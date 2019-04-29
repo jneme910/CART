@@ -1,78 +1,6 @@
--- 2019-03-27 T13:28:13 
-----https://websoilsurvey.sc.egov.usda.gov/App/WebSoilSurvey.aspx?aoicoords=MULTIPOLYGON%20(((-98.599033355712876%2039.839814661109379,%20-98.58066558837892%2039.838793139814641,%20-98.579893112182646%2039.827917939050472,%20-98.59916210174562%2039.828643006003304,%20-98.599462509155273%2039.839682852763886,%20-98.599033355712876%2039.839814661109379)),%20((-98.575901985168485%2039.843307490079241,%20-98.572382926940918%2039.836288700736318,%20-98.552942276000977%2039.839320378509363,%20-98.55804920196536%2039.844065344605674,%20-98.575901985168485%2039.843307490079241)))
--- BEGIN CREATING AOI QUERY
---
--- Declare all variables here
-use sdmONLINE;
-GO
-SET STATISTICS IO ON 
-GO 
 
-DROP TABLE IF EXISTS #AoiTable
-DROP TABLE IF EXISTS #AoiAcres
-DROP TABLE IF EXISTS #AoiSoils
-DROP TABLE IF EXISTS #AoiSoils2
-DROP TABLE IF EXISTS #M2
-DROP TABLE IF EXISTS #M5
-DROP TABLE IF EXISTS #M4
-DROP TABLE IF EXISTS #M6
-DROP TABLE IF EXISTS #M8
-DROP TABLE IF EXISTS #M10
-DROP TABLE IF EXISTS #InterpTable
-DROP TABLE IF EXISTS #LandunitRatingsDetailed
-DROP TABLE IF EXISTS #LandunitRatingsCART
-DROP TABLE IF EXISTS #SDV
-DROP TABLE IF EXISTS #RatingClasses
-DROP TABLE IF EXISTS #RatingDomain
-DROP TABLE IF EXISTS #DateStamps
-DROP TABLE IF EXISTS #LandunitMetadata
-DROP TABLE IF EXISTS #LandunitRatingsDetailed1
-DROP TABLE IF EXISTS #LandunitRatingsDetailed2
-DROP TABLE IF EXISTS  #LandunitRatingsCART2
-DROP TABLE IF EXISTS #interp_dcd
-DROP TABLE IF EXISTS  #Hydric2
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS #Hydric_A
-DROP TABLE IF EXISTS #Hydric_B
-DROP TABLE IF EXISTS  #Hydric1
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS  #FC
-DROP TABLE IF EXISTS  #wet
-DROP TABLE IF EXISTS  #wet1
-DROP TABLE IF EXISTS  #wet2
-DROP TABLE IF EXISTS  #pf
-DROP TABLE IF EXISTS  #pf1
-DROP TABLE IF EXISTS  #pf2
-DROP TABLE IF EXISTS  #agg1
-DROP TABLE IF EXISTS  #agg2
-DROP TABLE IF EXISTS  #agg3
-DROP TABLE IF EXISTS  #agg4
-DROP TABLE IF EXISTS #agg5
-DROP TABLE IF EXISTS #agg6
-DROP TABLE IF EXISTS #agg7
-DROP TABLE IF EXISTS #agg8
-GO
-
-DECLARE @attributeName CHAR(60);
-DECLARE @ruleDesign CHAR(60);
-DECLARE @ruleKey CHAR(30);
-DECLARE @rating1 CHAR(60);
-DECLARE @rating2  CHAR(60);
-DECLARE @rating3 CHAR(60);
-DECLARE @rating4 CHAR(60);
-DECLARE @rating5 CHAR(60);
-DECLARE @rating6 CHAR(60);
-DECLARE @dateStamp VARCHAR(60);
-DECLARE @minAcres INT ;
-DECLARE @minPct INT ;
-DECLARE @aoiGeom Geometry;
-DECLARE @aoiGeomFixed Geometry;
-DECLARE @ratingKey CHAR(70);
-DECLARE @notRatedPhrase CHAR(15);
-DECLARE @Level INT ;
-DECLARE @pAoiId INT ;
-declare @intersectedPolygonGeometries table (id int, geom geometry);
-declare @intersectedPolygonGeographies table (id int, geog geography);
+--declare @intersectedPolygonGeometries table (id int, geom geometry);
+--declare @intersectedPolygonGeographies table (id int, geog geography);
 
 
 
@@ -81,23 +9,23 @@ declare @intersectedPolygonGeographies table (id int, geog geography);
 -- BEGIN CREATING AOI QUERY
 --
 -- Declare all variables here
---| ~DeclareChar(@attributeName,60)~
---| ~DeclareChar(@ruleDesign,60)~
---| ~DeclareChar(@ruleKey,30)~
---| ~DeclareChar(@rating1,60)~
---| ~DeclareChar(@rating2,60)~
---| ~DeclareChar(@rating3,60)~
---| ~DeclareChar(@rating4,60)~
---| ~DeclareChar(@rating5,60)~
---| ~DeclareChar(@rating6,60)~
---| ~DeclareVarchar(@dateStamp,20)~
---| ~DeclareInt(@minAcres)~
---| ~DeclareInt(@minPct)~
---| ~DeclareGeometry(@aoiGeom)~
---| ~DeclareGeometry(@aoiGeomFixed)~
---| ~DeclareChar(@ratingKey,70)~
---| ~DeclareChar(@notRatedPhrase,15)~
---| ~DeclareInt(@Level)~
+ ~DeclareChar(@attributeName,60)~
+ ~DeclareChar(@ruleDesign,60)~
+ ~DeclareChar(@ruleKey,30)~
+ ~DeclareChar(@rating1,60)~
+ ~DeclareChar(@rating2,60)~
+ ~DeclareChar(@rating3,60)~
+ ~DeclareChar(@rating4,60)~
+ ~DeclareChar(@rating5,60)~
+ ~DeclareChar(@rating6,60)~
+ ~DeclareVarchar(@dateStamp,20)~
+ ~DeclareInt(@minAcres)~
+ ~DeclareInt(@minPct)~
+ ~DeclareGeometry(@aoiGeom)~
+ ~DeclareGeometry(@aoiGeomFixed)~
+ ~DeclareChar(@ratingKey,70)~
+ ~DeclareChar(@notRatedPhrase,15)~
+ ~DeclareInt(@Level)~
  
 -- 2019-04-03 T13:16:29 
 
@@ -2174,46 +2102,3 @@ hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
 FROM #Hydric2 AS mu
 INNER JOIN mapunit ON mapunit.mukey = mu.mukey
 
-DROP TABLE IF EXISTS #AoiTable
-DROP TABLE IF EXISTS #AoiAcres
-DROP TABLE IF EXISTS #AoiSoils
-DROP TABLE IF EXISTS #AoiSoils2
-DROP TABLE IF EXISTS #M2
-DROP TABLE IF EXISTS #M5
-DROP TABLE IF EXISTS #M4
-DROP TABLE IF EXISTS #M6
-DROP TABLE IF EXISTS #M8
-DROP TABLE IF EXISTS #M10
-DROP TABLE IF EXISTS #InterpTable
-DROP TABLE IF EXISTS #LandunitRatingsDetailed
-DROP TABLE IF EXISTS #LandunitRatingsCART
-DROP TABLE IF EXISTS #SDV
-DROP TABLE IF EXISTS #RatingClasses
-DROP TABLE IF EXISTS #RatingDomain
-DROP TABLE IF EXISTS #DateStamps
-DROP TABLE IF EXISTS #LandunitMetadata
-DROP TABLE IF EXISTS #LandunitRatingsDetailed1
-DROP TABLE IF EXISTS #LandunitRatingsDetailed2
-DROP TABLE IF EXISTS  #LandunitRatingsCART2
-DROP TABLE IF EXISTS #interp_dcd
-DROP TABLE IF EXISTS  #Hydric2
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS #Hydric_A
-DROP TABLE IF EXISTS #Hydric_B
-DROP TABLE IF EXISTS  #Hydric1
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS  #FC
-DROP TABLE IF EXISTS  #wet
-DROP TABLE IF EXISTS  #wet1
-DROP TABLE IF EXISTS  #wet2
-DROP TABLE IF EXISTS  #pf
-DROP TABLE IF EXISTS  #pf1
-DROP TABLE IF EXISTS  #pf2
-DROP TABLE IF EXISTS  #agg1
-DROP TABLE IF EXISTS  #agg2
-DROP TABLE IF EXISTS  #agg3
-DROP TABLE IF EXISTS  #agg4
-DROP TABLE IF EXISTS #agg5
-DROP TABLE IF EXISTS #agg6
-DROP TABLE IF EXISTS #agg7
-GO
