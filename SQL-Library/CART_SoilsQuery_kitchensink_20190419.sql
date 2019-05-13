@@ -50,7 +50,25 @@ DROP TABLE IF EXISTS  #agg4
 DROP TABLE IF EXISTS #agg5
 DROP TABLE IF EXISTS #agg6
 DROP TABLE IF EXISTS #agg7
+DROP TABLE IF EXISTS #agg7a
 DROP TABLE IF EXISTS #agg8
+DROP TABLE IF EXISTS #acpf
+DROP TABLE IF EXISTS #muacpf
+DROP TABLE IF EXISTS #SOC5
+DROP TABLE IF EXISTS #hortopdepth 
+DROP TABLE IF EXISTS #acpf2
+DROP TABLE IF EXISTS #acpfhzn
+DROP TABLE IF EXISTS #SOC
+DROP TABLE IF EXISTS #SOC2
+DROP TABLE IF EXISTS #SOC3
+DROP TABLE IF EXISTS #SOC4
+DROP TABLE IF EXISTS #SOC5
+DROP TABLE IF EXISTS #SOC6
+DROP TABLE IF EXISTS #acpfaws
+DROP TABLE IF EXISTS #hortopdepthaws
+DROP TABLE IF EXISTS #acpf2aws
+DROP TABLE IF EXISTS #acpfhznaws
+
 GO
 
 DECLARE @attributeName CHAR(60);
@@ -115,17 +133,13 @@ CREATE TABLE #AoiTable
 -- Insert identifier string and WKT geometry for each AOI polygon after this...
  
 SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
-
---SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-88.935570716857924 43.677245865460151, -88.920550346374526 43.67727690360843, -88.921065330505385 43.662469884232543, -88.9359998703003 43.662407792603673, -88.935570716857924 43.677245865460151)))', 4326);  
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
 VALUES ('T9981 Fld3', @aoiGeomFixed); 
 SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
---SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-88.920421600341811 43.677245865460151, -88.905229568481445 43.677245865460151, -88.905787467956557 43.662563021555471, -88.920722007751479 43.6625940672977, -88.920421600341811 43.677245865460151)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
 VALUES ('T9981 Fld4', @aoiGeomFixed);
- 
 
 -- End of AOI geometry section
  
@@ -412,7 +426,8 @@ INSERT INTO #SDV (attributename, nasisrulename, rulekey, ruledesign, notratedphr
 SELECT sdv.attributename, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname, sdv.maplegendxml, sdv.attributedescription
 FROM sdvattribute sdv
 LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
-WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms')
+WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms', 'Ponding Frequency Class','Flooding Frequency Class',
+'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
 GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;
  
 INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
@@ -457,7 +472,7 @@ INNER JOIN mapunit AS mu ON mu.mukey=fcc.mukey;
 INSERT INTO #M4
 SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum
 FROM #M2 AS M2
-INNER JOIN component AS CO ON CO.mukey = M2.mukey AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
+INNER JOIN component AS CO ON CO.mukey = M2.mukey AND majcompflag = 'yes'; --keep major component flag as Yes. It will mess up everything below
  
 -- Get survey area dates for all soil mapunits involved
 INSERT INTO #DateStamps
@@ -480,6 +495,456 @@ FROM #DateStamps dt1;
  
 -- END OF STATIC SECTION
 -- ************************************************************************************************
+--Begin SOC
+CREATE TABLE #acpf
+(  aoiid INT ,
+landunit CHAR(20), 
+mukey INT,
+mapunit_acres FLOAT, 
+cokey INT,
+compname CHAR(60),
+comppct_r INT,
+majcompflag  CHAR(3),
+localphase CHAR(60),
+ hzname CHAR(20),
+ hzdept_r INT,
+ hzdepb_r INT,
+  awc_r FLOAT, 
+ restrictiondepth INT,
+ restrictiodepth INT,
+ TOPrestriction	CHAR(80),	
+tcl CHAR(40),	
+thickness	INT,
+om_r	FLOAT, 
+dbthirdbar_r FLOAT,
+fragvol	 INT,
+texture	CHAR(20),
+chkey	 INT,
+mu_pct_sum INT)
+;
+
+INSERT INTO #acpf
+SELECT DISTINCT 
+ MA44.aoiid ,
+ MA44.landunit, 
+ MA44.mukey,
+ MA44.mapunit_acres, 
+ MA44.cokey,
+ MA44.compname,
+ MA44.comppct_r,
+ MA44.majcompflag,
+ localphase,
+ hzname,
+ hzdept_r,
+ hzdepb_r,
+  awc_r , 
+(SELECT CAST(MIN(resdept_r) AS INTEGER) FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND reskind  IS NOT NULL) AS restrictiondepth,
+(SELECT CASE WHEN MIN (resdept_r) IS NULL THEN 200 ELSE CAST (MIN (resdept_r) AS INT) END FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND reskind IS NOT NULL) AS restrictiodepth,
+(SELECT TOP 1  reskind  FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND corestrictions.reskind IN ('Lithic bedrock','Duripan', 'Densic bedrock', 'Paralithic bedrock', 'Fragipan', 'Natric', 'Ortstein', 'Permafrost', 'Petrocalcic', 'Petrogypsic')
+AND reskind IS NOT NULL ORDER BY resdept_r) AS TOPrestriction,
+ (SELECT TOP 1 texcl FROM chtexturegrp AS chtg INNER JOIN chtexture AS cht ON chtg.chtgkey=cht.chtgkey  AND chtg.rvindicator = 'yes' AND chtg.chkey=cha.chkey) AS tcl,
+ CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST((hzdepb_r-hzdept_r) AS INT) END AS thickness,  
+CASE WHEN texture LIKE '%PM%' AND (om_r) IS NULL THEN 35
+WHEN texture LIKE '%MUCK%' AND (om_r) IS NULL THEN 35
+WHEN texture LIKE '%PEAT%' AND (om_r) IS NULL THEN 35 ELSE om_r END AS om_r , 
+
+CASE WHEN texture LIKE '%PM%' AND (dbthirdbar_r) IS NULL THEN 0.25
+WHEN texture LIKE '%MUCK%' AND (dbthirdbar_r) IS NULL THEN 0.25
+WHEN texture LIKE '%PEAT%' AND (dbthirdbar_r) IS NULL THEN 0.25 ELSE dbthirdbar_r END AS dbthirdbar_r, 
+  (SELECT CASE WHEN SUM (cf.fragvol_r) IS NULL THEN 0 ELSE CAST (SUM(cf.fragvol_r) AS INT) END FROM chfrags cf WHERE cf.chkey = cha.chkey) as fragvol,
+texture,
+cha.chkey,
+ mu_pct_sum
+FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon  AS cha  ON cha.cokey=coa.cokey  ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'yes' )
+LEFT OUTER JOIN  chtexturegrp AS ct ON cha.chkey=ct.chkey and ct.rvindicator = 'yes'
+and CASE WHEN hzdept_r IS NULL THEN 2 
+WHEN texture LIKE '%PM%' AND om_r IS NULL THEN 1
+WHEN texture LIKE '%MUCK%' AND om_r IS NULL THEN 1
+WHEN texture LIKE '%PEAT%' AND om_r IS NULL THEN 1
+WHEN texture LIKE '%PM%' AND dbthirdbar_r IS NULL THEN 1
+WHEN texture LIKE '%MUCK%' AND dbthirdbar_r IS NULL THEN 1
+WHEN texture LIKE '%PEAT%' AND dbthirdbar_r IS NULL THEN 1
+WHEN om_r IS NULL THEN 2 
+WHEN om_r = 0 THEN 2 
+WHEN dbthirdbar_r IS NULL THEN 2
+WHEN dbthirdbar_r = 0 THEN 2
+ELSE 1 END = 1;
+
+---Sums the Component Percent and eliminate duplicate values by cokey
+SELECT landunit, aoiid, mapunit_acres , mukey, cokey, FORMAT ((1.0 * comppct_r / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct
+INTO #muacpf
+FROM #acpf AS acpf2
+WHERE acpf2.cokey=cokey
+GROUP BY landunit, aoiid, mapunit_acres , mukey, cokey, comppct_r, mu_pct_sum
+
+--grab top depth for the mineral soil and will use it later to get mineral surface properties
+--Because of SOC this wasnt really needed. If any error add statement below back
+SELECT compname, cokey, MIN(hzdept_r) AS min_t 
+INTO #hortopdepth 
+FROM #acpf 
+---WHERE texture NOT LIKE '%PM%' and texture NOT LIKE '%DOM' and texture NOT LIKE '%MPT%' AND texture NOT LIKE '%MUCK' AND texture NOT LIKE '%PEAT%'
+GROUP BY  cokey, compname
+
+---combine the mineral surface to grab surface mineral properties
+SELECT #hortopdepth.cokey,
+hzname,
+hzdept_r,
+hzdepb_r,
+thickness,
+texture AS texture_surf,
+om_r AS om_surf,
+dbthirdbar_r AS db_surf, 
+fragvol AS frag_surf, 
+chkey
+INTO #acpf2
+FROM #hortopdepth
+INNER JOIN #acpf on #hortopdepth.cokey=#acpf.cokey AND #hortopdepth.min_t = #acpf.hzdept_r
+ORDER BY #hortopdepth.cokey, hzname
+
+SELECT
+mukey,
+cokey,
+hzname,
+restrictiodepth, 
+hzdept_r,
+hzdepb_r,
+CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST ((hzdepb_r-hzdept_r) AS INT) END AS thickness,
+texture,
+CASE WHEN dbthirdbar_r IS NULL THEN 0 ELSE dbthirdbar_r  END AS dbthirdbar_r, 
+CASE WHEN fragvol IS NULL THEN 0 ELSE fragvol  END AS fragvol, 
+CASE when om_r IS NULL THEN 0 ELSE om_r END AS om_r,
+chkey
+INTO #acpfhzn
+FROM #acpf
+
+--- depth ranges for SOC ----
+SELECT hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness,
+CASE  WHEN hzdept_r < 150 then hzdept_r ELSE 0 END AS InRangeTop_0_150, 
+CASE  WHEN hzdepb_r <= 150 THEN hzdepb_r WHEN hzdepb_r > 150 and hzdept_r < 150 THEN 150 ELSE 0 END AS InRangeBot_0_150,
+
+CASE  WHEN hzdept_r < 5 then hzdept_r ELSE 0 END AS InRangeTop_0_5, 
+CASE  WHEN hzdepb_r <= 5 THEN hzdepb_r WHEN hzdepb_r > 5 and hzdept_r < 5 THEN 5 ELSE 0 END AS InRangeBot_0_5,
+
+
+CASE  WHEN hzdept_r < 30 then hzdept_r ELSE 0 END AS InRangeTop_0_30, 
+CASE  WHEN hzdepb_r <= 30  THEN hzdepb_r WHEN hzdepb_r > 30  and hzdept_r < 30 THEN 30  ELSE 0 END AS InRangeBot_0_30,
+---5 to 15 
+CASE    WHEN hzdepb_r < 5 THEN 0
+WHEN hzdept_r >15 THEN 0 
+WHEN hzdepb_r >= 5 AND hzdept_r < 5 THEN 5 
+WHEN hzdept_r < 5 THEN 0
+		WHEN hzdept_r < 15 then hzdept_r ELSE 5 END AS InRangeTop_5_15 ,
+		
+	
+CASE   WHEN hzdept_r > 15 THEN 0
+WHEN hzdepb_r < 5 THEN 0
+WHEN hzdepb_r <= 15 THEN hzdepb_r  WHEN hzdepb_r > 15 and hzdept_r < 15 THEN 15 ELSE 5 END AS InRangeBot_5_15,
+---15 to 30
+CASE    WHEN hzdepb_r < 15 THEN 0
+WHEN hzdept_r >30 THEN 0 
+WHEN hzdepb_r >= 15 AND hzdept_r < 15 THEN 15 
+WHEN hzdept_r < 15 THEN 0
+		WHEN hzdept_r < 30 then hzdept_r ELSE 15 END AS InRangeTop_15_30 ,
+		
+	
+CASE   WHEN hzdept_r > 30 THEN 0
+WHEN hzdepb_r < 15 THEN 0
+WHEN hzdepb_r <= 30 THEN hzdepb_r  WHEN hzdepb_r > 30 and hzdept_r < 30 THEN 30 ELSE 15 END AS InRangeBot_15_30,
+
+--30 to 60
+CASE    WHEN hzdepb_r < 30 THEN 0
+WHEN hzdept_r >60 THEN 0 
+WHEN hzdepb_r >= 30 AND hzdept_r < 30 THEN 30 
+WHEN hzdept_r < 30 THEN 0
+		WHEN hzdept_r < 60 then hzdept_r ELSE 30 END AS InRangeTop_30_60 ,
+		
+	
+CASE   WHEN hzdept_r > 60 THEN 0
+WHEN hzdepb_r < 30 THEN 0
+WHEN hzdepb_r <= 60 THEN hzdepb_r  WHEN hzdepb_r > 60 and hzdept_r < 60 THEN 60 ELSE 30 END AS InRangeBot_30_60,
+
+---60 to 100
+CASE    WHEN hzdepb_r < 60 THEN 0
+WHEN hzdept_r >100 THEN 0 
+WHEN hzdepb_r >= 60 AND hzdept_r < 60 THEN 60 
+WHEN hzdept_r < 60 THEN 0
+		WHEN hzdept_r < 100 then hzdept_r ELSE 60 END AS InRangeTop_60_100 ,
+		
+	
+CASE   WHEN hzdept_r > 100 THEN 0
+WHEN hzdepb_r < 60 THEN 0
+WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 60 END AS InRangeBot_60_100,
+
+--100 to 200
+CASE    WHEN hzdepb_r < 100 THEN 0
+WHEN hzdept_r >200 THEN 0 
+WHEN hzdepb_r >= 100 AND hzdept_r < 100 THEN 100 
+WHEN hzdept_r < 100 THEN 0
+		WHEN hzdept_r < 200 then hzdept_r ELSE 100 END AS InRangeTop_100_200 ,
+		
+	
+CASE   WHEN hzdept_r > 200 THEN 0
+WHEN hzdepb_r < 100 THEN 0
+WHEN hzdepb_r <= 200 THEN hzdepb_r  WHEN hzdepb_r > 200 and hzdept_r < 200 THEN 200 ELSE 100 END AS InRangeBot_100_200,
+CASE    WHEN hzdepb_r < 20 THEN 0
+WHEN hzdept_r >50 THEN 0 
+WHEN hzdepb_r >= 20 AND hzdept_r < 20 THEN 20 
+WHEN hzdept_r < 20 THEN 0
+		WHEN hzdept_r < 50 then hzdept_r ELSE 20 END AS InRangeTop_20_50 ,
+		
+	
+CASE   WHEN hzdept_r > 50 THEN 0
+WHEN hzdepb_r < 20 THEN 0
+WHEN hzdepb_r <= 50 THEN hzdepb_r  WHEN hzdepb_r > 50 and hzdept_r < 50 THEN 50 ELSE 20 END AS InRangeBot_20_50,
+
+
+
+CASE    WHEN hzdepb_r < 50 THEN 0
+WHEN hzdept_r >100 THEN 0 
+WHEN hzdepb_r >= 50 AND hzdept_r < 50 THEN 50 
+WHEN hzdept_r < 50 THEN 0
+		WHEN hzdept_r < 100 then hzdept_r ELSE 50 END AS InRangeTop_50_100 ,
+		
+	
+CASE   WHEN hzdept_r > 100 THEN 0
+WHEN hzdepb_r < 50 THEN 0
+WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 50 END AS InRangeBot_50_100,
+
+
+om_r, fragvol, dbthirdbar_r, cokey, mukey, 100.0 - fragvol AS frag_main
+INTO #SOC
+FROM #acpf
+ORDER BY cokey, hzdept_r ASC, hzdepb_r ASC, chkey
+
+
+SELECT mukey, cokey, hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness,
+InRangeTop_0_150, 
+InRangeBot_0_150, 
+ 
+InRangeTop_0_30, 
+InRangeBot_0_30, 
+
+InRangeTop_20_50, 
+InRangeBot_20_50, 
+
+InRangeTop_50_100 ,
+InRangeBot_50_100,
+(( ((InRangeBot_0_150 - InRangeTop_0_150) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_150,
+
+(( ((InRangeBot_0_30 - InRangeTop_0_30) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_30,
+---Removed * ( comppct_r * 100 ) 
+((((InRangeBot_20_50 - InRangeTop_20_50) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_20_50,
+---Removed * ( comppct_r * 100 ) 
+((((InRangeBot_50_100 - InRangeTop_50_100) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_50_100,
+
+(( ((InRangeBot_0_5 - InRangeTop_0_5) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_5,
+
+
+(( ((InRangeBot_5_15 - InRangeTop_5_15) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_5_15,
+
+(( ((InRangeBot_15_30 - InRangeTop_15_30) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_15_30,
+
+(( ((InRangeBot_30_60 - InRangeTop_30_60) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_30_60,
+
+
+(( ((InRangeBot_60_100 - InRangeTop_60_100) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_60_100,
+
+(( ((InRangeBot_100_200 - InRangeTop_100_200) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_100_200
+---Removed * ( comppct_r * 100 ) 
+INTO #SOC2
+FROM #SOC
+ORDER BY  mukey ,cokey, comppct_r DESC, hzdept_r ASC, hzdepb_r ASC, chkey
+
+---Aggregates and sum it by component. 
+SELECT DISTINCT cokey, mukey,  
+ROUND (SUM (HZ_SOC_0_150) over(PARTITION BY cokey) ,4) AS CO_SOC_0_150, 
+ROUND (SUM (HZ_SOC_0_30) over(PARTITION BY cokey) ,4) AS CO_SOC_0_30, 
+ROUND (SUM (HZ_SOC_20_50) over(PARTITION BY cokey),4) AS CO_SOC_20_50, 
+ROUND (SUM (HZ_SOC_50_100) over(PARTITION BY cokey),4)  AS CO_SOC_50_100,
+ROUND (SUM (HZ_SOC_0_5) over(PARTITION BY cokey),4) AS CO_SOC_0_5, 
+ROUND (SUM (HZ_SOC_5_15) over(PARTITION BY cokey),4) AS CO_SOC_5_15, 
+ROUND (SUM (HZ_SOC_15_30) over(PARTITION BY cokey),4) AS CO_SOC_15_30, 
+ROUND (SUM (HZ_SOC_30_60) over(PARTITION BY cokey),4) AS CO_SOC_30_60, 
+ROUND (SUM (HZ_SOC_60_100) over(PARTITION BY cokey),4) AS CO_SOC_60_100, 
+ROUND (SUM (HZ_SOC_100_200) over(PARTITION BY cokey),4) AS CO_SOC_100_200 
+INTO #SOC3
+FROM #SOC2
+GROUP BY mukey, cokey, HZ_SOC_0_150, HZ_SOC_0_30, HZ_SOC_20_50, HZ_SOC_50_100, HZ_SOC_0_5, HZ_SOC_5_15, HZ_SOC_15_30, HZ_SOC_30_60, HZ_SOC_60_100, HZ_SOC_100_200
+
+SELECT DISTINCT #SOC3.cokey, #SOC3.mukey,  adj_comp_pct  AS WEIGHTED_COMP_PCT, 
+CO_SOC_0_30, CO_SOC_0_30 * adj_comp_pct AS WEIGHTED_CO_SOC_0_30,
+CO_SOC_20_50, CO_SOC_20_50 * adj_comp_pct AS WEIGHTED_CO_SOC_20_50,
+CO_SOC_50_100, CO_SOC_50_100 * adj_comp_pct AS WEIGHTED_CO_SOC_50_100,
+CO_SOC_0_150, CO_SOC_0_150 * adj_comp_pct AS WEIGHTED_CO_SOC_0_150,
+CO_SOC_0_5, CO_SOC_0_5 * adj_comp_pct AS WEIGHTED_CO_SOC_0_5,
+CO_SOC_5_15, CO_SOC_5_15 * adj_comp_pct AS WEIGHTED_CO_SOC_5_15,
+CO_SOC_15_30, CO_SOC_15_30 * adj_comp_pct AS WEIGHTED_CO_SOC_15_30,
+CO_SOC_30_60, CO_SOC_30_60 * adj_comp_pct AS WEIGHTED_CO_SOC_30_60,
+CO_SOC_60_100, CO_SOC_60_100 * adj_comp_pct AS WEIGHTED_CO_SOC_60_100,
+CO_SOC_100_200 , CO_SOC_100_200  * adj_comp_pct AS WEIGHTED_CO_SOC_100_200
+INTO #SOC4
+FROM #SOC3
+INNER JOIN #muacpf ON #muacpf.cokey=#SOC3.cokey
+GROUP BY #SOC3.cokey, #SOC3.mukey,  adj_comp_pct , CO_SOC_0_30, CO_SOC_20_50,CO_SOC_50_100, CO_SOC_0_150, CO_SOC_0_5, CO_SOC_5_15, CO_SOC_15_30, CO_SOC_30_60,CO_SOC_60_100, CO_SOC_100_200
+
+---Unit Conversion *100
+---Link to Map Unit below
+SELECT DISTINCT #M4.mukey,   #M4.aoiid ,
+ #M4.landunit,  
+ landunit_acres, mapunit_acres, ROUND (SUM (WEIGHTED_CO_SOC_0_30) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_30 , 
+ROUND (SUM (WEIGHTED_CO_SOC_20_50) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_20_50 , 
+ROUND (SUM (WEIGHTED_CO_SOC_50_100) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_50_100,
+
+ROUND (SUM (WEIGHTED_CO_SOC_0_150) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_150,
+ROUND (SUM (WEIGHTED_CO_SOC_0_5) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_5 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_5_15) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_5_15 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_15_30) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_15_30 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_30_60) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_30_60 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_60_100) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_60_100 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_100_200) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_100_200
+INTO #SOC5
+FROM #SOC4
+LEFT OUTER JOIN #M4 ON #M4.mukey=#SOC4.mukey
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid
+GROUP BY  #M4.mukey,  #SOC4.mukey,  #M4.aoiid ,
+ #M4.landunit,  
+ landunit_acres, mapunit_acres,WEIGHTED_CO_SOC_0_30, WEIGHTED_CO_SOC_20_50, WEIGHTED_CO_SOC_50_100, WEIGHTED_CO_SOC_0_5, WEIGHTED_CO_SOC_5_15, WEIGHTED_CO_SOC_15_30, WEIGHTED_CO_SOC_30_60, WEIGHTED_CO_SOC_60_100, WEIGHTED_CO_SOC_100_200, #SOC4.WEIGHTED_CO_SOC_0_150
+
+ CREATE TABLE #SOC6
+( aoiid INT,
+landunit CHAR(20),  
+landunit_acres FLOAT,
+SOCSTOCK_0_5_Weighted_Average FLOAT, 
+SOCSTOCK_0_30_Weighted_Average FLOAT, 
+SOCSTOCK_0_150_Weighted_Average FLOAT
+)
+;
+
+
+
+INSERT INTO #SOC6
+SELECT DISTINCT 
+ aoiid ,
+ landunit,  
+ landunit_acres,
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*SOCSTOCK_0_5) over(partition by aoiid)  , '#,###,##0.00') AS SOCSTOCK_0_5_Weighted_Average, 
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*SOCSTOCK_0_30 ) over(partition by aoiid)  , '#,###,##0.00') AS SOCSTOCK_0_30_Weighted_Average,
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*SOCSTOCK_0_150) over(partition by aoiid)  , '#,###,##0.00') AS SOCSTOCK_0_150_Weighted_Average
+FROM #SOC5
+GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, SOCSTOCK_0_5, SOCSTOCK_0_30, SOCSTOCK_0_150;
+
+SELECT DISTINCT  landunit, landunit_acres, 'Soil Organic Carbon Stock' AS attributename,
+SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
+SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],
+SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150]
+FROM #SOC6
+--- END SOC
+--Begin AWS
+CREATE TABLE #acpfaws
+(  aoiid INT ,
+landunit CHAR(20), 
+mukey INT,
+mapunit_acres FLOAT, 
+cokey INT,
+compname CHAR(60),
+comppct_r INT,
+majcompflag  CHAR(3),
+localphase CHAR(60),
+ hzname CHAR(20),
+ hzdept_r INT,
+ hzdepb_r INT,
+  awc_r FLOAT, 
+ restrictiondepth INT,
+ restrictiodepth INT,
+ TOPrestriction	CHAR(80),	
+tcl CHAR(40),	
+thickness	INT,
+om_r	FLOAT, 
+dbthirdbar_r FLOAT,
+fragvol	 INT,
+texture	CHAR(20),
+chkey	 INT,
+mu_pct_sum INT)
+;
+
+INSERT INTO #acpfaws
+SELECT DISTINCT 
+ MA44.aoiid ,
+ MA44.landunit, 
+ MA44.mukey,
+ MA44.mapunit_acres, 
+ MA44.cokey,
+ MA44.compname,
+ MA44.comppct_r,
+ MA44.majcompflag,
+ localphase,
+ hzname,
+ hzdept_r,
+ hzdepb_r,
+  awc_r , 
+(SELECT CAST(MIN(resdept_r) AS INTEGER) FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND reskind  IS NOT NULL) AS restrictiondepth,
+(SELECT CASE WHEN MIN (resdept_r) IS NULL THEN 200 ELSE CAST (MIN (resdept_r) AS INT) END FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND reskind IS NOT NULL) AS restrictiodepth,
+(SELECT TOP 1  reskind  FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND corestrictions.reskind IN ('Lithic bedrock','Duripan', 'Densic bedrock', 'Paralithic bedrock', 'Fragipan', 'Natric', 'Ortstein', 'Permafrost', 'Petrocalcic', 'Petrogypsic')
+AND reskind IS NOT NULL ORDER BY resdept_r) AS TOPrestriction,
+ (SELECT TOP 1 texcl FROM chtexturegrp AS chtg INNER JOIN chtexture AS cht ON chtg.chtgkey=cht.chtgkey  AND chtg.rvindicator = 'yes' AND chtg.chkey=cha.chkey) AS tcl,
+ CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST((hzdepb_r-hzdept_r) AS INT) END AS thickness,  
+CASE WHEN texture LIKE '%PM%' AND (om_r) IS NULL THEN 35
+WHEN texture LIKE '%MUCK%' AND (om_r) IS NULL THEN 35
+WHEN texture LIKE '%PEAT%' AND (om_r) IS NULL THEN 35 ELSE om_r END AS om_r , 
+
+CASE WHEN texture LIKE '%PM%' AND (dbthirdbar_r) IS NULL THEN 0.25
+WHEN texture LIKE '%MUCK%' AND (dbthirdbar_r) IS NULL THEN 0.25
+WHEN texture LIKE '%PEAT%' AND (dbthirdbar_r) IS NULL THEN 0.25 ELSE dbthirdbar_r END AS dbthirdbar_r, 
+  (SELECT CASE WHEN SUM (cf.fragvol_r) IS NULL THEN 0 ELSE CAST (SUM(cf.fragvol_r) AS INT) END FROM chfrags cf WHERE cf.chkey = cha.chkey) as fragvol,
+texture,
+cha.chkey,
+ mu_pct_sum
+FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon  AS cha  ON cha.cokey=coa.cokey  AND CASE WHEN hzdept_r IS NULL THEN 2 
+WHEN awc_r IS NULL THEN 2 
+WHEN awc_r = 0 THEN 2 ELSE 1 END = 1 ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'yes' )
+LEFT OUTER JOIN  chtexturegrp AS ct ON cha.chkey=ct.chkey and ct.rvindicator = 'yes';
+
+SELECT compname, cokey, MIN(hzdept_r) AS min_t
+INTO #hortopdepthaws
+FROM #acpfaws
+WHERE texture NOT LIKE '%PM%' and texture NOT LIKE '%DOM' and texture NOT LIKE '%MPT%' AND texture NOT LIKE '%MUCK' AND texture NOT LIKE '%PEAT%'
+GROUP BY compname, cokey
+
+---combine the mineral surface to grab surface mineral properties
+
+SELECT #hortopdepthaws.cokey,
+hzname,
+hzdept_r,
+hzdepb_r,
+thickness,
+texture AS texture_surf,
+awc_r AS awc_surf,
+chkey
+INTO #acpf2aws
+FROM #hortopdepthaws
+INNER JOIN #acpfaws on #hortopdepthaws.cokey=#acpfaws.cokey AND #hortopdepthaws.min_t = #acpfaws.hzdept_r
+ORDER BY #hortopdepthaws.cokey, hzname
+
+SELECT
+mukey,
+cokey,
+hzname,
+restrictiodepth, 
+hzdept_r,
+hzdepb_r,
+CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST ((hzdepb_r-hzdept_r) AS INT) END AS thickness,
+texture,
+CASE when awc_r IS NULL THEN 0 ELSE awc_r END AS awc_r,
+chkey
+INTO #acpfhznaws
+FROM #acpfaws
+
+
 --Begin Aggregate Aggregate Stability
 
 CREATE TABLE #agg1
@@ -552,7 +1017,7 @@ SELECT DISTINCT
  FORMAT (CAST ((100*(-0.0126+0.01475*sar_h))/(1+(-0.0126+0.01475*sar_h)) as float)  , '#,###,##0.00')  as esp_h, 
  (SELECT TOP 1 texcl FROM chtexturegrp AS chtg INNER JOIN chtexture AS cht ON chtg.chtgkey=cht.chtgkey  AND chtg.rvindicator = 'yes' AND chtg.chkey=cha.chkey) AS tcl,
  mu_pct_sum
-FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon   AS cha  ON cha.cokey=coa.cokey AND cha.hzdept_r < 15 ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'Yes' );
+FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon   AS cha  ON cha.cokey=coa.cokey AND cha.hzdept_r < 15 ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'yes' );
 
 CREATE TABLE #agg2
 (  aoiid INT ,
@@ -740,7 +1205,7 @@ WHEN hzdept_r IS NULL THEN 0 ELSE hzdepb_r-hzdept_r END AS thickness,
 CASE  WHEN hzdept_r < 15 then hzdept_r ELSE 0 END AS AGG_InRangeTop_0_15, 
 CASE  WHEN hzdepb_r <= 15 THEN hzdepb_r WHEN hzdepb_r > 15 and hzdept_r < 15 THEN 15 ELSE 0 END AS AGG_InRangeBot_0_15
 FROM #AoiAcres
-LEFT OUTER JOIN #agg3 AS ag ON ag.aoiid=#AoiAcres.aoiid WHERE majcompflag = 'Yes' GROUP BY ag.aoiid ,
+LEFT OUTER JOIN #agg3 AS ag ON ag.aoiid=#AoiAcres.aoiid WHERE majcompflag = 'yes' GROUP BY ag.aoiid ,
 ag.landunit, 
 landunit_acres,
 mukey,
@@ -913,7 +1378,7 @@ MU_SUM_AGG_H FLOAT
 )
 ;
 
-
+-- Map Unit Aggregation
 INSERT INTO #agg7
 SELECT DISTINCT aoiid ,
 landunit, 
@@ -940,6 +1405,29 @@ comp_weighted_average_h
 ;
 
 
+CREATE TABLE #agg7a
+( aoiid INT,
+landunit CHAR(20),  
+landunit_acres FLOAT,
+mapunit_acres FLOAT,
+MU_SUM_AGG_L  FLOAT, 
+MU_SUM_AGG_R FLOAT, 
+MU_SUM_AGG_H FLOAT
+)
+;
+
+INSERT INTO #agg7a
+SELECT DISTINCT 
+ aoiid ,
+ landunit,  
+ landunit_acres,
+ mapunit_acres,
+CASE WHEN MU_SUM_AGG_R = 0 THEN 0 ELSE  MU_SUM_AGG_L END AS MU_SUM_AGG_L , 
+MU_SUM_AGG_R , 
+CASE WHEN MU_SUM_AGG_R = 0 THEN 0 ELSE  MU_SUM_AGG_H END AS MU_SUM_AGG_H
+FROM #agg7
+GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AGG_R, MU_SUM_AGG_H;
+
 CREATE TABLE #agg8
 ( aoiid INT,
 landunit CHAR(20),  
@@ -958,10 +1446,11 @@ SELECT DISTINCT
  FORMAT (SUM ((mapunit_acres/landunit_acres)*MU_SUM_AGG_L) over(partition by aoiid)  , '#,###,##0.00') AS LU_AGG_Weighted_Average_L, 
  FORMAT (SUM ((mapunit_acres/landunit_acres)*MU_SUM_AGG_R) over(partition by aoiid)  , '#,###,##0.00') AS LU_AGG_Weighted_Average_R,
  FORMAT (SUM ((mapunit_acres/landunit_acres)*MU_SUM_AGG_H) over(partition by aoiid)  , '#,###,##0.00') AS LU_AGG_Weighted_Average_H
-FROM #agg7
+FROM #agg7a
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AGG_R, MU_SUM_AGG_H;
 
-SELECT DISTINCT  landunit, landunit_acres, LU_AGG_Weighted_Average_L AS [Aggregate_Stability_L],
+SELECT DISTINCT  landunit, landunit_acres, 'Aggregate Stability' AS attributename,
+LU_AGG_Weighted_Average_L AS [Aggregate_Stability_L],
 LU_AGG_Weighted_Average_R AS [Aggregate_Stability_R],
 LU_AGG_Weighted_Average_H AS [Aggregate_Stability_H]
 FROM #agg8
@@ -999,7 +1488,7 @@ MD.DomainID = DD.DomainID order by choicesequence desc) as flodfreq,
 MD.DomainID = DD.DomainID order by choicesequence desc) as pondfreq,
 mu_pct_sum
 FROM #M4 AS M44 
-INNER JOIN comonth AS CM ON M44.cokey = CM.cokey AND M44.majcompflag = 'Yes' 
+INNER JOIN comonth AS CM ON M44.cokey = CM.cokey AND M44.majcompflag = 'yes' 
 AND CASE 
 WHEN (flodfreqcl IN ('occasional', 'common', 'frequent', 'very frequent'))  THEN 1 
 WHEN (pondfreqcl IN ('occasional', 'common', 'frequent'))  THEN 1
@@ -1087,7 +1576,7 @@ MIN (soimoistdept_l) over(partition by M44.cokey) AS  MIN_soimoistdept_l,
 MIN (soimoistdept_r) over(partition by M44.cokey) AS  MIN_soimoistdept_r,
 mu_pct_sum
 FROM (#M4 AS M44 INNER JOIN (comonth AS CM  INNER JOIN  cosoilmoist   AS COSM  ON COSM.comonthkey=CM.comonthkey AND soimoiststat = 'Wet' AND CASE WHEN soimoistdept_l < 46 THEN 1 WHEN soimoistdept_r < 46 THEN 1 ELSE 2 END = 1
-) ON M44.cokey = CM.cokey AND M44.majcompflag = 'Yes' 
+) ON M44.cokey = CM.cokey AND M44.majcompflag = 'yes' 
 INNER JOIN component ON  M44.cokey=component.cokey 
 AND (CASE WHEN soimoistdept_l IS NULL THEN soimoistdept_r ELSE soimoistdept_l END) = (SELECT MIN (CASE WHEN soimoistdept_l IS NULL THEN soimoistdept_r ELSE soimoistdept_l END) 
 FROM comonth AS CM2  
@@ -1121,10 +1610,10 @@ CREATE TABLE #wet1
       );
 
 INSERT INTO #wet1
-SELECT DISTINCT wet.aoiid, wet.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  MIN_soimoistdept_l, MIN_soimoistdept_r, mu_pct_sum, (1.0 * copct / mu_pct_sum) AS adj_comp_pct
+SELECT DISTINCT #AoiAcres.aoiid, #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  MIN_soimoistdept_l, MIN_soimoistdept_r, mu_pct_sum, (1.0 * copct / mu_pct_sum) AS adj_comp_pct
 FROM #AoiAcres
 LEFT OUTER JOIN #wet AS wet ON wet.aoiid=#AoiAcres.aoiid
-GROUP BY  wet.aoiid,  wet.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, MIN_soimoistdept_r, MIN_soimoistdept_l, mu_pct_sum
+GROUP BY  #AoiAcres.aoiid,  #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, MIN_soimoistdept_r, MIN_soimoistdept_l, mu_pct_sum
 
 CREATE TABLE #wet2
     ( aoiid INT,
@@ -1176,9 +1665,9 @@ INSERT INTO #Hydric_A (mukey, cokey, hydric_pct)
     SELECT DISTINCT M4.mukey, M4.cokey, M4.comppct_r AS hydric_pct
     FROM #M4 M4
     LEFT OUTER JOIN component C ON M4.cokey = C.cokey
-    WHERE C.hydricrating = 'Yes';
+    WHERE C.hydricrating = 'yes';
  
--- Hydric soils at the mapunit level, using all components where hydricrating = 'Yes'.
+-- Hydric soils at the mapunit level, using all components where hydricrating = 'yes'.
 -- Please note that any hydric components with a comppct_r of zero will not be counted.
 CREATE TABLE #Hydric_B
     (mukey INT,
@@ -1229,27 +1718,27 @@ SELECT DISTINCT M4.mukey,
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
- AND majcompflag = 'Yes') AS count_maj_comp,
+ AND majcompflag = 'yes') AS count_maj_comp,
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
- AND hydricrating = 'Yes' ) AS all_hydric,
+ AND hydricrating = 'yes' ) AS all_hydric,
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
- AND hydricrating  != 'Yes') AS all_not_hydric, 
+ AND hydricrating  != 'yes') AS all_not_hydric, 
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
- AND majcompflag = 'Yes' AND hydricrating = 'Yes') AS maj_hydric,
+ AND majcompflag = 'yes' AND hydricrating = 'yes') AS maj_hydric,
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
- AND majcompflag = 'Yes' AND hydricrating != 'Yes') AS maj_not_hydric,
+ AND majcompflag = 'yes' AND hydricrating != 'yes') AS maj_not_hydric,
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
- AND majcompflag != 'Yes' AND hydricrating  = 'Yes' ) AS hydric_inclusions,
+ AND majcompflag != 'yes' AND hydricrating  = 'yes' ) AS hydric_inclusions,
  (SELECT TOP 1 COUNT(*)
  FROM mapunit
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
@@ -1395,7 +1884,7 @@ INSERT INTO #M5
 SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
 FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
-WHERE M4.majcompflag = 'Yes';
+WHERE M4.majcompflag = 'yes';
  
 -- Populate component level ratings with adjusted component percent to account for the un-used minor components
 -- Can I use this table to determine the dominant interphrc-condition for each mapunit???
@@ -1533,7 +2022,7 @@ INSERT INTO #M5
 SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
 FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
-WHERE M4.majcompflag = 'Yes';
+WHERE M4.majcompflag = 'yes';
  
 -- Populate component level ratings with adjusted component percent to account for the un-used minor components
 -- Can I use this table to determine the dominant interphrc-condition for each mapunit???
@@ -1671,7 +2160,7 @@ INSERT INTO #M5
 SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
 FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
-WHERE M4.majcompflag = 'Yes';
+WHERE M4.majcompflag = 'yes';
  
 -- Populate component level ratings with adjusted component percent to account for the un-used minor components
 -- Can I use this table to determine the dominant interphrc-condition for each mapunit???
@@ -1732,7 +2221,7 @@ SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rati
  
 -- CART
 -- #LandunitRatingsCART
--- Identifies the single, most limiting rating (per landunit) that comprises at least 10% by area or 10 acres.
+-- Identifies the single, most limiting rating (per landunit) that comprises at least 10% by area or 10 acres.SOH -  Suitability for Aerobic Soil Organisms               
 -- This record will have an id value of 1.
 INSERT INTO #LandunitRatingsCART (id, landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres)
 SELECT ROW_NUMBER() OVER(PARTITION BY landunit ORDER BY rating_key ASC) AS "id",
@@ -1809,7 +2298,7 @@ INSERT INTO #M5
 SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
 FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
-WHERE M4.majcompflag = 'Yes';
+WHERE M4.majcompflag = 'yes';
  
 -- Populate component level ratings with adjusted component percent to account for the un-used minor components
 -- Can I use this table to determine the dominant interphrc-condition for each mapunit???
@@ -1948,7 +2437,7 @@ INSERT INTO #M5
 SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
 FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
-WHERE M4.majcompflag = 'Yes';
+WHERE M4.majcompflag = 'yes';
  
 -- Populate component level ratings with adjusted component percent to account for the un-used minor components
 -- Can I use this table to determine the dominant interphrc-condition for each mapunit???
@@ -1986,7 +2475,8 @@ INNER JOIN #RatingDomain RD ON M10.rating = RD.rating
 WHERE RD.attributename = @attributeName
 GROUP BY aoiid, M10.landunit, M10.rating, rating_key, rating_acres, landunit_acres, rating_num
 ORDER BY landunit, attributename, rating_num DESC;
- 
+
+
 -- #LandunitRatingsDetailed2 is populated with all information plus rolling_pct and rolling_acres which are using in the landunit summary rating.
 -- Detailed Landunit Ratings2 table columns: landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres 
 INSERT INTO #LandunitRatingsDetailed2 (landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres)
@@ -2098,11 +2588,11 @@ FROM #Hydric3
  --DOMINANT CONDITION
 SELECT M2.mukey,  rulename, attributename, (SELECT TOP 1 interphrc
  FROM mapunit
- INNER JOIN component ON component.mukey=mapunit.mukey AND majcompflag = 'Yes' 
+ INNER JOIN component ON component.mukey=mapunit.mukey AND majcompflag = 'yes' 
  INNER JOIN cointerp AS coi ON component.cokey = coi.cokey AND mapunit.mukey = M2.mukey AND ruledepth = 0 AND TP.rulekey=coi.rulekey
  GROUP BY interphrc, comppct_r ORDER BY SUM(comppct_r) over(partition by interphrc) DESC) as interp_dcd
 FROM #M2 AS M2
-INNER JOIN component AS CO ON CO.mukey = M2.mukey AND majcompflag = 'Yes'
+INNER JOIN component AS CO ON CO.mukey = M2.mukey AND majcompflag = 'yes'
 LEFT OUTER JOIN cointerp AS TP ON CO.cokey = TP.cokey 
 INNER JOIN #SDV AS s ON s.rulekey=TP.rulekey
 GROUP BY M2.mukey, rulename, TP.rulekey, attributename
@@ -2137,38 +2627,40 @@ ORDER BY M4.mukey, M4.comppct_r DESC, M4.cokey;
 SELECT #AoiSoils.polyid, #AoiSoils.landunit, #AoiSoils.mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 2 ) AS poly_acres, soilgeom,
  SUBSTRING( (SELECT DISTINCT ( ', ' +  cogm2.geomfname ) 
 FROM mapunit AS m2
-INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'Yes' AND m2.mukey = mu.mukey 
-INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='Yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
+INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'yes' AND m2.mukey = mu.mukey 
+INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
 
 SUBSTRING( (SELECT  DISTINCT ( ', ' +  cogm.geomfname ) 
    FROM mapunit AS m1
-   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'Yes' AND m1.mukey = mu.mukey 
-   INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'Yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
+   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'yes' AND m1.mukey = mu.mukey 
+   INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
 
 SUBSTRING( ( SELECT ( ', ' + hydriccriterion ) 
    FROM mapunit AS m
-   INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'Yes' AND m.mukey = mu.mukey
+   INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'yes' AND m.mukey = mu.mukey
    INNER JOIN cohydriccriteria AS coh ON c.cokey = coh.cokey GROUP BY m.mukey, hydriccriterion ORDER BY hydriccriterion ASC FOR XML PATH('') ), 3, 1000) AS hydric_criteria, 
-hydric_rating, farmlndclass 
+hydric_rating, farmlndclass, SOCSTOCK_0_5 AS SOC_0_5_CM,  SOCSTOCK_0_30 AS SOC_0_30_CM, SOCSTOCK_0_150 AS SOC_0_150_CM, MU_SUM_AGG_L, MU_SUM_AGG_R, MU_SUM_AGG_H 
 FROM #AoiSoils
 INNER JOIN #Hydric2 AS mu ON mu.mukey=#AoiSoils.mukey
 INNER JOIN mapunit ON mapunit.mukey = mu.mukey
-INNER JOIN #FC AS FC ON FC.mukey=#AoiSoils.mukey;
+INNER JOIN #FC AS FC ON FC.mukey=#AoiSoils.mukey
+LEFT OUTER JOIN #SOC5 AS SOC5 ON SOC5.mukey=mu.mukey
+LEFT OUTER JOIN  #AGG7 AS AGG7 ON AGG7.mukey=mu.mukey;
 
 -- Return detailed hydric data for map layer
 SELECT mukind, SUBSTRING( (SELECT DISTINCT ( ', ' +  cogm2.geomfname ) 
 FROM mapunit AS m2
-INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'Yes' AND m2.mukey = mu.mukey 
-INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='Yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
+INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'yes' AND m2.mukey = mu.mukey 
+INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
 
 SUBSTRING( (SELECT  DISTINCT ( ', ' +  cogm.geomfname ) 
    FROM mapunit AS m1
-   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'Yes' AND m1.mukey = mu.mukey 
-   INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'Yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
+   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'yes' AND m1.mukey = mu.mukey 
+   INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
 
 SUBSTRING( ( SELECT ( ', ' + hydriccriterion ) 
    FROM mapunit AS m
-   INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'Yes' AND m.mukey = mu.mukey
+   INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'yes' AND m.mukey = mu.mukey
    INNER JOIN cohydriccriteria AS coh ON c.cokey = coh.cokey GROUP BY m.mukey, hydriccriterion ORDER BY hydriccriterion ASC FOR XML PATH('') ), 3, 1000) AS hydric_criteria, 
 hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
 FROM #Hydric2 AS mu
@@ -2216,4 +2708,19 @@ DROP TABLE IF EXISTS  #agg4
 DROP TABLE IF EXISTS #agg5
 DROP TABLE IF EXISTS #agg6
 DROP TABLE IF EXISTS #agg7
+DROP TABLE IF EXISTS #agg7a
+DROP TABLE IF EXISTS #acpf
+DROP TABLE IF EXISTS #muacpf
+DROP TABLE IF EXISTS #hortopdepth 
+DROP TABLE IF EXISTS #acpf2
+DROP TABLE IF EXISTS #acpfhzn
+DROP TABLE IF EXISTS #SOC
+DROP TABLE IF EXISTS #SOC2
+DROP TABLE IF EXISTS #SOC3
+DROP TABLE IF EXISTS #SOC4
+DROP TABLE IF EXISTS #SOC5
+DROP TABLE IF EXISTS #SOC6
+DROP TABLE IF EXISTS #acpfaws
+DROP TABLE IF EXISTS #hortopdepthaws
+DROP TABLE IF EXISTS #acpf2aws
 GO
