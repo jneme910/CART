@@ -1,7 +1,6 @@
 ---
-title: "Soil Organic Carbon Stocks"
-author: "J. Nemececk and S.A. Wills"
-date: "October 12, 2017"
+title: "Soil Quality Degradation"
+date: "June 05, 2019"
 output: html_document
 ---
 
