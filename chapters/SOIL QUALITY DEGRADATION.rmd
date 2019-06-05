@@ -1,0 +1,487 @@
+---
+title: "Soil Organic Carbon Stocks"
+author: "J. Nemececk and S.A. Wills"
+date: "October 12, 2017"
+output: html_document
+---
+
+
+# Soil Organic Carbon Stocks by Map Unit
+[SQL Script Soil Organic Carbon Stock](https://github.com/ncss-tech/sda-lib/blob/master/SQL-Library/SDA_SOC_Weighted_Mean_Soil_Organic_Carbon_Stock.sql) This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey. 
+Soil organic carbon  (SOC) stocks are estimates of the total mass of  SOC in total soil profile for a given depth (0 cm to the any predetermined depth) up to the depth  of the soil profile. SOC stocks present in each soil component and mapunit is expressed in metric tons (Mg) per hectare for predetermined depth increments. NULL values are presented where data are incomplete or not available.
+
+General Information about this query:
+
+   * Uses all components with horizon data.
+   * Does not calculate component SOC below the following component restrictions:
+       + Lithic bedrock, Paralithic bedrock, Densic bedrock, Fragipan, Duripan, Sulfuric, Petrocalcic and Petroferic 
+   * Areasymbol listed twice in the script for Entire SSURGO use `areasymbol != 'US'` OR STATSGO use `areasymbol = 'US'`
+   
+$$Layer\ SOC\ stock =  (hz_{T} * ( ( om / 1.724 ) * db3 ) * (100.0 - fragvol) / 100.0)$$
+
+where `hz_{T}` = horizon thickness, `om` = organic matter, `db3` = bulk density and `fragvol` = coarse fragment volume.
+   
+## Mapunit Table
+This table selects all map units for a given area of interst. Mapunits are described as a collection of areas defined and named the same in terms of their soil components by the NSSH (Part 627.03).  To select all mapunits for the most detailed US soil survey product, SSURGO, use `areasymbol != 'US'` OR for the general soil map, STATSGO, use `areasymbol = 'US'`. This is an example from `mukey = 2809839`.  For general use, `areasymbol = 'WI025'` (commented out below).
+
+```{SQL}
+SELECT areasymbol, areaname, mapunit.mukey, mapunit.mukey AS mulink, mapunit.musym, 
+nationalmusym, mapunit.muname, mukind, muacres
+INTO
+FROM legend
+INNER JOIN mapunit on legend.lkey=mapunit.lkey AND mapunit.mukey = 2809839
+INNER JOIN muaggatt AS mt1 on mapunit.mukey=mt1.mukey
+--AND legend.areasymbol = 'WI025'
+```
+
+|areasymbol|	areaname|	mukey|	mulink|	musym|	nationalmusym|	muname|	mukind	|muacres|
+| ----- | --------- | --------- | --------- | --------- |--------- |--------- |--------- |--------- |
+|WI025|	Dane County, Wisconsin|	2809839|	2809839|	161B2|	1q9nn|	Fivepoints silt loam, 2 to 6 percent slopes, moderately eroded|	Consociation|	113|
+
+
+## Component and Layer Tables
+
+These tables collect map unit and component information needed. This includes all map units selected above and all components (typically soil series) within each map unit that do not have a limiting layer within 200cm. The concepts of components are described by the NSSH (Part 627.034).  This example is limited to one mapunit, mukey = 2809839.  The information needed for further SOC stock calculations, individual layer information, is selected from each component.
+
+Component variables used in SOC stock calculation (r denotes that the value is representative of the central tendency):
+   * comppct_r = the composition of each map unit, reported as the proportion (%) of the map unit made up of that soil component as part of the map unit documentation process (NSSH, 2017 -- Part 627.08)
+
+
+###### acpf Table
+```{SQL}
+SELECT
+-- grab survey area data
+LEFT((areasymbol), 2) AS state,
+ l.areasymbol,
+ l.areaname,
+(SELECT SUM (DISTINCT comppct_r) FROM mapunit  AS mui3  INNER JOIN component AS cint3 ON cint3.mukey=mui3.mukey INNER JOIN chorizon AS chint3 ON chint3.cokey=cint3.cokey AND cint3.cokey = c.cokey GROUP BY chint3.cokey) AS sum_comp,
+--grab map unit level information
+
+ mu.mukey,
+ mu.musym,
+
+--grab component level information
+
+ c.majcompflag,
+ c.comppct_r,
+ c.compname,
+ compkind,
+ localphase,
+ slope_l,
+ slope_r,
+ slope_h,
+(SELECT CAST(MIN(resdept_r) AS INTEGER) FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = c.cokey AND reskind  IS NOT NULL) AS restrictiondepth,
+(SELECT CASE WHEN MIN (resdept_r) IS NULL THEN 200 ELSE CAST (MIN (resdept_r) AS INT) END FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = c.cokey AND reskind IS NOT NULL) AS restrictiodepth,
+(SELECT TOP 1  reskind  FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = c.cokey AND corestrictions.reskind IN ('Lithic bedrock','Duripan', 'Densic bedrock', 'Paralithic bedrock', 'Fragipan', 'Natric', 'Ortstein', 'Permafrost', 'Petrocalcic', 'Petrogypsic')
+AND reskind IS NOT NULL ORDER BY resdept_r) AS TOPrestriction, c.cokey,
+
+---begin selection of horizon properties
+ hzname,
+ hzdept_r,
+ hzdepb_r,
+ CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST((hzdepb_r-hzdept_r) AS INT) END AS thickness,  
+
+  om_r, dbthirdbar_r, 
+  (SELECT CASE WHEN SUM (cf.fragvol_r) IS NULL THEN 0 ELSE CAST (SUM(cf.fragvol_r) AS INT) END FROM chfrags cf WHERE cf.chkey = ch.chkey) as fragvol,
+brockdepmin,
+  texture,
+  ch.chkey
+INTO #acpf
+FROM legend  AS l
+INNER JOIN mapunit AS mu ON mu.lkey = l.lkey 
+--AND l.areasymbol like 'WI025'
+AND mu.mukey = 2809839
+INNER JOIN muaggatt AS  mt on mu.mukey=mt.mukey
+INNER JOIN component AS  c ON c.mukey = mu.mukey 
+INNER JOIN chorizon AS ch ON ch.cokey = c.cokey and CASE WHEN hzdept_r IS NULL THEN 2 
+WHEN om_r IS NULL THEN 2 
+WHEN om_r = 0 THEN 2 
+WHEN dbthirdbar_r IS NULL THEN 2
+WHEN dbthirdbar_r = 0 THEN 2
+ELSE 1 END = 1
+INNER JOIN chtexturegrp ct ON ch.chkey=ct.chkey and ct.rvindicator = 'yes'
+ORDER by l.areasymbol, mu.musym, hzdept_r 
+```
+
+|state|areasymbol|areaname|sum_comp|mukey|musym|majcompflag|comppct_r|compname|compkind|localphase|slope_l|slope_r|slope_h|restrictiondepth|restrictiodepth|TOPrestriction|cokey|hzname|hzdept_r|hzdepb_r|thickness|om_r|dbthirdbar_r|fragvol|brockdepmin|texture|chkey|
+|-----|----------|--------|--------|-----|-----|-----------|---------|--------|--------|----------|-------|-------|-------|----------------|---------------|--------------|-----|------|--------|--------|---------|----|------------|-------|-----------|-------|-----|
+|WI|WI025|Dane County, Wisconsin|90|2809839|161B2|Yes|90|Fivepoints|Series||2|4|6|89|89|Lithic bedrock|13906974|Ap|0|18|18|1.5|1.4|5|89|SIL|39904473|
+|WI|WI025|Dane County, Wisconsin|10|2809839|161B2|No|10|NewGlarus|Series||2|4|6|114|114|Lithic bedrock|13906975|Ap|0|23|23|1.5|1.4|3|89|SIL|39904478|
+|WI|WI025|Dane County, Wisconsin|90|2809839|161B2|Yes|90|Fivepoints|Series||2|4|6|89|89|Lithic bedrock|13906974|Bt1|18|25|7|0.5|1.5|5|89|SICL|39904470|
+|WI|WI025|Dane County, Wisconsin|10|2809839|161B2|No|10|NewGlarus|Series||2|4|6|114|114|Lithic bedrock|13906975|BE|23|33|10|0.25|1.4|3|89|SIL|39904479|
+|WI|WI025|Dane County, Wisconsin|90|2809839|161B2|Yes|90|Fivepoints|Series||2|4|6|89|89|Lithic bedrock|13906974|2Bt2|25|48|23|0.25|1.4|11|89|C|39904471|
+|WI|WI025|Dane County, Wisconsin|10|2809839|161B2|No|10|NewGlarus|Series||2|4|6|114|114|Lithic bedrock|13906975|Bt1|33|58|25|0.25|1.5|5|89|SICL|39904480|
+|WI|WI025|Dane County, Wisconsin|90|2809839|161B2|Yes|90|Fivepoints|Series||2|4|6|89|89|Lithic bedrock|13906974|3Bt3|48|89|41|0.25|1.5|45|89|CNV-L|39904472|
+|WI|WI025|Dane County, Wisconsin|10|2809839|161B2|No|10|NewGlarus|Series||2|4|6|114|114|Lithic bedrock|13906975|2Bt2|58|89|31|0.25|1.4|11|89|C|39904475|
+|WI|WI025|Dane County, Wisconsin|10|2809839|161B2|No|10|NewGlarus|Series||2|4|6|114|114|Lithic bedrock|13906975|3Bt3|89|114|25|0.25|1.5|45|89|CNV-L|39904476|
+
+
+
+## Mapunit Component Composition Table
+
+These tables summarize the proportion of components in each map unit.  The components should sum to 100, but this step ensures that any database errors to not overestimate or underestimate stocks on an areal basis.
+
+
+###### MUACPF Table
+```{SQL}
+---Sums the Component Percent and eliminate duplicate values by cokey
+SELECT mukey, cokey,  SUM (DISTINCT sum_comp) AS sum_comp2
+INTO #muacpf
+FROM #acpf AS acpf2
+WHERE acpf2.cokey=cokey
+GROUP BY mukey, cokey
+```
+|mukey|cokey|sum_comp2|
+|-----|-----|---------|
+|2809839|13906974|90|
+|2809839|13906975|10|
+
+
+###### MUACPF2 Table
+```{SQL}
+---Sums the component percent in a map unit
+SELECT mukey, cokey, sum_comp2,  SUM (sum_comp2) over(partition by #muacpf.mukey ) AS sum_comp3 --, SUM (sum_comp2) AS sum_comp3
+INTO #muacpf2
+FROM #muacpf
+GROUP BY mukey, cokey, sum_comp2
+```
+|mukey|cokey|sum_comp2|sum_comp3|
+|-----|-----|---------|---------|
+|2809839|13906974|90|100|
+|2809839|13906975|10|100|
+
+
+
+## Layer Data
+Tables that collect data by layers (horizons) from each component needed for SOC stock calculation
+
+Layer variables used in SOC stock calculation (r denotes that the value is representative of the central tendency):
+   * `hzdept_r`  = top depth of layer (NSSH, 2017 -- Part 618.36).
+   * `hzdepb` = bottom depth of layer (NSSH, 2017 -- Part 618.35).
+   * `om_r` = layer organic matter (%) content. US soil survey databases report OM (NSSH, 2017 -- Part 618.43)this is typically based on measurement of total combustion carbon and calcium carbonate concentration by calcimeter (KSSL, 2014). 
+   * `dbthirdbar_r` = bulk density represting field conditions(NSSH, 2017 -- Part 618.7). US soil survey bases this on a clod measurement of volume at 1/3 bar and weight at oven dry water content (KSSL, 2014) 
+   * `fragvol_r` = Volume of coarse fragments (>2mm in size), typically based on visual estimates (NSSH, 2017 -- Part 618.36).
+
+
+### acpf hzn Table
+```{SQL}
+SELECT
+mukey,
+cokey,
+hzname,
+restrictiodepth, 
+hzdept_r,
+hzdepb_r,
+CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST ((hzdepb_r-hzdept_r) AS INT) END AS thickness,
+texture,
+CASE WHEN dbthirdbar_r IS NULL THEN 0 ELSE dbthirdbar_r  END AS dbthirdbar_r, 
+CASE WHEN fragvol IS NULL THEN 0 ELSE fragvol  END AS fragvol, 
+CASE when om_r IS NULL THEN 0 ELSE om_r END AS om_r,
+chkey
+INTO #acpfhzn
+FROM #acpf
+```
+|mukey|cokey|hzname|restrictiodepth|hzdept_r|hzdepb_r|thickness|texture|dbthirdbar_r|fragvol|om_r|chkey|
+|-----|-----|------|---------------|--------|--------|---------|-------|------------|-------|----|-----|
+|2809839|13906974|Bt1|89|18|25|7|SICL|1.5|5|0.5|39904470|
+|2809839|13906974|2Bt2|89|25|48|23|C|1.4|11|0.25|39904471|
+|2809839|13906974|3Bt3|89|48|89|41|CNV-L|1.5|45|0.25|39904472|
+|2809839|13906974|Ap|89|0|18|18|SIL|1.4|5|1.5|39904473|
+|2809839|13906975|2Bt2|114|58|89|31|C|1.4|11|0.25|39904475|
+|2809839|13906975|3Bt3|114|89|114|25|CNV-L|1.5|45|0.25|39904476|
+|2809839|13906975|Ap|114|0|23|23|SIL|1.4|3|1.5|39904478|
+|2809839|13906975|BE|114|23|33|10|SIL|1.4|3|0.25|39904479|
+|2809839|13906975|Bt1|114|33|58|25|SICL|1.5|5|0.25|39904480|
+
+
+####Set depths used for increments and organize variables for SOC stock calculations.
+##### SOC Table
+```{SQL}
+SELECT
+mukey,
+cokey,
+hzname,
+restrictiodepth,
+hzdept_r,
+hzdepb_r,
+CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST ((hzdepb_r-hzdept_r) AS INT) END AS thickness, texture, CASE WHEN dbthirdbar_r IS NULL THEN 0 ELSE dbthirdbar_r  END AS dbthirdbar_r, CASE WHEN fragvol IS NULL THEN 0 ELSE fragvol  END AS fragvol, CASE when om_r IS NULL THEN 0 ELSE om_r END AS om_r, chkey INTO #acpfhzn FROM #acpf
+
+
+--- depth ranges for SOC ----
+SELECT hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness, CASE  WHEN hzdept_r < 150 then hzdept_r ELSE 0 END AS InRangeTop_0_150, CASE  WHEN hzdepb_r <= 150 THEN hzdepb_r WHEN hzdepb_r > 150 and hzdept_r < 150 THEN 150 ELSE 0 END AS InRangeBot_0_150,
+
+CASE  WHEN hzdept_r < 5 then hzdept_r ELSE 0 END AS InRangeTop_0_5, CASE  WHEN hzdepb_r <= 5 THEN hzdepb_r WHEN hzdepb_r > 5 and hzdept_r < 5 THEN 5 ELSE 0 END AS InRangeBot_0_5,
+
+
+CASE  WHEN hzdept_r < 30 then hzdept_r ELSE 0 END AS InRangeTop_0_30, CASE  WHEN hzdepb_r <= 30  THEN hzdepb_r WHEN hzdepb_r > 30  and hzdept_r < 30 THEN 30  ELSE 0 END AS InRangeBot_0_30,
+---5 to 15 
+CASE    WHEN hzdepb_r < 5 THEN 0
+WHEN hzdept_r >15 THEN 0
+WHEN hzdepb_r >= 5 AND hzdept_r < 5 THEN 5 WHEN hzdept_r < 5 THEN 0
+		WHEN hzdept_r < 15 then hzdept_r ELSE 5 END AS InRangeTop_5_15 ,
+		
+	
+CASE   WHEN hzdept_r > 15 THEN 0
+WHEN hzdepb_r < 5 THEN 0
+WHEN hzdepb_r <= 15 THEN hzdepb_r  WHEN hzdepb_r > 15 and hzdept_r < 15 THEN 15 ELSE 5 END AS InRangeBot_5_15,
+---15 to 30
+CASE    WHEN hzdepb_r < 15 THEN 0
+WHEN hzdept_r >30 THEN 0
+WHEN hzdepb_r >= 15 AND hzdept_r < 15 THEN 15 WHEN hzdept_r < 15 THEN 0
+		WHEN hzdept_r < 30 then hzdept_r ELSE 15 END AS InRangeTop_15_30 ,
+		
+	
+CASE   WHEN hzdept_r > 30 THEN 0
+WHEN hzdepb_r < 15 THEN 0
+WHEN hzdepb_r <= 30 THEN hzdepb_r  WHEN hzdepb_r > 30 and hzdept_r < 30 THEN 30 ELSE 15 END AS InRangeBot_15_30,
+
+--30 to 60
+CASE    WHEN hzdepb_r < 30 THEN 0
+WHEN hzdept_r >60 THEN 0 
+WHEN hzdepb_r >= 30 AND hzdept_r < 30 THEN 30 
+WHEN hzdept_r < 30 THEN 0
+		WHEN hzdept_r < 60 then hzdept_r ELSE 30 END AS InRangeTop_30_60 ,
+		
+	
+CASE   WHEN hzdept_r > 60 THEN 0
+WHEN hzdepb_r < 30 THEN 0
+WHEN hzdepb_r <= 60 THEN hzdepb_r  WHEN hzdepb_r > 60 and hzdept_r < 60 THEN 60 ELSE 30 END AS InRangeBot_30_60,
+
+---60 to 100
+CASE    WHEN hzdepb_r < 60 THEN 0
+WHEN hzdept_r >100 THEN 0 
+WHEN hzdepb_r >= 60 AND hzdept_r < 60 THEN 60 
+WHEN hzdept_r < 60 THEN 0
+		WHEN hzdept_r < 100 then hzdept_r ELSE 60 END AS InRangeTop_60_100 ,
+		
+	
+CASE   WHEN hzdept_r > 100 THEN 0
+WHEN hzdepb_r < 60 THEN 0
+WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 60 END AS InRangeBot_60_100,
+
+--100 to 200
+CASE    WHEN hzdepb_r < 100 THEN 0
+WHEN hzdept_r >200 THEN 0 
+WHEN hzdepb_r >= 100 AND hzdept_r < 100 THEN 100 
+WHEN hzdept_r < 100 THEN 0
+		WHEN hzdept_r < 200 then hzdept_r ELSE 100 END AS InRangeTop_100_200 ,
+		
+	
+CASE   WHEN hzdept_r > 200 THEN 0
+WHEN hzdepb_r < 100 THEN 0
+WHEN hzdepb_r <= 200 THEN hzdepb_r  WHEN hzdepb_r > 200 and hzdept_r < 200 THEN 200 ELSE 100 END AS InRangeBot_100_200,
+CASE    WHEN hzdepb_r < 20 THEN 0
+WHEN hzdept_r >50 THEN 0 
+WHEN hzdepb_r >= 20 AND hzdept_r < 20 THEN 20 
+WHEN hzdept_r < 20 THEN 0
+		WHEN hzdept_r < 50 then hzdept_r ELSE 20 END AS InRangeTop_20_50 ,
+		
+	
+CASE   WHEN hzdept_r > 50 THEN 0
+WHEN hzdepb_r < 20 THEN 0
+WHEN hzdepb_r <= 50 THEN hzdepb_r  WHEN hzdepb_r > 50 and hzdept_r < 50 THEN 50 ELSE 20 END AS InRangeBot_20_50,
+
+
+
+CASE    WHEN hzdepb_r < 50 THEN 0
+WHEN hzdept_r >100 THEN 0 
+WHEN hzdepb_r >= 50 AND hzdept_r < 50 THEN 50 
+WHEN hzdept_r < 50 THEN 0
+		WHEN hzdept_r < 100 then hzdept_r ELSE 50 END AS InRangeTop_50_100 ,
+		
+	
+CASE   WHEN hzdept_r > 100 THEN 0
+WHEN hzdepb_r < 50 THEN 0
+WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 50 END AS InRangeBot_50_100,
+--CASE    WHEN hzdept_r < 50 THEN 50
+--		WHEN hzdept_r < 100 then hzdept_r ELSE 50 END AS InRangeTop_50_100,
+		
+--CASE    WHEN hzdepb_r < 50 THEN 50
+--WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 50 END AS InRangeBot_50_100,
+
+om_r, fragvol, dbthirdbar_r, cokey, mukey, 100.0 - fragvol AS frag_main
+INTO #SOC
+FROM #acpf
+ORDER BY cokey, hzdept_r ASC, hzdepb_r ASC, chkey
+
+```
+|hzname|chkey|comppct_r|hzdept_r|hzdepb_r|thickness|InRangeTop|InRangeBot|InRangeTop_0_30|InRangeBot_0_30|InRangeTop_20_50|InRangeBot_20_50|InRangeTop_50_100|InRangeBot_50_100|om_r|fragvol|dbthirdbar_r|cokey|mukey|frag_main|
+|------|-----|---------|--------|--------|---------|----------|----------|---------------|--------------|-----------------|-----------------|----------------|-----------------|-----|--------------|------------|-----------|---------|---------|
+|Ap|39904473|90|0|18|18|0|18|0|18|0|0|0|0|1.5|5|1.4|13906974|2809839|95|
+|Bt1|39904470|90|18|25|7|18|25|18|25|20|25|0|0|0.5|5|1.5|13906974|2809839|95|
+|2Bt2|39904471|90|25|48|23|25|48|25|30|25|48|0|0|0.25|11|1.4|13906974|2809839|89|
+|3Bt3|39904472|90|48|89|41|48|89|0|0|48|50|50|89|0.25|45|1.5|13906974|2809839|55|
+|Ap|39904478|10|0|23|23|0|23|0|23|20|23|0|0|1.5|3|1.4|13906975|2809839|97|
+|BE|39904479|10|23|33|10|23|33|23|30|23|33|0|0|0.25|3|1.4|13906975|2809839|97|
+|Bt1|39904480|10|33|58|25|33|58|0|0|33|50|50|58|0.25|5|1.5|13906975|2809839|95|
+|2Bt2|39904475|10|58|89|31|58|89|0|0|0|0|58|89|0.25|11|1.4|13906975|2809839|89|
+|3Bt3|39904476|10|89|114|25|89|114|0|0|0|0|89|100|0.25|45|1.5|13906975|2809839|55|
+
+
+#### Execute SOC layer calculations.
+Layer SOC stock =  ( (hzT * ( ( om / 1.724 ) * db3 )) / 100.0 ) * ((100.0 - fragvol) / 100.0) 
+
+$$Layer SOC stock  =  Thickness * (om/1.724)/100 * \rho * (1-FRAG)$$
+
+where Thickness is the layer/horizon thickness present within the depth increment in question ($cm$), $\rho$ is the bulk density in ($g oven dried soil in volume at one third bar, cm ^{-3}$), [om] is the concentration of organic matter in soil ($% of soil ^{-1}$), and FRAG is the proportion of sample greater than 2mm in diameter ($% by volumen$). 
+
+###### SOC2 Table
+```{SQL}
+SELECT mukey, cokey, hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness,
+InRangeTop_0_150, 
+InRangeBot_0_150, 
+ 
+InRangeTop_0_30, 
+InRangeBot_0_30, 
+
+InRangeTop_20_50, 
+InRangeBot_20_50, 
+
+InRangeTop_50_100 ,
+InRangeBot_50_100,
+(( ((InRangeBot_0_150 - InRangeTop_0_150) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_150,
+
+(( ((InRangeBot_0_30 - InRangeTop_0_30) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_30,
+---Removed * ( comppct_r * 100 ) 
+((((InRangeBot_20_50 - InRangeTop_20_50) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_20_50,
+---Removed * ( comppct_r * 100 ) 
+((((InRangeBot_50_100 - InRangeTop_50_100) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_50_100,
+
+(( ((InRangeBot_0_5 - InRangeTop_0_5) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_5,
+
+
+(( ((InRangeBot_5_15 - InRangeTop_5_15) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_5_15,
+
+(( ((InRangeBot_15_30 - InRangeTop_15_30) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_15_30,
+
+(( ((InRangeBot_30_60 - InRangeTop_30_60) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_30_60,
+
+
+(( ((InRangeBot_60_100 - InRangeTop_60_100) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_60_100,
+
+(( ((InRangeBot_100_200 - InRangeTop_100_200) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_100_200
+---Removed * ( comppct_r * 100 ) 
+INTO #SOC2
+FROM #SOC
+ORDER BY  mukey ,cokey, comppct_r DESC, hzdept_r ASC, hzdepb_r ASC, chkey
+```
+
+|mukey|cokey|hzname|chkey|comppct_r|hzdept_r|hzdepb_r|thickness|InRangeTop_0_30|InRangeBot_0_30|InRangeTop_20_50|InRangeBot_20_50|InRangeTop_50_100|InRangeBot_50_100|HZ_SOC_0_30|HZ_SOC_20_50|HZ_SOC_50_100|
+|-----|-----|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
+|2809839|13906974|Ap|39904473|90|0|18|18|0|18|0|0|0|0|0.2082947|0|0|
+|2809839|13906974|Bt1|39904470|90|18|25|7|18|25|20|25|0|0|0.02892981|0.02066415|0|
+|2809839|13906974|2Bt2|39904471|90|25|48|23|25|30|25|48|0|0|0.009034222|0.04155742|0|
+|2809839|13906974|3Bt3|39904472|90|48|89|41|0|0|48|50|50|89|0|0.002392691|0.04665748|
+|2809839|13906975|Ap|39904478|10|0|23|23|0|23|20|23|0|0|0.2717576|0.03544664|0|
+|2809839|13906975|BE|39904479|10|23|33|10|23|30|23|33|0|0|0.0137848|0.01969258|0|
+|2809839|13906975|Bt1|39904480|10|33|58|25|0|0|33|50|50|58|0|0.03512906|0.01653132|
+|2809839|13906975|2Bt2|39904475|10|58|89|31|0|0|0|0|58|89|0|0|0.05601218|
+|2809839|13906975|3Bt3|39904476|10|89|114|25|0|0|0|0|89|100|0|0|0.0131598|
+
+
+##### Sum SOC layers within each component.
+
+Summarize SOC stocks by component
+Pedon SOC stock ($SOCstock_D$) were summed for soil depths (D) of 0-5, 0-30, and 0-100cm using the fixed depth increment approach described by Ellert et al. (2008). Previous work has show this to be comparable to the spline technique, particularly at shallow depths (such as 0 - 30cm) 
+
+
+$$SOCstock_c = \sum_{D}^L SOC_{l} $$
+
+where L is the number of soil layers within the specified soil depth (D).
+
+##### SOC3 Table
+```{SQL}
+SELECT DISTINCT cokey, mukey,  
+ROUND (SUM (HZ_SOC_0_150) over(PARTITION BY cokey) ,4) AS CO_SOC_0_150, 
+ROUND (SUM (HZ_SOC_0_30) over(PARTITION BY cokey) ,4) AS CO_SOC_0_30, 
+ROUND (SUM (HZ_SOC_20_50) over(PARTITION BY cokey),4) AS CO_SOC_20_50, 
+ROUND (SUM (HZ_SOC_50_100) over(PARTITION BY cokey),4)  AS CO_SOC_50_100,
+ROUND (SUM (HZ_SOC_0_5) over(PARTITION BY cokey),4) AS CO_SOC_0_5, 
+ROUND (SUM (HZ_SOC_5_15) over(PARTITION BY cokey),4) AS CO_SOC_5_15, 
+ROUND (SUM (HZ_SOC_15_30) over(PARTITION BY cokey),4) AS CO_SOC_15_30, 
+ROUND (SUM (HZ_SOC_30_60) over(PARTITION BY cokey),4) AS CO_SOC_30_60, 
+ROUND (SUM (HZ_SOC_60_100) over(PARTITION BY cokey),4) AS CO_SOC_60_100, 
+ROUND (SUM (HZ_SOC_100_200) over(PARTITION BY cokey),4) AS CO_SOC_100_200 
+INTO #SOC3
+FROM #SOC2
+
+```
+|cokey|mukey|CO_SOC_0_30|CO_SOC_20_50|CO_SOC_50_100|
+|-----|-----|-----------|------------|-------------|
+|13906974|	2809839|	0.246|	0.065|	0.047|
+|13906975|	2809839|	0.286|	0.09|	0.086|
+
+
+#### Weighted Average of Components within each map unit.
+$$SOC_{mu} = (\sum_{C}^n SOC_d*Cpct) * 100$$
+where SOCmu is the average SOC stock in each map unit, c is the number of components, Cpct is the proportion of each component within the map unit and SOCd is the carbon stock within a given depth increment. Converted for expression in units of  $Mg C ha ^{-1}$:
+
+##### SOC4 Table
+```{SQL}
+SELECT DISTINCT #SOC3.cokey, #SOC3.mukey,  WEIGHTED_COMP_PCT, 
+CO_SOC_0_30, CO_SOC_0_30 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_0_30,
+CO_SOC_20_50, CO_SOC_20_50 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_20_50,
+CO_SOC_50_100, CO_SOC_50_100 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_50_100,
+CO_SOC_0_150, CO_SOC_0_150 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_0_150,
+CO_SOC_0_5, CO_SOC_0_5 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_0_5,
+CO_SOC_5_15, CO_SOC_5_15 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_5_15,
+CO_SOC_15_30, CO_SOC_15_30 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_15_30,
+CO_SOC_30_60, CO_SOC_30_60 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_30_60,
+CO_SOC_60_100, CO_SOC_60_100 * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_60_100,
+CO_SOC_100_200 , CO_SOC_100_200  * WEIGHTED_COMP_PCT AS WEIGHTED_CO_SOC_100_200
+INTO #SOC4
+FROM #SOC3
+INNER JOIN #muacpf3 ON #muacpf3.cokey=#SOC3.cokey
+```
+
+
+|cokey|mukey|WEIGHTED_COMP_PCT|CO_SOC_0_30|WEIGHTED_CO_SOC_0_30|
+|-----|-----|-----------------|----------|--------------------|
+|13906974|2809839|0.90|0.246|0.2214|
+|13906975|2809839|0.10|0.286|0.0286|
+
+##### Output Table
+```{SQL}
+SELECT DISTINCT #main.mukey, ROUND (SUM (WEIGHTED_CO_SOC_0_30) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_0_30 , 
+ROUND (SUM (WEIGHTED_CO_SOC_20_50) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_20_50 , 
+ROUND (SUM (WEIGHTED_CO_SOC_50_100) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_50_100,
+
+ROUND (SUM (WEIGHTED_CO_SOC_0_150) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_0_150,
+ROUND (SUM (WEIGHTED_CO_SOC_0_5) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_0_5 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_5_15) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_5_15 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_15_30) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_15_30 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_30_60) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_30_60 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_60_100) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_60_100 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_100_200) over(PARTITION BY #SOC4.mukey) ,4) *100  AS SOCSTOCK_100_200
+FROM #SOC4
+RIGHT OUTER JOIN #main ON #main.mukey=#SOC4.mukey 
+
+```
+|mukey|	SOCSTOCK_0_30|
+|-----|---------|
+|2809839|25|
+
+## Global Soil Organic Carbon Output
+The SOCstock for 0 - 30cm (high, rv, and low) was exported for further GIS interpolation and extrapolation.
+
+
+## Sources and Citations
+The data source of this data is the STATSGO and SSURGO data from the US National Cooperative Soil Survey.  The following references cover data definitions, derivation and quality procedures.
+ 
+**NSSH** - U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, title 430-VI.	http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242 (accessed 13 October 2017).
+
+**KSSL** - Laboratory Methods Manual (SSIR 42), version 5, 2014 (PDF; 6.29 MB)
+
+**SDA** - Soil Data Access, portal to soil survey products
+**SSURGO** data: Soil Survey Staff, Natural Resources Conservation Service, United States Department of Agriculture. 
++	Soil Survey Geographic (SSURGO) Database. Available online at https://sdmdataaccess.sc.egov.usda.gov.  Accessed [October/12/2017]. 
+**STATSGO** data: Soil Survey Staff, Natural Resources Conservation Service, United States Department of Agriculture. U.S. General 	Soil Map (STATSGO2). Available online at https://sdmdataaccess.sc.egov.usda.gov.  Accessed [October/12/2017].
+
+Ellert, B. H., Janzen, H. H., VandenBygaart, A. J. and Bremer, E. (2008). Measuring change in soil organic carbon storage. In Carter, M. R. and E. G. Gregorich (Eds) Soil Sampling and Methods of Analysis, 2nd Edition. CRC Press, Boca Raton, FL, pp. 25-38
+
+
