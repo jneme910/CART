@@ -1,0 +1,6 @@
+title: "Soil Quality Degradation"
+date: "June 05, 2019"
+output: html_document
+
+# Soil Quality Degradation
+This query is meant to be run through the Soil Data Access tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey.
