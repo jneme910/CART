@@ -12,7 +12,7 @@ CART has 6 resource concerns related to Soil Quality Degradation and each will i
 |3|	Organic Matter Depletion|Organic Matter Depletion|
 |4	|Concentration of Salts and Other Chemicals|	Surface Salt Concentration|
 |5| Soil organism habitat loss or degradation|Suitability for Aerobic Soil Organisms|
-|6|Aggregate instability| Aggregate Stability|
+|6|Aggregate instability| Aggregate stability|
 
 
    *  [Soil Quality Degradation](https://ncss-tech.github.io/CART/chapters/SOIL%20QUALITY%20DEGRADATION.html) 
