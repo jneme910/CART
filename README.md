@@ -37,7 +37,7 @@ The map on the left shows 8 different soils within this land unit. The map on th
 
 In the example below, the Query service has returned soils data for the ‘Risk of Surface Salt Concentration’ within the land unit. The rating data shown in table below is then used to calculate the magnitude of each rating as both a land unit percentage and as land unit acres. 
 
-![Example: Service Data](https://github.com/jneme910/CART/blob/master/TableImages/https://github.com/jneme910/CART/blob/master/TableImages/Service%20Data.PNG)
+![Example: Service Data](https://github.com/jneme910/CART/blob/master/TableImages/Service%20Data.PNG)
 
 Areas with the highest risk will be assigned a rating number of 1. Areas with a lower risk will be assigned a larger rating number. Rating values are calculated using soils data at the component level.
 
