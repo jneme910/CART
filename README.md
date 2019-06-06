@@ -61,7 +61,7 @@ This domain table contains an ordered list of all possible rating values.
 
 # EASMEMTS 
 
-1. [Soil Organic Carbon Stocks (https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190419.sql)
+1. [Soil Organic Carbon Stocks]https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190419.sql)
 
 
 
