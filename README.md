@@ -47,6 +47,17 @@ The service request then calculates the rolling sum values for rating_acres and 
 
 ![Example: Land Unit Detail RatingsService Data](https://github.com/jneme910/CART/blob/master/TableImages/Land%20Unit%20Detail%20Ratings.PNG)
 
+In this example, it is the second row that meets these criteria and will be provided to the CART application as the land unit rating for Concentration of Salts and Other Chemicals. It is important to understand that the functionality for calculating land unit ratings is not available from Web Soil Survey. It is only designed to provide soil maps and reports. 
+
+### Final Land unit Ratings 
+
+The final Soil Data Access land unit ratings for each of the resource concerns will be returned to CART for awarding of points. The publication date of the soils data will also be returned to CART as metadata. This will ensure that any of the Soil Quality Degradation ratings can be tied back to a particular version of SSURGO soils data.
+
+![Example: Final Land Unit Ratings](https://github.com/jneme910/CART/blob/master/TableImages/https://github.com/jneme910/CART/blob/master/TableImages/Final%20Land%20Unit%20Ratings.PNG)
+
+
+
+
 
 
 
