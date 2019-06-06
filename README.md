@@ -96,6 +96,11 @@ This domain table contains an ordered list of all possible rating values.
 7. Drainage Class
 8. Availible Water Storage
 
+# Environmental Evaluation
+1. Farmland Classification
+
+
+
 
 
 
