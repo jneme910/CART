@@ -10,7 +10,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |3|Hydric Rating by Map Unit |RA, EP ||
 |4 |Hydrologic Group |RA ||
  |5|Prime and Unique Farmland |EE, EP ||
-|6|Water holding capacity |EP ||
+|6|Availible Water Storage |EP ||
 |7|Soil Carbon |EP ||
  |8|Drainage Class |EP ||
 |9|Organic Soils |RA ||
@@ -81,7 +81,15 @@ This domain table contains an ordered list of all possible rating values.
 
 # EASMEMTS 
 
-1. [Soil Organic Carbon Stocks](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190419.sql)
+1. [Soil Organic Carbon Stock](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190419.sql)
+2. Farmland Classification
+3. Hydric Soil Rating by Map Unit
+4. Flooding Frequency
+5. Organic Soils*
+6. Depth to Water Table
+7. Drainage Class
+8. Availible Water Storage
+
 
 
 
