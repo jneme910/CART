@@ -3,27 +3,26 @@ The Conservation Assessment Ranking Tool (CART) will assess clients’ resource 
 
 This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey.  [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190419.sql) for the Conservation Assessment Ranking Tool soil SQL Script
 
-|Datasets |"Purpose
-RA - Resource Assessment;
-EP- Easement Program;
-EE - Environmental Evaluation;
-RT - Ranking Tool;" |Location|
- |Flooding or Ponding |RA, EP ||
- |Water Table Depth |RA, EP ||
- |Hydric Rating by Map Unit |RA, EP ||
- |Hydrologic Group |RA ||
- |Prime and Unique Farmland |EE, EP ||
- |Water holding capacity |EP ||
- |Soil Carbon |EP ||
- |Drainage Class |EP ||
-|Organic Soils |RA ||
-|Agricultural Organic Soil Subsidence |RA ||
-|Soil Susceptibility to Compaction |RA ||
-|Organic Matter Depletion |RA ||
-|Surface Salt Concentration |RA ||
-|Suitability for Aerobic Soil Organisms |RA ||
-|Aggregate stability |RA ||
-
+ ||Datasets|Purpose* |Location
+|-----|----------|--------|--------|
+|1| Flooding or Ponding|RA, EP||
+|2|Water Table Depth |RA, EP ||
+|3|Hydric Rating by Map Unit |RA, EP ||
+|4 |Hydrologic Group |RA ||
+ |5|Prime and Unique Farmland |EE, EP ||
+|6|Water holding capacity |EP ||
+|7|Soil Carbon |EP ||
+ |8|Drainage Class |EP ||
+|9|Organic Soils |RA ||
+|10|Agricultural Organic Soil Subsidence |RA ||
+|11|Soil Susceptibility to Compaction |RA ||
+|12|Organic Matter Depletion |RA ||
+|13|Surface Salt Concentration |RA ||
+|14|Suitability for Aerobic Soil Organisms |RA ||
+|15|Aggregate stability |RA ||
+ 
+ *RA - Resource Assessment; EP- Easement Program; EE - Environmental Evaluation; RT - Ranking Tool
+ 
 # Resource Concerns
 ## [Soil Quality Degradation](https://ncss-tech.github.io/CART/chapters/SOIL%20QUALITY%20DEGRADATION.html) 
 
