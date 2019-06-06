@@ -53,7 +53,7 @@ In this example, it is the second row that meets these criteria and will be prov
 
 The final Soil Data Access land unit ratings for each of the resource concerns will be returned to CART for awarding of points. The publication date of the soils data will also be returned to CART as metadata. This will ensure that any of the Soil Quality Degradation ratings can be tied back to a particular version of SSURGO soils data.
 
-![Example: Final Land Unit Ratings](https://github.com/jneme910/CART/blob/master/TableImages/https://github.com/jneme910/CART/blob/master/TableImages/Final%20Land%20Unit%20Ratings.PNG)
+![Example: Final Land Unit Ratings](https://github.com/jneme910/CART/blob/master/TableImages/Final%20Land%20Unit%20Ratings.PNG)
 
 
 
