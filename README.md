@@ -5,6 +5,15 @@ The Conservation Assessment Ranking Tool (CART) will assess clients’ resource 
 
 CART has 6 resource concerns related to Soil Quality Degradation and each will involve analysis of soil interpretation data from the Soil Data Access Query service. Soil maps and reports for these interpretations are also available from Web Soil Survey. Both applications are connecting to the same soils database.
 
+||Resource Concern|Soil Interpretation
+|-----|----------|--------|
+|1|Subsidence|Agricultural Organic Soil Subsidence|
+|2|	Compaction|	Soil Susceptibility to Compaction|
+|3|	Organic Matter Depletion|Organic Matter Depletion|
+|4	|Concentration of Salts and Other Chemicals|	Surface Salt Concentration|
+|5|
+|6|
+
 
    *  [Soil Quality Degradation](https://ncss-tech.github.io/CART/chapters/SOIL%20QUALITY%20DEGRADATION.html) 
 
