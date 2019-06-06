@@ -57,7 +57,7 @@ The final Soil Data Access land unit ratings for each of the resource concerns w
 
 
 This domain table contains an ordered list of all possible rating values.
-![Example: Final Land Unit Ratings](https://github.com/jneme910/CART/blob/master/TableImages/Final%20Land%20Unit%20Ratings.PNG)
+![Example: Domain](https://github.com/jneme910/CART/blob/master/TableImages/Domain.PNG)
 
 
 
