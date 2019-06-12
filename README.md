@@ -96,7 +96,7 @@ This domain table contains an ordered list of all possible rating values.
 7. Drainage Class
 8. Availible Water Storage
 
-# Environmental Evaluation
+# Environmental Evaluation (CPA-52)
 1. Farmland Classification
 2. Wetlands
 
