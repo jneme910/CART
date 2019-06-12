@@ -99,6 +99,8 @@ This domain table contains an ordered list of all possible rating values.
 # Environmental Evaluation
 1. Farmland Classification
 
+# OUTCOMES
+
 
 
 
