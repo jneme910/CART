@@ -27,7 +27,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 properties. Intrinsic soil properties are those empirical soil properties that are not based on any other soil properties
 (very fine sand content). Non-intrinsic soil properties tend to be derived from multiple intrinsic soil properties
 (Kfactor). Non-intrinsic soil properties tend to be interpretive in nature. Examples of non-intrinsic soil properties
-include Farmland Classification, T Factor and Wind Erodibility Group
+include Farmland Classification, T Factor and Wind Erodibility Group.
  
 # Resource Concerns
 ## [Soil Quality Degradation](https://github.com/jneme910/CART/blob/master/chapters/Soil%20Quality%20Degradation) 
