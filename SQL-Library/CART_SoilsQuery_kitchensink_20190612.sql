@@ -1,7 +1,7 @@
 -- 06-12-2019
 --ip: 10.203.23.70,26020
 -- BEGIN CREATING AOI QUERY
---
+--RatingDomain -Domain Values
 -- Declare all variables here
 use sdmONLINE;
 GO
@@ -2542,14 +2542,15 @@ WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acre
 
  
 -- Rating domain values 
--- SELECT * FROM #RatingDomain;
+ SELECT * FROM #RatingDomain;
  
 -- Diagnostic table contains an ordered set of rating classes for each interpretation
 -- SELECT * FROM #RatingClasses;
  
 -- Diagnostic table contains an ordered set of rating classes for each interpretation
--- SELECT attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, CAST(maplegendxml AS NVARCHAR(2048)) AS maplegendxml, attributedescription
--- FROM #SDV;
+--SELECT attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, --CAST(maplegendxml AS NVARCHAR(2048)) AS maplegendxml,
+ --attributedescription
+--FROM #SDV;
  
 -- Aggregated Map Unit Acres into Farm Class Acres.
 -- Please note. This query returns multiple values per landunit, not an overall rating for each landunit.
