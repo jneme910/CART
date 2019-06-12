@@ -87,7 +87,7 @@ This domain table contains an ordered list of all possible rating values.
 
 # EASEMENTS
 
-1. [Soil Organic Carbon Stock](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190419.sql)
+1. [Soil Organic Carbon Stock](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)
 2. Farmland Classification
 3. Hydric Soil Rating by Map Unit
 4. Flooding Frequency
