@@ -3,6 +3,8 @@ The Conservation Assessment Ranking Tool (CART) will assess clients’ resource 
 
 This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey.  [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql) for the Conservation Assessment Ranking Tool soil SQL Script.
 
+## [CART Domain Tables](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) 
+
  ||Datasets|Purpose* |Location
 |-----|----------|--------|--------|
 |1| Flooding or Ponding|RA, EP||
@@ -29,7 +31,7 @@ properties. Intrinsic soil properties are those empirical soil properties that a
 (Kfactor). Non-intrinsic soil properties tend to be interpretive in nature. Examples of non-intrinsic soil properties
 include Farmland Classification, T Factor and Wind Erodibility Group.
 
-## [CART Domain Tables](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) 
+
 
 # Resource Concerns
 ## [Soil Quality Degradation](https://github.com/jneme910/CART/blob/master/chapters/Soil%20Quality%20Degradation) 
