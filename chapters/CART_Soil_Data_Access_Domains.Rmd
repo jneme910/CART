@@ -1,0 +1,44 @@
+---
+title: "CART Soil Data Access Domains"
+author: "Steve Peaslee & Jason Nemecek"
+date: "June 18, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+|Line|CART Rating |Soil Interpretation Name |Soil Interpretation Rating Class |Rating Number
+|-----|----------|--------|--------|--------|
+|1 |Surface Salt Concentration:1 |Surface Salt Concentration |High surface salinization risk or already saline |1
+|1 |Surface Salt Concentration:1 |Surface Salt Concentration |High surface salinization risk or already saline |1|
+|2 |Surface Salt Concentration:2 |Surface Salt Concentration |Surface salinization risk |2
+|3 |Surface Salt Concentration:3 |Surface Salt Concentration |Low surface salinization risk |3
+|4 |Surface Salt Concentration:4 |Surface Salt Concentration |Not rated |4
+|5 |Soil Susceptibility to Compaction:1 |Soil Susceptibility to Compaction |High |1
+|6 |Soil Susceptibility to Compaction:2 |Soil Susceptibility to Compaction |Medium |2
+|7 |Soil Susceptibility to Compaction:3 |Soil Susceptibility to Compaction |Low |3
+|8 |Soil Susceptibility to Compaction:4 |Soil Susceptibility to Compaction |Not rated |4
+|9 |Organic Matter Depletion:1 |Organic Matter Depletion |OM depletion high |1
+|10 |Organic Matter Depletion:2 |Organic Matter Depletion |OM depletion moderately high |2
+|11 |Organic Matter Depletion:3 |Organic Matter Depletion |OM depletion moderate |3
+|12 |Organic Matter Depletion:4 |Organic Matter Depletion |OM depletion moderately low |4
+|13 |Organic Matter Depletion:5 |Organic Matter Depletion |OM depletion low |5
+|14 |Organic Matter Depletion:6 |Organic Matter Depletion |Not rated |6
+|15 |Agricultural Organic Soil Subsidence:1 |Agricultural Organic Soil Subsidence |Severe subsidence |1
+|16 |Agricultural Organic Soil Subsidence:2 |Agricultural Organic Soil Subsidence |Moderate subsidence |2
+|17 |Agricultural Organic Soil Subsidence:3 |Agricultural Organic Soil Subsidence |Low subsidence |3
+|18 |Agricultural Organic Soil Subsidence:4 |Agricultural Organic Soil Subsidence |Mineral soil |4
+|19 |Agricultural Organic Soil Subsidence:5 |Agricultural Organic Soil Subsidence |Not rated |5
+|20 |Suitability for Aerobic Soil Organisms:1|Suitability for Aerobic Soil Organisms|Not favorable|    1
+|21 |Suitability for Aerobic Soil Organisms:2 |Suitability for Aerobic Soil Organisms   |Somewhat favorable|  2
+|22 |Suitability for Aerobic Soil Organisms:3   |Suitability for Aerobic Soil Organisms   |Very favorable |  3
+|23 |Suitability for Aerobic Soil Organisms:4 |Suitability for Aerobic Soil Organisms   |Not rated  |  4
+|25| Ponding or Flooding:1|Ponding or Flooding|1|1
+|26| Ponding or Flooding:0|Ponding or Flooding|0|0
+|27| Ponding or Flooding:3|Ponding or Flooding|Not rated |3
+
+
+
