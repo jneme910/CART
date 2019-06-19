@@ -20,7 +20,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |13|Surface Salt Concentration |RA ||
 |14|Suitability for Aerobic Soil Organisms |RA ||
 |15|Aggregate stability |RA ||
-|16| Domain Tables||  [Click here](https://jneme910.github.io/CART/chapters/CART%20Soil%20Data%20Access%20Domains) |
+|16| Domain Tables||  [Click here](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domain) |
  
  *RA - Resource Assessment; EP- Easement Program; EE - Environmental Evaluation; RT - Ranking Tool
  
