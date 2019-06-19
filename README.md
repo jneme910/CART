@@ -3,8 +3,6 @@ The Conservation Assessment Ranking Tool (CART) will assess clients’ resource 
 
 This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey.  [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql) for the Conservation Assessment Ranking Tool soil SQL Script.
 
-## [Click here for CART Domain Tables](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) 
-
  ||Datasets|Purpose* |Location
 |-----|----------|--------|--------|
 |1| Flooding or Ponding|RA, EP||
@@ -22,6 +20,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |13|Surface Salt Concentration |RA ||
 |14|Suitability for Aerobic Soil Organisms |RA ||
 |15|Aggregate stability |RA ||
+|16| Domain Tables||  [Click here](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) |
  
  *RA - Resource Assessment; EP- Easement Program; EE - Environmental Evaluation; RT - Ranking Tool
  
