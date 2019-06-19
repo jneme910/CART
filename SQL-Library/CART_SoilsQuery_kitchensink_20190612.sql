@@ -79,7 +79,7 @@ DROP TABLE IF EXISTS #alldata2
 DROP TABLE IF EXISTS #aws1
 DROP TABLE IF EXISTS #drain
 DROP TABLE IF EXISTS #drain2
-
+DROP TABLE IF EXISTS #organic
 GO
 
 DECLARE @attributeName CHAR(60);
@@ -442,6 +442,8 @@ WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Suscep
 'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
 GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;
  
+
+
 INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
 SELECT  aoiid, landunit,
 SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
@@ -1466,7 +1468,7 @@ FROM #agg8
 --flooding frequency  and Ponding frequency 
 ---The assessment will trigger a soil data web service to determine flood frequency rating of occasional, frequent, or very frequent 
 
--- Water Table
+
 CREATE TABLE #pf
 ( aoiid INT, 
  landunit CHAR(20), 
@@ -1546,6 +1548,45 @@ SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, cop
 FROM #pf1;
 
 --End Ponding and Flooding
+--Begin Organic
+-- Water Table
+CREATE TABLE #organic
+( aoiid INT, 
+ landunit CHAR(20), 
+ mukey INT, 
+ mapunit_acres FLOAT, 
+ cokey INT , 
+ cname CHAR(60), 
+ copct  INT, 
+ majcompflag CHAR(3), 
+
+ mu_pct_sum INT
+
+      );
+
+--INSERT INTO #hydric and organic soils
+--Taxonomic Subgroup meets the histicols abbrevation and does not include folists or;
+--Hydric Rating is Yes
+
+SELECT 
+aoiid, 
+landunit, 
+M44.mukey, 
+mapunit_acres, 
+M44.cokey AS cokey, 
+M44.compname AS cname, 
+M44.comppct_r AS copct ,
+M44.majcompflag AS majcompflag, 
+taxgrtgroup,
+taxsubgrp,
+hydricrating  
+FROM #M4 AS M44 
+INNER JOIN component ON  M44.cokey=component.cokey AND M44.majcompflag = 'Yes' 
+AND CASE WHEN taxsubgrp LIKE '%hist%'THEN 1 
+WHEN taxsubgrp LIKE '%ists%'AND taxsubgrp NOT LIKE '%fol%' THEN 1 
+WHEN taxgrtgroup LIKE '%ists%'AND taxgrtgroup NOT LIKE '%fol%' THEN 1 
+WHEN hydricrating = 'Yes'  THEN 1 ELSE 2 END = 1;
+
 
 --Begin Water
 -- Water Table
@@ -2743,5 +2784,6 @@ DROP TABLE IF EXISTS #alldata2
 DROP TABLE IF EXISTS #aws1
 DROP TABLE IF EXISTS #drain
 DROP TABLE IF EXISTS #drain2
+DROP TABLE IF EXISTS #organic
 
 GO
