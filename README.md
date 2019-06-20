@@ -91,7 +91,7 @@ The final Soil Data Access land unit ratings for each of the resource concerns w
 
 
 This domain table contains an ordered list of all possible rating values.
-![Example: Domain](https://github.com/jneme910/CART/blob/master/TableImages/Domain.PNG)
+![Example: Soil Interpretation Domain](https://github.com/jneme910/CART/blob/master/TableImages/Domain.PNG)
 
 # EASEMENTS
 
