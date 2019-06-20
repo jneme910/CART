@@ -79,7 +79,7 @@ Areas with the highest risk will be assigned a rating number of 1. Areas with a 
 
 The service request then calculates the rolling sum values for rating_acres and rating percent for each resource concern and finds the single most limiting rating (per land unit) that comprises **at least 10% by area or 10 acres.** 
 
-![Example: Land Unit Detail RatingsService Data](https://github.com/jneme910/CART/blob/master/TableImages/Land%20Unit%20Detail%20Ratings.PNG)
+![Example: Land Unit Detail Ratings](https://github.com/jneme910/CART/blob/master/TableImages/Land%20Unit%20Detail%20Ratings.PNG)
 
 In this example, it is the second row that meets these criteria and will be provided to the CART application as the land unit rating for Concentration of Salts and Other Chemicals. It is important to understand that the functionality for calculating land unit ratings is not available from Web Soil Survey. It is only designed to provide soil maps and reports. 
 
