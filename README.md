@@ -1,5 +1,5 @@
 # Conservation Assessment Ranking Tool (CART)
-Steve Peaslee / Jason Nemecek
+Jason Nemecek and Steve Peaslee 
 
 June 19, 2019
 
