@@ -1,82 +1,30 @@
 ---
 title: "CART Soil Data Access Domains"
-author: "Steve Peaslee & Jason Nemecek"
-date: "June 18, 2019"
-output: html_document
+author: "Jason Nemecek and Steve Peaslee"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+  mathjax: null
+jquery: null
+smart: no
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, echo=FALSE, results='hide', warning=FALSE}
+# setup
+library(knitr, quietly=TRUE)
+library(kableExtra, quietly=TRUE)
+opts_chunk$set(message=FALSE, warning=FALSE, background='#F7F7F7', fig.align='center', fig.retina=2, dev='png', tidy=FALSE, verbose=FALSE)
+options(width=100, stringsAsFactors=FALSE)
 ```
 
 
-|Line|CART Rating                         |Soil Interpretation Name |Soil Interpretation Rating Class |Rating Number |
-|----|--------------------------------------|-------------------------|---------------------------------|
-|1 |Surface Salt Concentration:1 |Surface Salt Concentration |High surface salinization risk or already saline |1
-|1 |Surface Salt Concentration:1 |Surface Salt Concentration |High surface salinization risk or already saline |1|
-|2 |Surface Salt Concentration:2 |Surface Salt Concentration |Surface salinization risk |2
-|3 |Surface Salt Concentration:3 |Surface Salt Concentration |Low surface salinization risk |3
-|4 |Surface Salt Concentration:4 |Surface Salt Concentration |Not rated |4
-|5 |Soil Susceptibility to Compaction:1 |Soil Susceptibility to Compaction |High |1
-|6 |Soil Susceptibility to Compaction:2 |Soil Susceptibility to Compaction |Medium |2
-|7 |Soil Susceptibility to Compaction:3 |Soil Susceptibility to Compaction |Low |3
-|8 |Soil Susceptibility to Compaction:4 |Soil Susceptibility to Compaction |Not rated |4
-|9 |Organic Matter Depletion:1 |Organic Matter Depletion |OM depletion high |1
-|10 |Organic Matter Depletion:2 |Organic Matter Depletion |OM depletion moderately high |2
-|11 |Organic Matter Depletion:3 |Organic Matter Depletion |OM depletion moderate |3
-|12 |Organic Matter Depletion:4 |Organic Matter Depletion |OM depletion moderately low |4
-|13 |Organic Matter Depletion:5 |Organic Matter Depletion |OM depletion low |5
-|14 |Organic Matter Depletion:6 |Organic Matter Depletion |Not rated |6
-|15 |Agricultural Organic Soil Subsidence:1 |Agricultural Organic Soil Subsidence |Severe subsidence |1
-|16 |Agricultural Organic Soil Subsidence:2 |Agricultural Organic Soil Subsidence |Moderate subsidence |2
-|17 |Agricultural Organic Soil Subsidence:3 |Agricultural Organic Soil Subsidence |Low subsidence |3
-|18 |Agricultural Organic Soil Subsidence:4 |Agricultural Organic Soil Subsidence |Mineral soil |4
-|19 |Agricultural Organic Soil Subsidence:5 |Agricultural Organic Soil Subsidence |Not rated |5
-|20 |Suitability for Aerobic Soil Organisms:1|Suitability for Aerobic Soil Organisms|Not favorable|    1
-|21 |Suitability for Aerobic Soil Organisms:2 |Suitability for Aerobic Soil Organisms   |Somewhat favorable|  2
-|22 |Suitability for Aerobic Soil Organisms:3   |Suitability for Aerobic Soil Organisms   |Very favorable |  3
-|23 |Suitability for Aerobic Soil Organisms:4 |Suitability for Aerobic Soil Organisms   |Not rated  |  4
-|25| Ponding or Flooding:1|Ponding or Flooding|1|1
-|26| Ponding or Flooding:0|Ponding or Flooding|0|0
-|27| Ponding or Flooding:3|Ponding or Flooding|Not rated |3
-|	28	|	Drainage Class: 1	|	drainage_class	|	Excessively drained	|	1
-|	29	|	Drainage Class: 2	|	drainage_class	|	Somewhat excessively drained	|	2
-|	30	|	Drainage Class: 3	|	drainage_class	|	Well drained	|	3
-|	31	|	Drainage Class: 4	|	drainage_class	|	Moderately well drained	|	4
-|	32	|	Drainage Class: 5	|	drainage_class	|	Somewhat poorly drained	|	5
-|	33	|	Drainage Class: 6	|	drainage_class	|	Poorly drained	|	6
-|	34	|	Drainage Class: 7	|	drainage_class	|	Very poorly drained	|	7
-|	35	|	Drainage Class: 8	|	drainage_class	|	Subaqueous	|	8
-|	36	|	Drainage Class: 9	|	drainage_class	|	Null	|	9
-|	37	|	Availible Water Storage: 0	|	Availible Water Storage	|	0	|	0
-|	38	|	Availible Water Storage: 1	|	Availible Water Storage	|	1	|	1
-|	39	|	Availible Water Storage: 2	|	Availible Water Storage	|	Not rated	|	2
-|	40	|	Soil Organic Carbon Stock: 0	|	Soil Organic Carbon Stock	|	0	|	0
-|	41	|	Soil Organic Carbon Stock: 1	|	Soil Organic Carbon Stock	|	1	|	1
-|	42	|	Soil Organic Carbon Stock: 2	|	Soil Organic Carbon Stock	|	Not rated	|	2
-|	43	|	Aggregate Stability:1	|	Aggregate Stability	|	Low	|	1
-|	44	|	Aggregate Stability:2	|	Aggregate Stability	|	Moderate	|	2
-|	45	|	Aggregate Stability:3	|	Aggregate Stability	|	Moderately High	|	3
-|	46	|	Aggregate Stability:4	|	Aggregate Stability	|	High	|	4
-|	47	|	Aggregate Stability:5	|	Aggregate Stability	|	Not rated	|	5
-|	48	|	Water Table: 0	|	Water Table	|	0	|	0
-|	49	|	Water Table: 1	|	Water Table	|	1	|	1
-|	50	|	Water Table: 2	|	Water Table	|	Not rated	|	2
-|	51	|	Farm Class: 1	|	farmland_classification	|	Null	|	1
-|	52	|	Farm Class: 2	|	farmland_classification	|	Prime farmland	|	2
-|	53	|	Farm Class: 3	|	farmland_classification	|	Prime farmland if	|	3
-|	54	|	Farm Class: 4	|	farmland_classification	|	State importance	|	4
-|	55	|	Farm Class: 5	|	farmland_classification	|	State importance if	|	5
-|	56	|	Farm Class: 6	|	farmland_classification	|	Local importance	|	6
-|	57	|	Farm Class: 7	|	farmland_classification	|	Local importance if	|	7
-|	58	|	Farm Class: 8	|	farmland_classification	|	'Not Prime farmland	|	8
-|	59	|	Farm Class: 9	|	farmland_classification	|	Not rated	|	9
-|	60	|	Hydric Interp:0                                               	|	Hyrdic_Rating	|	0	|	0
-|	61	|	Hydric Interp:1	|	Hyrdic_Rating	|	1	|	1
-|	62	|	Hydric Interp:2	|	Hyrdic_Rating	|	Not rated	|	2
-|	63	|	Organic Soils: 0	|	Organic Soils	|	0	|	0
-|	64	|	Organic Soils: 1	|	Organic Soils	|	1	|	1
-|	65	|	Organic Soils: 2	|	Organic Soils	|	Not rated	|	2
+```{r echo=FALSE, results='asis'}
+library(knitr)
+library(kableExtra)
 
+# read from text file
+x <- read.csv('CART_Soil_Data_Access_Domains.csv', check.names = FALSE, stringsAsFactors = FALSE)
 
-
+# nice HTML output
+kable_styling(kable(x, format = 'html'), bootstrap_options = 'striped', full_width = TRUE, font_size = 12)
+```

@@ -553,7 +553,19 @@ INSERT INTO #drain2
 SELECT aoiid, landunit, landunit_acres,  mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag, mu_pct_sum, drainagecl, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
 FROM #drain;
 
-SELECT DISTINCT aoiid, landunit, landunit_acres, drainagecl , ROUND (SUM (co_acres) over(partition by aoiid, drainagecl),2)  AS drainage_class_acres, 'Drainage Class' AS attributename
+SELECT DISTINCT aoiid, landunit, landunit_acres, drainagecl , ROUND (SUM (co_acres) over(partition by aoiid, drainagecl),2)  AS drainage_class_acres,
+
+ CASE WHEN drainagecl = 'Excessively drained' THEN CONCAT ('Drainage Class', ':', 1) 
+ WHEN drainagecl = 'Somewhat excessively drained' THEN CONCAT ('Drainage Class', ':', 2) 
+ WHEN drainagecl = 'Well drained' THEN CONCAT ('Drainage Class', ':', 3) 
+ WHEN drainagecl = 'Moderately well drained' THEN CONCAT ('Drainage Class', ':', 4) 
+ WHEN drainagecl = 'Somewhat poorly drained' THEN CONCAT ('Drainage Class', ':', 5) 
+ WHEN drainagecl = 'Poorly drained' THEN CONCAT ('Drainage Class', ':', 6) 
+ WHEN drainagecl = 'Very poorly drained' THEN CONCAT ('Drainage Class', ':', 7) 
+ WHEN drainagecl = 'Subaqueous' THEN CONCAT ('Drainage Class', ':', 8) 
+ WHEN drainagecl IS NULL  THEN CONCAT ('Drainage Class', ':', 9) 	END		 
+  AS rating_key ,
+  'Drainage Class' AS attributename
 FROM #drain2
 
 ORDER BY aoiid, drainage_class_acres DESC
@@ -904,7 +916,12 @@ SELECT DISTINCT
 FROM #SOC5
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, SOCSTOCK_0_5, SOCSTOCK_0_30, SOCSTOCK_0_150;
 
-SELECT DISTINCT  landunit, landunit_acres, 'Soil Organic Carbon Stock' AS attributename,
+SELECT DISTINCT  landunit, landunit_acres, 
+CASE WHEN SOCSTOCK_0_30_Weighted_Average IS NOT NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
+WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0)
+WHEN SOCSTOCK_0_30_Weighted_Average IS  NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 'Not Rated') 
+END AS rating_key,
+ 'Soil Organic Carbon Stock' AS attributename,
 SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
 SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],
 SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150]
@@ -950,7 +967,11 @@ FROM #acpfaws
 LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#acpfaws.aoiid
 GROUP BY #acpfaws.aoiid, #acpfaws.landunit, mapunit_acres, landunit_acres, aws0150wta;
 
-SELECT DISTINCT  landunit, landunit_acres, 'Availible Water Storage' AS attributename,
+SELECT DISTINCT  landunit, landunit_acres, CASE WHEN AWS_Weighted_Average0_150 IS NOT NULL THEN CONCAT ('Availible Water Storage' , ':' , 1) 
+WHEN AWS_Weighted_Average0_150 = 0 THEN CONCAT ('Availible Water Storage' , ':' , 0)
+WHEN AWS_Weighted_Average0_150 IS  NULL THEN CONCAT ('Availible Water Storage' , ':' , 'Not Rated') 
+END AS rating_key,
+'Availible Water Storage' AS attributename,
 AWS_Weighted_Average0_150	AS [AWS_0_150]
 FROM #aws1;
 
@@ -1459,7 +1480,11 @@ SELECT DISTINCT
 FROM #agg7a
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AGG_R, MU_SUM_AGG_H;
 
-SELECT DISTINCT  landunit, landunit_acres, 'Aggregate Stability' AS attributename,
+SELECT DISTINCT  landunit, landunit_acres,
+CASE WHEN LU_AGG_Weighted_Average_R AS [Aggregate_Stability_R],
+
+
+ 'Aggregate Stability' AS attributename,
 LU_AGG_Weighted_Average_L AS [Aggregate_Stability_L],
 LU_AGG_Weighted_Average_R AS [Aggregate_Stability_R],
 LU_AGG_Weighted_Average_H AS [Aggregate_Stability_H]
