@@ -39,14 +39,14 @@ knitr::opts_chunk$set(echo = TRUE)
 |25| Ponding or Flooding:1|Ponding or Flooding|1|1
 |26| Ponding or Flooding:0|Ponding or Flooding|0|0
 |27| Ponding or Flooding:3|Ponding or Flooding|Not rated |3
-|	28	|	Drainage Class: 1	|	drainage_class	|	subaqueous	|	1
-|	29	|	Drainage Class: 2	|	drainage_class	|	very poorly	|	2
-|	30	|	Drainage Class: 3	|	drainage_class	|	poorly	|	3
-|	31	|	Drainage Class: 4	|	drainage_class	|	somewhat poorly	|	4
-|	32	|	Drainage Class: 5	|	drainage_class	|	moderately well	|	5
-|	33	|	Drainage Class: 6	|	drainage_class	|	well	|	6
-|	34	|	Drainage Class: 7	|	drainage_class	|	somewhat excessively	|	7
-|	35	|	Drainage Class: 8	|	drainage_class	|	excessively	|	8
+|	28	|	Drainage Class: 1	|	drainage_class	|	Excessively drained	|	1
+|	29	|	Drainage Class: 2	|	drainage_class	|	Somewhat excessively drained	|	2
+|	30	|	Drainage Class: 3	|	drainage_class	|	Well drained	|	3
+|	31	|	Drainage Class: 4	|	drainage_class	|	Moderately well drained	|	4
+|	32	|	Drainage Class: 5	|	drainage_class	|	Somewhat poorly drained	|	5
+|	33	|	Drainage Class: 6	|	drainage_class	|	Poorly drained	|	6
+|	34	|	Drainage Class: 7	|	drainage_class	|	Very poorly drained	|	7
+|	35	|	Drainage Class: 8	|	drainage_class	|	Subaqueous	|	8
 |	36	|	Drainage Class: 9	|	drainage_class	|	Null	|	9
 |	37	|	Availible Water Storage: 0	|	Availible Water Storage	|	0	|	0
 |	38	|	Availible Water Storage: 1	|	Availible Water Storage	|	1	|	1
