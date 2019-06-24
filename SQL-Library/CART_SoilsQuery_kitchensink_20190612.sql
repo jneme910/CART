@@ -470,7 +470,7 @@ GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
  
 ---Farm Class
 INSERT INTO #FC
-SELECT aoiid, landunit, mu.mukey, mapunit_acres,  CASE WHEN (farmlndcl) IS NULL  THEN '---'
+SELECT aoiid, landunit, mu.mukey, mapunit_acres,  CASE WHEN (farmlndcl) IS NULL  THEN ''
                         WHEN farmlndcl =  'All areas are prime farmland' THEN 'Prime farmland' 
                         WHEN farmlndcl LIKE 'Prime if%' THEN 'Prime farmland if'
                         WHEN farmlndcl =  'Farmland of statewide importance' THEN 'State importance' 
@@ -565,7 +565,7 @@ SELECT DISTINCT aoiid, landunit, landunit_acres, drainagecl , ROUND (SUM (co_acr
  WHEN drainagecl = 'Subaqueous' THEN CONCAT ('Drainage Class', ':', 8) 
  WHEN drainagecl IS NULL  THEN CONCAT ('Drainage Class', ':', 9) 	END		 
   AS rating_key ,
-  'Drainage Class' AS attributename
+  'Drainage class' AS attributename
 FROM #drain2
 
 ORDER BY aoiid, drainage_class_acres DESC
@@ -1481,9 +1481,18 @@ FROM #agg7a
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AGG_R, MU_SUM_AGG_H;
 
 SELECT DISTINCT  landunit, landunit_acres,
-CASE WHEN LU_AGG_Weighted_Average_R AS [Aggregate_Stability_R],
-
-
+CASE WHEN LU_AGG_Weighted_Average_R <25 THEN 'Low'
+WHEN LU_AGG_Weighted_Average_R >=25 AND  LU_AGG_Weighted_Average_R <50 THEN 'Moderate'
+WHEN LU_AGG_Weighted_Average_R >=50 AND  LU_AGG_Weighted_Average_R <75 THEN 'Moderately High' 
+WHEN LU_AGG_Weighted_Average_R >=75 THEN 'High'
+WHEN LU_AGG_Weighted_Average_R IS NULL THEN 'Not Rated'
+END AS rating_class,
+CASE WHEN LU_AGG_Weighted_Average_R <25 THEN CONCAT ('Aggregate Stability', ':', 1)
+WHEN LU_AGG_Weighted_Average_R >=25 AND  LU_AGG_Weighted_Average_R <50 THEN CONCAT ('Aggregate Stability', ':', 2)
+WHEN LU_AGG_Weighted_Average_R >=50 AND  LU_AGG_Weighted_Average_R <75 THEN CONCAT ('Aggregate Stability', ':', 3)
+WHEN LU_AGG_Weighted_Average_R >=75 THEN CONCAT ('Aggregate Stability', ':', 4)
+WHEN LU_AGG_Weighted_Average_R IS NULL THEN CONCAT ('Aggregate Stability', ':', 'Not Rated')
+END AS rating_key,
  'Aggregate Stability' AS attributename,
 LU_AGG_Weighted_Average_L AS [Aggregate_Stability_L],
 LU_AGG_Weighted_Average_R AS [Aggregate_Stability_R],
@@ -1865,7 +1874,7 @@ FROM #Hydric1;
 INSERT INTO #Hydric3 ( aoiid, landunit, attributename, aoi_acres, mukey, hydric_flag, low_acres, rv_acres, high_acres)
 SELECT DISTINCT aoiid,
 landunit,
-'Hydric Interp' AS attributename,
+'Hydric Soils' AS attributename,
 ROUND (SUM (mapunit_acres ) OVER(PARTITION BY aoiid), 2) AS aoi_acres,
 H3.mukey,
 CASE WHEN hydric_rating = 'Nonhydric' THEN 0 ELSE 1 END AS hydric_flag,
@@ -2623,26 +2632,53 @@ WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acre
 -- Also note that the aaoid was removed from the DISTINCT list. Make sure that just using landunit string does not cause problems.
 
 --Ponding and Flooding
-SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS ponding_flooding_acres, 'Ponding or Flooding' AS attributename 
+SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS ponding_flooding_acres, 
+CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Ponding or Flooding' , ':' , 1) 
+WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Ponding or Flooding' , ':' , 0)
+WHEN ROUND (SUM (co_acres),2) IS  NULL THEN CONCAT ('Ponding or Flooding', ':' , 'Not Rated') 
+END AS rating_key,
+
+'Ponding or Flooding' AS attributename 
 FROM #pf2
 GROUP BY landunit, landunit_acres
 ORDER BY landunit;
 
 --Water Table By Land Unit
-SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS water_table_acres, 'Water Table' AS attributename 
+SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS water_table_acres, 
+CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Water Table' , ':' , 1) 
+WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Water Table' , ':' , 0)
+WHEN ROUND (SUM (co_acres),2) IS  NULL THEN CONCAT ('Water Table', ':' , 'Not Rated') 
+END AS rating_key,
+'Water Table' AS attributename 
 FROM #wet2
 GROUP BY landunit, landunit_acres
 ORDER BY landunit;
 
 
 --Farm Class By Land Unit
-SELECT DISTINCT landunit, SUM (mapunit_acres) OVER(PARTITION BY aoiid, farmlndclass) AS rating_acres, farmlndclass, 'Farm Class' AS attributename 
+SELECT DISTINCT landunit, SUM (mapunit_acres) OVER(PARTITION BY aoiid, farmlndclass) AS rating_acres, farmlndclass, 
+CASE WHEN farmlndclass IS NULL THEN  CONCAT ('Farm Class' , ':' , 1) 
+WHEN farmlndclass = 'Prime farmland' THEN  CONCAT ('Farm Class' , ':' , 2) 
+WHEN farmlndclass = 'Prime farmland if' THEN  CONCAT ('Farm Class' , ':' , 3) 
+WHEN farmlndclass = 'State importance' THEN  CONCAT ('Farm Class' , ':' , 4) 
+WHEN farmlndclass = 'State importance if' THEN  CONCAT ('Farm Class' , ':' , 5) 
+WHEN farmlndclass = 'Local importance' THEN  CONCAT ('Farm Class' , ':' , 6) 
+WHEN farmlndclass = 'Local importance if' THEN  CONCAT ('Farm Class' , ':' , 7) 
+WHEN farmlndclass = 'Not Prime farmland' THEN  CONCAT ('Farm Class' , ':' , 8) 
+WHEN farmlndclass = 'Not rated' THEN  CONCAT ('Farm Class' , ':' , 9) 
+END AS rating_key,
+'Farm Class' AS attributename 
 FROM #FC
 GROUP BY aoiid, landunit, mapunit_acres, farmlndclass;
 
 
 -- Return hydric by Land Unit
 SELECT DISTINCT landunit,
+CASE WHEN rv_acres  IS NOT NULL THEN CONCAT ('Hydric Soils' , ':' , 1) 
+WHEN rv_acres  = 0 THEN CONCAT ('Hydric Soils' , ':' , 0)
+WHEN rv_acres IS  NULL THEN CONCAT ('Hydric Soils', ':' , 'Not Rated') 
+END AS rating_key,
+
 attributename,
 ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_low_acres, 
 ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_rv_acres, 
