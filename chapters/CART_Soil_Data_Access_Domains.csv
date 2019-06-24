@@ -59,9 +59,9 @@ drained"
 57,Farm Class: 7,Farm Class,Local importance if
 58,Farm Class: 8,Farm Class,Not Prime farmland
 59,Farm Class: 9,Farm Class,Not rated
-60,Hydric Interp:0,Hydric Soils,0
-61,Hydric Interp:1,Hydric Soils,1
-62,Hydric Interp:2,Hydric Soils,Not rated
+60,Hydric Soils:0,Hydric Soils,0
+61,Hydric Soils:1,Hydric Soils,1
+62,Hydric Soils:2,Hydric Soils,Not rated
 63,Organic Soils: 0,Organic and Hydric Soils,0
 64,Organic Soils: 1,Organic and Hydric Soils,1
 65,Organic Soils: 2,Organic and Hydric Soils,Not rated
