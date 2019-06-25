@@ -1,3 +1,4 @@
+-- Wisconsin Testing
 SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-89.41635 43.03728,-89.33979 43.03301,-89.34734 43.00013,-89.42253 42.99485,-89.41635 43.03728)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
@@ -15,6 +16,19 @@ INSERT INTO #AoiTable ( landunit, aoigeom )
 VALUES ('T9981 Fld4', @aoiGeomFixed);
 
 --- END Origional
+
+SD landunit (small - 179.5 acres) with Cutcomb mucky peat soil; comppct_r=85%)
+-----------------------------------------------------------------------------------------
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-101.84494063299996 43.00114497800007, -101.86442166199998 43.001375866000046, -101.86439375499998 42.999115980000056, -101.84495783899996 42.998998459000063, -101.84494063299996 43.00114497800007)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());
+INSERT INTO #AoiTable ( landunit, aoigeom ) VALUES ('T1106 Fld1', @aoiGeomFixed);
+
+Same SD Cutcomb mucky peat soil, but a very large landunit (1,790 acres)
+-----------------------------------------------------------------------------------------
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-101.84492377099997 43.003248366000037, -101.84487397499998 43.010584351000034, -101.85488937099996 43.010487579000028, -101.85521510499996 43.017703231000041, -101.85498712099997 43.03217367700006, -101.86037680099997 43.032140587000072, -101.86449558999999 43.032147413000075, -101.86441548599998 43.02540250900006, -101.86453770199995 43.019487328000025, -101.86446939499996 43.014259870000046, -101.86453545799998 43.010589917000061, -101.86439375499998 42.999115980000056, -101.84495783899996 42.998998459000063, -101.84492377099997 43.003248366000037)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());
+INSERT INTO #AoiTable ( landunit, aoigeom ) VALUES ('T1106 Fld1', @aoiGeomFixed);
+
 
 -- 1. Insert identifier string and WKT geometry for each AOI polygon after this...
  

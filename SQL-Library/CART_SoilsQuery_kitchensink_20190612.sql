@@ -3,6 +3,9 @@
 -- BEGIN CREATING AOI QUERY
 --RatingDomain -Domain Values
 -- Declare all variables here
+
+--Need to think about adding a coulumn in table m4 and add a major component percent sum.  
+
 use sdmONLINE;
 GO
 SET STATISTICS IO ON 
@@ -262,6 +265,7 @@ CREATE TABLE #M4
     comppct_r INT,
     majcompflag CHAR(3),
 	mu_pct_sum INT, 
+	major_mu_pct_sum INT, 
     drainagecl CHAR(254)
     );
 
@@ -485,10 +489,16 @@ INNER JOIN mapunit AS mu ON mu.mukey=fcc.mukey;
 -- #M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag
 
 INSERT INTO #M4
-SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+FROM #M2 AS MM2
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+
+SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
 FROM #M2 AS M2
 INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
- 
+
+
+
 -- Get survey area dates for all soil mapunits involved
 INSERT INTO #DateStamps
 SELECT DISTINCT AM.landunit, ([SC].[areasymbol] + ' ' + CONVERT(VARCHAR(32),[SC].[saverest],120) ) AS datestamp
@@ -523,13 +533,15 @@ compname CHAR(280),
 comppct_r INT, 
 majcompflag CHAR(4), 
 mu_pct_sum INT, 
+major_mu_pct_sum INT, 
+
 drainagecl CHAR(40), 
 adj_comp_pct FLOAT
 )
 ;
 
 INSERT INTO #drain
-SELECT #M4.aoiid, #M4.landunit, #AoiAcres.landunit_acres,  mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag, mu_pct_sum, drainagecl, FORMAT ((1.0 * comppct_r / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct 
+SELECT #M4.aoiid, #M4.landunit, #AoiAcres.landunit_acres,  mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag, mu_pct_sum, major_mu_pct_sum , drainagecl, FORMAT ((1.0 * comppct_r / major_mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct 
 FROM #M4 
 LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid WHERE majcompflag = 'Yes' ;
 
@@ -1010,7 +1022,9 @@ omh  FLOAT,
 esp_r FLOAT,
 esp_h FLOAT, 
 tcl CHAR(40),
-mu_pct_sum INT)
+mu_pct_sum INT,
+major_mu_pct_sum INT,
+)
 ;
 
 INSERT INTO #agg1
@@ -1047,7 +1061,7 @@ SELECT DISTINCT
  FORMAT (CAST ((100*(-0.0126+0.01475*sar_r))/(1+(-0.0126+0.01475*sar_r)) as float) , '#,###,##0.00')  as esp_r,
  FORMAT (CAST ((100*(-0.0126+0.01475*sar_h))/(1+(-0.0126+0.01475*sar_h)) as float)  , '#,###,##0.00')  as esp_h, 
  (SELECT TOP 1 texcl FROM chtexturegrp AS chtg INNER JOIN chtexture AS cht ON chtg.chtgkey=cht.chtgkey  AND chtg.rvindicator = 'yes' AND chtg.chkey=cha.chkey) AS tcl,
- mu_pct_sum
+major_mu_pct_sum, mu_pct_sum
 FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon   AS cha  ON cha.cokey=coa.cokey AND cha.hzdept_r < 15 ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'Yes' );
 
 CREATE TABLE #agg2
@@ -1082,7 +1096,7 @@ omh  FLOAT,
 esp_r FLOAT,
 esp_h FLOAT, 
 tcl CHAR(40),
-sandy INT,
+sandy INT,  major_mu_pct_sum INT,
  mu_pct_sum INT);
 
 INSERT INTO #agg2
@@ -1131,7 +1145,7 @@ WHEN  tcl = 'Loamy fine sand' THEN 1
 WHEN  tcl = 'Loamy sand'  THEN 1
 WHEN  tcl = 'Sand' THEN 1
 WHEN  tcl = 'Coarse sand' THEN 1
-WHEN  tcl = 'Fine sand' THEN 1 ELSE 0 END AS sandy,  mu_pct_sum
+WHEN  tcl = 'Fine sand' THEN 1 ELSE 0 END AS sandy, major_mu_pct_sum, mu_pct_sum
 FROM #agg1;
 
 CREATE TABLE #agg3
@@ -1157,7 +1171,7 @@ sandy INT,
 AgStab_l FLOAT,
 AgStab_r FLOAT,
 AgStab_h FLOAT,
-tcl CHAR(40),  mu_pct_sum INT)
+tcl CHAR(40),   major_mu_pct_sum INT, mu_pct_sum INT)
 ;
 
 INSERT INTO #agg3
@@ -1184,7 +1198,7 @@ sandy,
 FORMAT (49.7+13.7*LOG(oml) + 0.61*claytotall-0.0045*POWER(claytotall,2) - 0.28*esp_h-0.06*POWER(esp_h,2), '#,###,##0.00')  AS AgStab_l,
 FORMAT (49.7+13.7*LOG(omr) + 0.61*claytotalr-0.0045*POWER(claytotalr,2) - 0.28*esp_r-0.06*POWER(esp_r,2), '#,###,##0.00')  AS AgStab_r,
 FORMAT (49.7+13.7*LOG(omh) + 0.61*claytotalh-0.0045*POWER(claytotalh,2) - 0.28*esp_l-0.06*POWER(esp_l,2), '#,###,##0.00')  AS AgStab_h, 
-tcl,  mu_pct_sum 
+tcl,  major_mu_pct_sum ,  mu_pct_sum 
 FROM #agg2;
 
 
@@ -1206,7 +1220,7 @@ AgStab_l FLOAT,
 AgStab_r FLOAT,
 AgStab_h FLOAT,
 tcl CHAR(40),  
-mu_pct_sum INT,
+major_mu_pct_sum INT, mu_pct_sum INT,
 adj_comp_pct FLOAT, 
 thickness INT,
 AGG_InRangeTop_0_15 INT,
@@ -1231,7 +1245,7 @@ hzdepb_r,
 CASE WHEN AgStab_l > 100  THEN 100 WHEN claytotall >= 0  and claytotall < 5 THEN null WHEN sandy=1 THEN null WHEN oml > 20 THEN null ELSE AgStab_l END AS AgStab_l,
 CASE WHEN AgStab_r > 100  THEN 100 WHEN claytotalr >= 0  and claytotalr < 5 THEN null WHEN sandy=1 THEN null WHEN omr > 20 THEN null ELSE AgStab_r END AS AgStab_r,
 CASE WHEN AgStab_h > 100  THEN 100 WHEN claytotalh >= 0  and claytotalh < 5 THEN null WHEN sandy=1 THEN null WHEN omh > 20 THEN null ELSE AgStab_h END AS AgStab_h,
-tcl,  mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct, CASE WHEN hzdepb_r IS NULL THEN 0
+tcl, major_mu_pct_sum, mu_pct_sum, (1.0 * comppct_r / major_mu_pct_sum) AS adj_comp_pct, CASE WHEN hzdepb_r IS NULL THEN 0
 WHEN hzdept_r IS NULL THEN 0 ELSE hzdepb_r-hzdept_r END AS thickness, 
 CASE  WHEN hzdept_r < 15 then hzdept_r ELSE 0 END AS AGG_InRangeTop_0_15, 
 CASE  WHEN hzdepb_r <= 15 THEN hzdepb_r WHEN hzdepb_r > 15 and hzdept_r < 15 THEN 15 ELSE 0 END AS AGG_InRangeBot_0_15
@@ -1248,7 +1262,7 @@ majcompflag,
 localphase,
 hzname,
 hzdept_r,
-hzdepb_r, AgStab_l , AgStab_h, AgStab_r, claytotall, claytotalr, claytotalh, sandy,comppct_r , mu_pct_sum , oml, omr, omh, tcl;
+hzdepb_r, AgStab_l , AgStab_h, AgStab_r, claytotall, claytotalr, claytotalh, sandy,comppct_r , major_mu_pct_sum ,mu_pct_sum , oml, omr, omh, tcl;
 
 
 CREATE TABLE #agg5
@@ -1269,7 +1283,7 @@ AgStab_l FLOAT,
 AgStab_r FLOAT,
 AgStab_h FLOAT,
 tcl CHAR(40),  
-mu_pct_sum INT,
+major_mu_pct_sum INT,mu_pct_sum INT,
 adj_comp_pct FLOAT, 
 thickness INT,
 AGG_InRangeTop_0_15 INT,
@@ -1296,7 +1310,7 @@ AgStab_l,
 AgStab_r,
 AgStab_h,
 tcl, 
-mu_pct_sum,
+major_mu_pct_sum, mu_pct_sum,
 adj_comp_pct,
 thickness, 
 AGG_InRangeTop_0_15, 
@@ -1322,7 +1336,7 @@ hzdepb_r,
 AgStab_l,
 AgStab_r,
 AgStab_h,
-tcl, 
+tcl, major_mu_pct_sum,
 mu_pct_sum,
 adj_comp_pct,
 thickness, 
@@ -1339,7 +1353,7 @@ mapunit_acres FLOAT,
 cokey INT,
 compname CHAR(60),
 localphase CHAR(60),
-mu_pct_sum INT,
+major_mu_pct_sum INT,mu_pct_sum INT,
 adj_comp_pct FLOAT ,
 --AGG_InRangeTop_0_15 INT, 
 --AGG_InRangeBot_0_15 INT, 
@@ -1362,7 +1376,7 @@ mukey,
 mapunit_acres, 
 cokey,
 compname,
-localphase,
+localphase, major_mu_pct_sum,
 mu_pct_sum,
 adj_comp_pct,
 --AGG_InRangeTop_0_15, 
@@ -1383,7 +1397,7 @@ mukey,
 mapunit_acres, 
 cokey,
 compname,
-localphase,
+localphase, major_mu_pct_sum ,
 mu_pct_sum,
 adj_comp_pct,-- AgStab_l ,
 --AgStab_r , 
@@ -1401,7 +1415,7 @@ landunit CHAR(20),
 landunit_acres FLOAT,
 mukey INT,
 mapunit_acres FLOAT, 
-mu_pct_sum INT,
+major_mu_pct_sum INT,mu_pct_sum INT,
 MU_SUM_AGG_L FLOAT, 
 MU_SUM_AGG_R FLOAT, 
 MU_SUM_AGG_H FLOAT
@@ -1416,7 +1430,7 @@ landunit,
 landunit_acres,
 mukey,
 mapunit_acres, 
-mu_pct_sum,
+major_mu_pct_sum, mu_pct_sum,
  FORMAT ( SUM (adj_comp_pct * comp_weighted_average_l) over(PARTITION BY ag6.mukey, aoiid )  , '#,###,##0.00') AS MU_SUM_AGG_L,
 FORMAT (SUM (adj_comp_pct * comp_weighted_average_r) over(PARTITION BY ag6.mukey, aoiid )  , '#,###,##0.00') AS MU_SUM_AGG_R,
 FORMAT (SUM (adj_comp_pct * comp_weighted_average_h) over(PARTITION BY ag6.mukey, aoiid )  , '#,###,##0.00') ASMU_SUM_AGG_H
@@ -1428,7 +1442,7 @@ landunit,
 landunit_acres,
 mukey,
 mapunit_acres, 
-mu_pct_sum,
+major_mu_pct_sum , mu_pct_sum,
 adj_comp_pct,
 comp_weighted_average_l,
 comp_weighted_average_r,
@@ -1513,7 +1527,7 @@ CREATE TABLE #pf
  copct  INT, 
  majcompflag CHAR(3), 
  flodfreq CHAR(20), 
-  pondfreq CHAR(20), 
+  pondfreq CHAR(20),   major_mu_pct_sum INT,
  mu_pct_sum INT);
 
 INSERT INTO #pf
@@ -1530,14 +1544,14 @@ M44.majcompflag AS majcompflag,
 MD.DomainID = DD.DomainID order by choicesequence desc) as flodfreq,
 (SELECT TOP 1 pondfreqcl FROM  comonth, MetadataDomainMaster AS  MD, MetadataDomainDetail AS DD WHERE comonth.cokey = M44.cokey and pondfreqcl = ChoiceLabel and DomainName = 'ponding_frequency_class' and 
 MD.DomainID = DD.DomainID order by choicesequence desc) as pondfreq,
-mu_pct_sum
+major_mu_pct_sum ,mu_pct_sum
 FROM #M4 AS M44 
 INNER JOIN comonth AS CM ON M44.cokey = CM.cokey AND M44.majcompflag = 'Yes' 
 AND CASE 
 WHEN (flodfreqcl IN ('occasional', 'common', 'frequent', 'very frequent'))  THEN 1 
 WHEN (pondfreqcl IN ('occasional', 'common', 'frequent'))  THEN 1
 ELSE 2 END  = 1
-GROUP BY aoiid, landunit, M44.mukey, mapunit_acres,mu_pct_sum, M44.cokey,M44.compname , M44.majcompflag, M44.comppct_r, flodfreqcl, pondfreqcl
+GROUP BY aoiid, landunit, M44.mukey, mapunit_acres, major_mu_pct_sum,mu_pct_sum, M44.cokey,M44.compname , M44.majcompflag, M44.comppct_r, flodfreqcl, pondfreqcl
 
 
 CREATE TABLE #pf1
@@ -1552,15 +1566,15 @@ CREATE TABLE #pf1
  majcompflag CHAR(3), 
  flodfreq CHAR(20), 
   pondfreq CHAR(20), 
- mu_pct_sum INT,
+ major_mu_pct_sum INT,  mu_pct_sum INT,
   adj_comp_pct FLOAT
       );
 
 INSERT INTO #pf1
-SELECT DISTINCT pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq ,  mu_pct_sum, (1.0 * copct / mu_pct_sum) AS adj_comp_pct
+SELECT DISTINCT pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq , major_mu_pct_sum,  mu_pct_sum, (1.0 * copct / major_mu_pct_sum) AS adj_comp_pct
 FROM #AoiAcres
 LEFT OUTER JOIN #pf AS pf ON pf.aoiid=#AoiAcres.aoiid
-GROUP BY  pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq ,  mu_pct_sum,  mu_pct_sum
+GROUP BY  pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq ,  major_mu_pct_sum,  mu_pct_sum
 
 CREATE TABLE #pf2
     ( aoiid INT,
@@ -1571,14 +1585,14 @@ CREATE TABLE #pf2
     cokey INT,
     cname CHAR(60),
     copct INT,
-    MU_pct_sum INT,
+    major_MU_pct_sum INT, MU_pct_sum INT,
     adj_comp_pct FLOAT,
     co_acres FLOAT
     );
 
 TRUNCATE TABLE #pf2
 INSERT INTO #pf2
-SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct,  MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
+SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct,  major_MU_pct_sum, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
 FROM #pf1;
 
 --End Ponding and Flooding
@@ -1597,11 +1611,12 @@ CREATE TABLE #organic
  mu_pct_sum INT,
 taxgrtgroup CHAR(120),
 taxsubgrp CHAR(120),
-hydricrating CHAR(120)
+hydricrating CHAR(120), 
+ organic_flag INT
 
       );
 
---INSERT INTO #organic -- organic soils
+INSERT INTO #organic -- organic soils
 SELECT 
 aoiid, 
 landunit, 
@@ -1620,7 +1635,7 @@ WHEN taxsubgrp LIKE '%ists%'AND taxsubgrp NOT LIKE '%fol%' THEN 1
 WHEN taxgrtgroup LIKE '%ists%'AND taxgrtgroup NOT LIKE '%fol%' THEN 1 
   END AS organic_flag
 FROM #M4 AS M44 
-INNER JOIN component ON  M44.cokey=component.cokey --AND M44.majcompflag = 'Yes' 
+INNER JOIN component ON  M44.cokey=component.cokey 
 ;
 
 
@@ -1667,7 +1682,7 @@ CREATE TABLE #wet
  soimoiststat CHAR(7), 
  MIN_soimoistdept_l  INT, 
  MIN_soimoistdept_r INT,
- mu_pct_sum INT
+ major_mu_pct_sum INT , mu_pct_sum INT
 
       );
 
@@ -1686,9 +1701,9 @@ soimoistdept_r,
 soimoiststat, 
 MIN (soimoistdept_l) over(partition by M44.cokey) AS  MIN_soimoistdept_l,
 MIN (soimoistdept_r) over(partition by M44.cokey) AS  MIN_soimoistdept_r,
-mu_pct_sum
+major_mu_pct_sum, mu_pct_sum
 FROM (#M4 AS M44 INNER JOIN (comonth AS CM  INNER JOIN  cosoilmoist   AS COSM  ON COSM.comonthkey=CM.comonthkey AND soimoiststat = 'Wet' AND CASE WHEN soimoistdept_l < 46 THEN 1 WHEN soimoistdept_r < 46 THEN 1 ELSE 2 END = 1
-) ON M44.cokey = CM.cokey AND M44.majcompflag = 'yes' 
+) ON M44.cokey = CM.cokey AND M44.majcompflag = 'Yes' 
 INNER JOIN component ON  M44.cokey=component.cokey 
 AND (CASE WHEN soimoistdept_l IS NULL THEN soimoistdept_r ELSE soimoistdept_l END) = (SELECT MIN (CASE WHEN soimoistdept_l IS NULL THEN soimoistdept_r ELSE soimoistdept_l END) 
 FROM comonth AS CM2  
@@ -1717,15 +1732,15 @@ CREATE TABLE #wet1
  majcompflag CHAR(3), 
  MIN_soimoistdept_l  INT, 
  MIN_soimoistdept_r INT,
- mu_pct_sum INT,
+ major_mu_pct_sum INT,  mu_pct_sum INT,
   adj_comp_pct FLOAT
       );
 
 INSERT INTO #wet1
-SELECT DISTINCT #AoiAcres.aoiid, #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  MIN_soimoistdept_l, MIN_soimoistdept_r, mu_pct_sum, (1.0 * copct / mu_pct_sum) AS adj_comp_pct
+SELECT DISTINCT #AoiAcres.aoiid, #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  MIN_soimoistdept_l, MIN_soimoistdept_r, major_mu_pct_sum, mu_pct_sum,(1.0 * copct / major_mu_pct_sum) AS adj_comp_pct
 FROM #AoiAcres
 LEFT OUTER JOIN #wet AS wet ON wet.aoiid=#AoiAcres.aoiid
-GROUP BY  #AoiAcres.aoiid,  #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, MIN_soimoistdept_r, MIN_soimoistdept_l, mu_pct_sum
+GROUP BY  #AoiAcres.aoiid,  #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, MIN_soimoistdept_r, MIN_soimoistdept_l, major_mu_pct_sum, mu_pct_sum
 
 CREATE TABLE #wet2
     ( aoiid INT,
@@ -1736,14 +1751,14 @@ CREATE TABLE #wet2
     cokey INT,
     cname CHAR(60),
     copct INT,
-    MU_pct_sum INT,
+    major_MU_pct_sum INT,MU_pct_sum INT,
     adj_comp_pct FLOAT,
     co_acres FLOAT
     );
 
 TRUNCATE TABLE #wet2
 INSERT INTO #wet2
-SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct,  MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, major_MU_pct_sum, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
 FROM #wet1;
 
 -- Aggregated rating class values and sum of component acres  by landunit (Tract and Field number)
@@ -1996,7 +2011,7 @@ INSERT INTO #M5
 SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
 FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
-WHERE M4.majcompflag = 'yes';
+WHERE M4.majcompflag = 'Yes';
  
 -- Populate component level ratings with adjusted component percent to account for the un-used minor components
 -- Can I use this table to determine the dominant interphrc-condition for each mapunit???
@@ -2788,23 +2803,23 @@ LEFT OUTER JOIN #SOC5 AS SOC5 ON SOC5.mukey=mu.mukey
 LEFT OUTER JOIN  #AGG7 AS AGG7 ON AGG7.mukey=mu.mukey;
 
 -- Return detailed hydric data for map layer
-SELECT mukind, SUBSTRING( (SELECT DISTINCT ( ', ' +  cogm2.geomfname ) 
-FROM mapunit AS m2
-INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'yes' AND m2.mukey = mu.mukey 
-INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
+--: SELECT mukind, SUBSTRING( (SELECT DISTINCT ( ', ' +  cogm2.geomfname ) 
+--:FROM mapunit AS m2
+--: INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'yes' AND m2.mukey = mu.mukey 
+--:INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
 
-SUBSTRING( (SELECT  DISTINCT ( ', ' +  cogm.geomfname ) 
-   FROM mapunit AS m1
-   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'yes' AND m1.mukey = mu.mukey 
-   INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
+--:SUBSTRING( (SELECT  DISTINCT ( ', ' +  cogm.geomfname ) 
+--:   FROM mapunit AS m1
+--:   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'yes' AND m1.mukey = mu.mukey 
+  --: INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
 
-SUBSTRING( ( SELECT ( ', ' + hydriccriterion ) 
-   FROM mapunit AS m
-   INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'yes' AND m.mukey = mu.mukey
-   INNER JOIN cohydriccriteria AS coh ON c.cokey = coh.cokey GROUP BY m.mukey, hydriccriterion ORDER BY hydriccriterion ASC FOR XML PATH('') ), 3, 1000) AS hydric_criteria, 
-hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
-FROM #Hydric2 AS mu
-INNER JOIN mapunit ON mapunit.mukey = mu.mukey
+--:SUBSTRING( ( SELECT ( ', ' + hydriccriterion ) 
+ --:  FROM mapunit AS m
+ --:  INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'yes' AND m.mukey = mu.mukey
+ --:  INNER JOIN cohydriccriteria AS coh ON c.cokey = coh.cokey GROUP BY m.mukey, hydriccriterion ORDER BY hydriccriterion ASC FOR XML PATH('') ), 3, 1000) AS hydric_criteria, 
+--:hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
+--:FROM #Hydric2 AS mu
+--:INNER JOIN mapunit ON mapunit.mukey = mu.mukey
 
 DROP TABLE IF EXISTS #AoiTable
 DROP TABLE IF EXISTS #AoiAcres
