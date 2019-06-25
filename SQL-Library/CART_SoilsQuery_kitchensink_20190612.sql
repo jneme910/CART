@@ -80,6 +80,8 @@ DROP TABLE IF EXISTS #aws1
 DROP TABLE IF EXISTS #drain
 DROP TABLE IF EXISTS #drain2
 DROP TABLE IF EXISTS #organic
+DROP TABLE IF EXISTS #o1
+
 GO
 
 DECLARE @attributeName CHAR(60);
@@ -143,14 +145,12 @@ CREATE TABLE #AoiTable
  
 -- Insert identifier string and WKT geometry for each AOI polygon after this...
  
-SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-89.41635 43.03728,-89.33979 43.03301,-89.34734 43.00013,-89.42253 42.99485,-89.41635 43.03728)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
-VALUES ('T9981 Fld3', @aoiGeomFixed); 
-SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
-SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
-INSERT INTO #AoiTable ( landunit, aoigeom )  
-VALUES ('T9981 Fld4', @aoiGeomFixed);
+VALUES ('T0001 Fld1', @aoiGeomFixed); 
+ 
+ 
 
 -- End of AOI geometry section
  
@@ -487,7 +487,7 @@ INNER JOIN mapunit AS mu ON mu.mukey=fcc.mukey;
 INSERT INTO #M4
 SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
 FROM #M2 AS M2
-INNER JOIN component AS CO ON CO.mukey = M2.mukey AND majcompflag = 'yes'; --keep major component flag as Yes. It will mess up everything below
+INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
  
 -- Get survey area dates for all soil mapunits involved
 INSERT INTO #DateStamps
@@ -531,7 +531,7 @@ adj_comp_pct FLOAT
 INSERT INTO #drain
 SELECT #M4.aoiid, #M4.landunit, #AoiAcres.landunit_acres,  mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag, mu_pct_sum, drainagecl, FORMAT ((1.0 * comppct_r / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct 
 FROM #M4 
-LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid;
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid WHERE majcompflag = 'Yes' ;
 
 CREATE TABLE #drain2
 (  aoiid INT ,
@@ -633,8 +633,8 @@ WHEN texture LIKE '%PEAT%' AND (dbthirdbar_r) IS NULL THEN 0.25 ELSE dbthirdbar_
 texture,
 cha.chkey,
  mu_pct_sum
-FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon  AS cha  ON cha.cokey=coa.cokey  ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'yes' )
-LEFT OUTER JOIN  chtexturegrp AS ct ON cha.chkey=ct.chkey and ct.rvindicator = 'yes'
+FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon  AS cha  ON cha.cokey=coa.cokey  ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'Yes' )
+LEFT OUTER JOIN  chtexturegrp AS ct ON cha.chkey=ct.chkey and ct.rvindicator = 'Yes'
 and CASE WHEN hzdept_r IS NULL THEN 2 
 WHEN texture LIKE '%PM%' AND om_r IS NULL THEN 1
 WHEN texture LIKE '%MUCK%' AND om_r IS NULL THEN 1
@@ -1048,7 +1048,7 @@ SELECT DISTINCT
  FORMAT (CAST ((100*(-0.0126+0.01475*sar_h))/(1+(-0.0126+0.01475*sar_h)) as float)  , '#,###,##0.00')  as esp_h, 
  (SELECT TOP 1 texcl FROM chtexturegrp AS chtg INNER JOIN chtexture AS cht ON chtg.chtgkey=cht.chtgkey  AND chtg.rvindicator = 'yes' AND chtg.chkey=cha.chkey) AS tcl,
  mu_pct_sum
-FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon   AS cha  ON cha.cokey=coa.cokey AND cha.hzdept_r < 15 ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'yes' );
+FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon   AS cha  ON cha.cokey=coa.cokey AND cha.hzdept_r < 15 ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'Yes' );
 
 CREATE TABLE #agg2
 (  aoiid INT ,
@@ -1532,7 +1532,7 @@ MD.DomainID = DD.DomainID order by choicesequence desc) as flodfreq,
 MD.DomainID = DD.DomainID order by choicesequence desc) as pondfreq,
 mu_pct_sum
 FROM #M4 AS M44 
-INNER JOIN comonth AS CM ON M44.cokey = CM.cokey AND M44.majcompflag = 'yes' 
+INNER JOIN comonth AS CM ON M44.cokey = CM.cokey AND M44.majcompflag = 'Yes' 
 AND CASE 
 WHEN (flodfreqcl IN ('occasional', 'common', 'frequent', 'very frequent'))  THEN 1 
 WHEN (pondfreqcl IN ('occasional', 'common', 'frequent'))  THEN 1
@@ -1583,7 +1583,8 @@ FROM #pf1;
 
 --End Ponding and Flooding
 --Begin Organic
--- Water Table
+-- Organic and Hydric
+
 CREATE TABLE #organic
 ( aoiid INT, 
  landunit CHAR(20), 
@@ -1593,15 +1594,14 @@ CREATE TABLE #organic
  cname CHAR(60), 
  copct  INT, 
  majcompflag CHAR(3), 
-
- mu_pct_sum INT
+ mu_pct_sum INT,
+taxgrtgroup CHAR(120),
+taxsubgrp CHAR(120),
+hydricrating CHAR(120)
 
       );
 
---INSERT INTO #hydric and organic soils
---Taxonomic Subgroup meets the histicols abbrevation and does not include folists or;
---Hydric Rating is Yes
-
+--INSERT INTO #organic -- organic soils
 SELECT 
 aoiid, 
 landunit, 
@@ -1611,15 +1611,44 @@ M44.cokey AS cokey,
 M44.compname AS cname, 
 M44.comppct_r AS copct ,
 M44.majcompflag AS majcompflag, 
+mu_pct_sum,
 taxgrtgroup,
 taxsubgrp,
-hydricrating  
-FROM #M4 AS M44 
-INNER JOIN component ON  M44.cokey=component.cokey AND M44.majcompflag = 'Yes' 
-AND CASE WHEN taxsubgrp LIKE '%hist%'THEN 1 
+hydricrating , 
+CASE WHEN taxsubgrp LIKE '%hist%'THEN 1 
 WHEN taxsubgrp LIKE '%ists%'AND taxsubgrp NOT LIKE '%fol%' THEN 1 
 WHEN taxgrtgroup LIKE '%ists%'AND taxgrtgroup NOT LIKE '%fol%' THEN 1 
-WHEN hydricrating = 'Yes'  THEN 1 ELSE 2 END = 1;
+  END AS organic_flag
+FROM #M4 AS M44 
+INNER JOIN component ON  M44.cokey=component.cokey --AND M44.majcompflag = 'Yes' 
+;
+
+
+CREATE TABLE #o1
+( aoiid INT, 
+ landunit CHAR(20), 
+  landunit_acres FLOAT,
+ mukey INT, 
+ mapunit_acres FLOAT, 
+  cokey INT , 
+ cname CHAR(60), 
+ copct  INT, 
+ majcompflag CHAR(3), 
+ mu_pct_sum INT,
+  adj_comp_pct FLOAT
+      );
+
+--INSERT INTO #o1
+SELECT DISTINCT og.aoiid, og.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  mu_pct_sum, FORMAT ((1.0 * copct / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct, taxgrtgroup,
+taxsubgrp,
+hydricrating 
+FROM #AoiAcres
+LEFT OUTER JOIN #organic AS og ON og.aoiid=#AoiAcres.aoiid
+--:GROUP BY  og.aoiid, og.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  mu_pct_sum,  mu_pct_sum, taxgrtgroup,
+--:taxsubgrp,
+--:hydricrating 
+
+
 
 
 --Begin Water
@@ -2846,5 +2875,6 @@ DROP TABLE IF EXISTS #aws1
 DROP TABLE IF EXISTS #drain
 DROP TABLE IF EXISTS #drain2
 DROP TABLE IF EXISTS #organic
+DROP TABLE IF EXISTS #o1
 
 GO
