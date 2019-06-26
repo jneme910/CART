@@ -1,6 +1,5 @@
 Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
 1,Surface Salt Concentration:1,Surface Salt Concentration,High surface salinization risk or already saline
-1,Surface Salt Concentration:1,Surface Salt Concentration,High surface salinization risk or already saline
 2,Surface Salt Concentration:2,Surface Salt Concentration,Surface salinization risk
 3,Surface Salt Concentration:3,Surface Salt Concentration,Low surface salinization risk
 4,Surface Salt Concentration:4,Surface Salt Concentration,Not rated
@@ -25,7 +24,7 @@ Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
 23,Suitability for Aerobic Soil Organisms:4,Suitability for Aerobic Soil Organisms,Not rated
 25,Ponding or Flooding:1,Ponding or Flooding,1
 26,Ponding or Flooding:0,Ponding or Flooding,0
-27,Ponding or Flooding:3,Ponding or Flooding,Not rated
+27,Ponding or Flooding:2,Ponding or Flooding,Not rated
 28,Drainage Class: 1,Drainage class,Excessively drained
 29,Drainage Class: 2,Drainage class,"Somewhat excessively
 drained"
