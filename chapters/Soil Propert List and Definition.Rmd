@@ -1,5 +1,5 @@
 ---
-title: "Soil Property List and Column Descriptions"
+title: "Soil Property List & Column Descriptions"
 author: "Jason Nemecek"
 date: "`r Sys.Date()`"
 output:
