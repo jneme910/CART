@@ -1,0 +1,29 @@
+---
+title: "Soil Data Checks"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+  mathjax: null
+jquery: null
+smart: no
+---
+
+```{r setup, echo=FALSE, results='hide', warning=FALSE}
+# setup
+library(knitr, quietly=TRUE)
+library(kableExtra, quietly=TRUE)
+opts_chunk$set(message=FALSE, warning=FALSE, background='#F7F7F7', fig.align='center', fig.retina=2, dev='png', tidy=FALSE, verbose=FALSE)
+options(width=100, stringsAsFactors=FALSE)
+```
+
+
+```{r echo=FALSE, results='asis'}
+library(knitr)
+library(kableExtra)
+
+# read from text file
+x <- read.csv('Soil_Data_Checks.csv', check.names = FALSE, stringsAsFactors = FALSE)
+
+# nice HTML output
+kable_styling(kable(x, format = 'html'), bootstrap_options = 'striped', full_width = TRUE, font_size = 12)
