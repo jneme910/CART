@@ -39,7 +39,6 @@ properties. Intrinsic soil properties are those empirical soil properties that a
 include Farmland Classification, T Factor and Wind Erodibility Group.
 
 
-
 # Resource Concerns
 ## [Soil Quality Degradation](https://github.com/jneme910/CART/blob/master/chapters/Soil%20Quality%20Degradation) 
 
