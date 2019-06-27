@@ -1,6 +1,6 @@
 ---
 title: "Aggregate Stability"
-author: "Cathy Seybold and Jason Nemecek"
+author: "Cathy Seybold, John Hammerly, Anna Courtney, Jeff Glanville, Andrew Brown and Jason Nemecek"
 date: "June 27, 2019"
 output: html_document
 ---
@@ -9,10 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Aggregate Stability
+# Introduction
 The Aggregate Stability Interpretation provides soil survey users with an inherent soil property-based ranking of soils and map units for predicting the potential suitability. Onsite investigation may be needed to validate the interpretations in this table and to confirm the identity of the soil on a given site. The numbers in the value columns range from 0 to 100. The larger the value, the greater the potential suitability. The soil may have additional limitations.
 
 Crop varieties, management scenarios vary by location, over time, reflecting choices made by farmers. These factors partially mask inherent soil quality. Except for extreme circumstances, inherent soil quality or inherent soil productivity varies little by location, over time for a specific soil (map unit component) identified by NRCS soil surveys. The interpretation reflects a relative comparison on soils within the top 6 inches for aggregate stability. It does not forecast actual aggregate stability because values are based on weather conditions, soil health, tillage, management conditions, etc.
+
+## Scope
+Surface/near surface horizons, conventional tillage, focus on macroaggregates (>250 micron)
 
 ## Definition of What is Estimated
 
@@ -46,10 +49,6 @@ Maintaining and increasing aggregation and aggregate strength can be accomplishe
 
 Aggregate stability is determined by a wet sieving technique preceded by vacuum saturation of the 1-2 mm size aggregates as described in USDA-ARS (1966). Stable aggregates are corrected for sand greater than 0.25 mm as follows: Aggregate stability (%) = ((wt. of stable aggregates and sand) - (wt. of sand))/((wt. of sample) - (wt. of sand)).
 
-## Interpretation: Macroaggregate stability under conventional tillage
-Group: John Hammerly, Anna Courtney, Jeff Glanville, Andrew Brown, Cathy Seybold
-
-Scope: Surface/near surface horizons, conventional tillage, focus on macroaggregates (>250 micron)
 
 ### Criteria Table:
 
