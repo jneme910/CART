@@ -57,8 +57,8 @@ Aggregate stability is determined by a wet sieving technique preceded by vacuum 
 |% clay |> 36 |21 - 35 |0 - 20 |Lower clay content results in lower aggregate stability. |
 |% OM |> 5 |5-Jan|0 - 1 |Lower organic matter results in lower aggregate stability. |
 Suborder / SMR Depth to Water|||Aqu- / aquic within 50cm|Shallow depth to water table during growing season results in higher moisture status. Soil aggregates are less stable at higher moisture content.
-|"Fe2O3 (Fed| mass %) "|> 2 |0.5 - 2 |< 0.5 |Low free iron oxide (esp. with low % OM) results in lower aggregate stability. |
-|"ESP| % "|0 - 4 |10-Apr|> 10 |High exchangeable sodium percentage results in dispersion of clay and low aggregate stability. |
+|Fe2O3 (Fed mass %) |> 2 |0.5 - 2 |< 0.5 |Low free iron oxide (esp. with low % OM) results in lower aggregate stability. |
+|ESP % |0 - 4 |4 - 10|> 10 |High exchangeable sodium percentage results in dispersion of clay and low aggregate stability. |
 |EC (dS/m) |Any (with ESP < 4%) |< 4 (with ESP > 4%) |< 4 (with ESP > 10%) |Low EC (with high ESP) results in dispersion of clay and low aggregate stability.|
 
 ## References:
