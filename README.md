@@ -20,7 +20,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
  |8|Drainage Class |EP ||Easements|
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|---|
 |10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation-Subsidence |
-|11|Soil Susceptibility to Compaction |RA |[Click here](https://jneme910.github.io/CART/chapters/Soil_Susceptibility_to_Compaction)|Soil Quality Degradation-Compaction|
+|11|Soil Susceptibility to Compaction |RA |[Click here](https://jneme910.github.io/CART/chapters/Soil_Susceptibility_to_Compaction)|Soil Quality Degradation-Compaction| 
 |12|Organic Matter Depletion |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Organic_Matter_Depletion)|Soil Quality Degradation-Organic Matter Depletion|
 |13|Surface Salt Concentration |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Surface_Salt_Concentration.)|Soil Quality Degradation-Concentration of Salts and Other Chemicals}
 |14|Suitability for Aerobic Soil Organisms |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Suitability_for_Aerobic_Soil_Organisms)|Soil Quality Degradation-Soil Organism Habitat Loss and Degradation|
