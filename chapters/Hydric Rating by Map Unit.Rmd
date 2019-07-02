@@ -1,0 +1,57 @@
+---
+title: "Hydric Rating By Mapunit"
+author: "Jason Nemecek"
+date: "July 2, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This Hydric Soil Category rating indicates the components of map units that meet the criteria for hydric soils. Map units are composed of one or more major soil components or soil types that generally make up 20 percent or more of the map unit and are listed in the map unit name, and they may also have one or more minor contrasting soil components that generally make up less than 20 percent of the map unit. Each major and minor map unit component that meets the hydric criteria is rated hydric. The map unit class ratings based on the hydric components present are: Hydric, Predominantly Hydric, Partially Hydric, Predominantly Nonhydric, and Nonhydric. The report also shows the total representative percentage of each map unit that the hydric components comprise.
+
+1. **"Hydric"** means that all major and minor components listed for a given map unit are rated as being hydric.
+2. **"Predominantly Hydric"** means that all major components listed for a given map unit are rated as hydric, and at least one contrasting minor component is not rated hydric.
+3. **"Partially Hydric"** means that at least one major component listed for a given map unit is rated as hydric, and at least one other major component is not rated hydric.
+4. **"Predominantly Nonhydric"** means that no major component listed for a given map unit is rated as hydric, and at least one contrasting minor component is rated hydric.
+5. **"Nonhydric"** means no major or minor components for the map unit are rated hydric. The assumption is that the map unit is nonhydric even if none of the components within the map unit have been rated.
+
+Hydric soils are defined by the National Technical Committee for Hydric Soils (NTCHS) as soils that formed under conditions of saturation, flooding, or ponding long enough during the growing season to develop anaerobic conditions in the upper part (Federal Register, 1994). Under natural conditions, these soils are either saturated or inundated long enough during the growing season to support the growth and reproduction of hydrophytic vegetation.
+
+If soils are wet enough for a long enough period of time to be considered hydric, they typically exhibit certain properties that can be easily observed in the field. These visible properties are indicators of hydric soils. The indicators used to make onsite determinations of hydric soils are specified in "Field Indicators of Hydric Soils in the United States" (Vasilas, Hurt, and Noble, 2010).
+
+The NTCHS has developed criteria to identify those soil properties unique to hydric soils (Federal Register, 2012). These criteria are used to identify map unit components that normally are associated with wetlands. The criteria use selected soil properties that are described in "Field Indicators of Hydric Soils in the United States." (Vasilas, Hurt, and Noble, 2010), "Soil Taxonomy" (Soil Survey Staff, 1999), "Keys to Soil Taxonomy" (Soil Survey Staff, 2010), and the "Soil Survey Manual" (Soil Survey Division Staff, 1993).
+
+The criteria for hydric soils are represented by codes, for example, 2 or 3. Definitions for the codes are as follows:
+
+1. All Histels except for Folistels, and Histosols except for Folists.
+
+2. Soils in Aquic suborders, great groups, or subgroups, Albolls suborder, Historthels great group, Histoturbels great group, Pachic subgroups, or Cumulic subgroups that:
+
+    a. Based on the range of characteristics for the soil series, will at least in part meet one or more Field Indicators of Hydric Soils in the United States, or
+
+    b. Show evidence that the soil meets the definition of a hydric soil;
+
+3. Soils that are frequently ponded for long or very long duration during the growing season.
+
+    a. Based on the range of characteristics for the soil series, will at least in part meet one or more Field Indicators of Hydric Soils in the United States, or
+
+    b. Show evidence that the soil meets the definition of a hydric soil;
+
+4. Map unit components that are frequently flooded for long duration or very long duration during the growing season that:
+
+    a. Based on the range of characteristics for the soil series, will at least in part meet one or more Field Indicators of Hydric Soils in the United States, or
+
+    b. Show evidence that the soil meets the definition of a hydric soil;
+
+Hydric Condition: Food Security Act information regarding the ability to grow a commodity crop without removing woody vegetation or manipulating hydrology.
+
+### References:
+
+1. Federal Register. July 13, 1994. Changes in hydric soils of the United States.
+2. Federal Register. February, 28, 2012. Hydric soils of the United States.
+3. Soil Survey Division Staff. 1993. Soil survey manual. Soil Conservation Service. U.S. Department of Agriculture Handbook 18.
+4. Soil Survey Staff. 1999. Soil taxonomy: A basic system of soil classification for making and interpreting soil surveys. 2nd edition. Natural Resources Conservation Service. U.S. Department of Agriculture Handbook 436.
+5. Soil Survey Staff. 2010. Keys to soil taxonomy. 11th edition. U.S. Department of Agriculture, Natural Resources Conservation Service.
+6. Vasilas, L.M., G.W. Hurt, and C.V. Noble, editors. Version 7.0, 2010. Field indicators of hydric soils in the United States.

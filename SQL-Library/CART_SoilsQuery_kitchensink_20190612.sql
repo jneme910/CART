@@ -447,7 +447,6 @@ WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Suscep
 GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;
  
 
-
 INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
 SELECT  aoiid, landunit,
 SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
@@ -1596,6 +1595,7 @@ SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, cop
 FROM #pf1;
 
 --End Ponding and Flooding
+
 --Begin Organic
 -- Organic and Hydric
 
@@ -1633,6 +1633,7 @@ hydricrating ,
 CASE WHEN taxsubgrp LIKE '%hist%'THEN 1 
 WHEN taxsubgrp LIKE '%ists%'AND taxsubgrp NOT LIKE '%fol%' THEN 1 
 WHEN taxgrtgroup LIKE '%ists%'AND taxgrtgroup NOT LIKE '%fol%' THEN 1 
+WHEN hydricrating = 'Yes' THEN 1 
   END AS organic_flag
 FROM #M4 AS M44 
 INNER JOIN component ON  M44.cokey=component.cokey 
@@ -1650,7 +1651,10 @@ CREATE TABLE #o1
  copct  INT, 
  majcompflag CHAR(3), 
  mu_pct_sum INT,
-  adj_comp_pct FLOAT
+  adj_comp_pct FLOAT, 
+  taxgrtgroup CHAR(120), 
+taxsubgrp CHAR(120),
+hydricrating CHAR(3)
       );
 
 --INSERT INTO #o1
@@ -1659,9 +1663,8 @@ taxsubgrp,
 hydricrating 
 FROM #AoiAcres
 LEFT OUTER JOIN #organic AS og ON og.aoiid=#AoiAcres.aoiid
---:GROUP BY  og.aoiid, og.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  mu_pct_sum,  mu_pct_sum, taxgrtgroup,
---:taxsubgrp,
---:hydricrating 
+WHERE organic_flag = 1
+
 
 
 
@@ -2820,6 +2823,9 @@ LEFT OUTER JOIN  #AGG7 AS AGG7 ON AGG7.mukey=mu.mukey;
 --:hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
 --:FROM #Hydric2 AS mu
 --:INNER JOIN mapunit ON mapunit.mukey = mu.mukey
+
+--Select * From  Tempdb.Sys.Columns Where Object_ID = Object_ID('tempdb..#AoiTable') UNION
+--Select * From  Tempdb.Sys.Columns Where Object_ID = Object_ID('tempdb..#AoiAcres') UNION
 
 DROP TABLE IF EXISTS #AoiTable
 DROP TABLE IF EXISTS #AoiAcres
