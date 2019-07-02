@@ -14,4 +14,16 @@ knitr::opts_chunk$set(echo = TRUE)
 provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA. 
 
 
+1. ![Alt text](https://github.com/jneme910/CART/blob/master/TableImages/OutcomePhoto-0.jpg)
+
+2. ![Alt text](https://github.com/jneme910/CART/blob/master/TableImages/OutcomePhoto-1.jpg)
+
+3. ![Alt text](https://github.com/jneme910/CART/blob/master/TableImages/OutcomePhoto-2.jpg)
+
+4. ![Alt text](https://github.com/jneme910/CART/blob/master/TableImages/OutcomePhoto-3.jpg)
+
+5. ![Alt text](https://github.com/jneme910/CART/blob/master/TableImages/OutcomePhoto-4.jpg)
+
+6. ![Alt text](https://github.com/jneme910/CART/blob/master/TableImages/OutcomePhoto-5.jpg)
+
 
