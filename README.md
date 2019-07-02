@@ -98,21 +98,21 @@ This domain table contains an ordered list of all possible rating values.
 
 1. [Soil Organic Carbon Stock](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)
 2. [Farmland Classification](https://jneme910.github.io/CART/chapters/Farmland_Classification)
-3. [Hydric Soil Rating by Map Unit] (https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)
+3. [Hydric Soil Rating by Map Unit](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)
 4. [Ponding or Flooding Frequency](https://jneme910.github.io/CART/chapters/Ponding_or_Flooding)
-5. [Depth to Water Table] (https://jneme910.github.io/CART/chapters/Depth_to_Water_Table)
-6. [Drainage Class] (https://jneme910.github.io/CART/chapters/Drainage_Class)
-7. [Availible Water Storage] (https://jneme910.github.io/CART/chapters/Available_Water_Storage)
+5. [Depth to Water Table](https://jneme910.github.io/CART/chapters/Depth_to_Water_Table)
+6. [Drainage Class](https://jneme910.github.io/CART/chapters/Drainage_Class)
+7. [Availible Water Storage](https://jneme910.github.io/CART/chapters/Available_Water_Storage)
 
 # Environmental Evaluation (CPA-52)
-1. [Farmland Classification] (https://jneme910.github.io/CART/chapters/Farmland_Classification)
-2. [Hydric Soils Rating by Mapunit] (https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)
+1. [Farmland Classification](https://jneme910.github.io/CART/chapters/Farmland_Classification)
+2. [Hydric Soils Rating by Mapunit](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)
 
 # Outcomes
 provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA.  
 
 ### Design
-[Outcome] (https://jneme910.github.io/CART/chapters/Outcomes)
+[Outcome](https://jneme910.github.io/CART/chapters/Outcomes)
 
 
 
