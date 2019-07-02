@@ -64,7 +64,7 @@ CART has 6 resource concerns related to Soil Quality Degradation and each will i
 ![Example: Park County, Wyoming](https://github.com/jneme910/CART/blob/master/TableImages/Park_County_WY.png)
 
 ### Map data is processed in the background
-
+ 
 ![Example: Map data is processed in the background](https://github.com/jneme910/CART/blob/master/TableImages/Map%20Data%20is%20processed%20in%20the%20background.PNG)
 
 The map on the left shows 8 different soils within this land unit. The map on the right side illustrates risk of surface salinization. The red polygon indicates an area of high risk for surface salinization, yellow areas have a moderate risk and green areas are low risk.
