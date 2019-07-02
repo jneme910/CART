@@ -8,23 +8,23 @@ The Conservation Assessment Ranking Tool (CART) will assess clients’ resource 
 
 This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey.  [SQL Server SQL version - Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql) or [Soil Data Access SQL version - Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt) for the Conservation Assessment Ranking Tool soil SQL Script. 
 
- ||Datasets|Purpose* |Location
-|-----|----------|--------|--------|
-|1| Flooding or Ponding|RA, EP||
-|2|Water Table Depth |RA, EP ||
-|3|Hydric Rating by Map Unit |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)|
+ ||Datasets|Purpose* |Location| Section|
+|-----|----------|--------|--------|----------------------------------------|
+|1| Flooding or Ponding|RA, EP|Excess Water-Ponding and Flooding, Easements|
+|2|Water Table Depth |RA, EP |Excess Water-Seasonal High Water Table, Easements|
+|3|Hydric Rating by Map Unit |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)|Excess Water-Seeps, Air Quality-Emmisions of Greenhouse Gases, Easements|
 |4 |Hydrologic Group |RA ||
- |5|Prime and Unique Farmland |EE, EP ||
-|6|Availible Water Storage |EP ||
-|7|Soil Organic Carbon Stock|EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)|
- |8|Drainage Class |EP ||
-|9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|
-|10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |
-|11|Soil Susceptibility to Compaction |RA |[Click here](https://jneme910.github.io/CART/chapters/Soil_Susceptibility_to_Compaction)|
-|12|Organic Matter Depletion |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Organic_Matter_Depletion)|
-|13|Surface Salt Concentration |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Surface_Salt_Concentration.)|
-|14|Suitability for Aerobic Soil Organisms |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Suitability_for_Aerobic_Soil_Organisms)|
-|15|Aggregate stability |RA |[Click here](https://jneme910.github.io/CART/chapters/Aggregate_stability) |
+ |5|Prime and Unique Farmland |EE, EP |Easements, Environmental Evaluation|
+|6|Availible Water Storage |EP |Easements|
+|7|Soil Organic Carbon Stock|EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)|Easements, Air Quality-Emmisions of Greenhouse Gases |
+ |8|Drainage Class |EP ||Easements|
+|9|Organic Soils |RA |See 'Hydric Rating by Mapunit'||
+|10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation-Subsidence |
+|11|Soil Susceptibility to Compaction |RA |[Click here](https://jneme910.github.io/CART/chapters/Soil_Susceptibility_to_Compaction)|Soil Quality Degradation-Compaction|
+|12|Organic Matter Depletion |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Organic_Matter_Depletion)|Soil Quality Degradation-Organic Matter Depletion|
+|13|Surface Salt Concentration |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Surface_Salt_Concentration.)|Soil Quality Degradation-Concentration of Salts and Other Chemicals}
+|14|Suitability for Aerobic Soil Organisms |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Suitability_for_Aerobic_Soil_Organisms)|Soil Quality Degradation-Soil Organism Habitat Loss and Degradation|
+|15|Aggregate stability |RA |[Click here](https://jneme910.github.io/CART/chapters/Aggregate_stability) |Soil Quality Degradation-Aggregate Instability|
 |16| Domain Tables||  [Click here](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) |
 |17|Soil Property List by Interpretation || [Click here](https://jneme910.github.io/CART/chapters/Soil_Property_List_by_Soil_Interpretation) ||
 |18|Soil Property List and Column Descriptions ||[Click here](https://jneme910.github.io/CART/chapters/Soil_Propert_List_and_Definition)|
