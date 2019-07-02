@@ -1,0 +1,17 @@
+---
+title: "Outcomes"
+author: "Laura Morton and Jason Nemecek"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Conservation Assessment Ranking Tool Outcomes
+
+provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA. 
+
+
+
