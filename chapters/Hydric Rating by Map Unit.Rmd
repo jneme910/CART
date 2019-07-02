@@ -1,7 +1,7 @@
 ---
 title: "Hydric Rating By Mapunit"
 author: "Jason Nemecek"
-date: "July 2, 2019"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 

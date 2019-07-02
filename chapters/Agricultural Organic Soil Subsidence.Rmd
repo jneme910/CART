@@ -1,0 +1,27 @@
+---
+title: "Agricultural Organic Soil Subsidence"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management.
+ 
+Organic soils used in agricultural production are subject to a loss of volume and depth of organic material due to oxidation caused by above normal microbial activity resulting from excessive water drainage, soil disturbance, or extended drought. Microbial mediated oxidation is the primary driver of volume reduction once excess water is removed.   Soil shrinkage and compaction due to dewatering is considered to be secondary. Any drawdown resulting in water levels below soil surface can result in increased subsidence rates.  The subsidence rate can also be influenced by agricultural practices. The type of tillage operation, such as plowing, disc harrowing and switch plowing, moldboard plowing increase the oxidation rate.  The use of no-till practice is recommended to slow the subsidence. Any aggressive tillage measure increases microbiological activity and decreases carbon sequestration.  Drainage water management can be implemented to control water tables to help slow the subsidence rate.
+
+Several soil and site properties influence the rate of organic matter oxidation and subsidence.  Organic soils are generally found in cooler climates, thus, farmed organic soils in warmer climates are vulnerable.  Periodic saturation of the organic soil with water tends to decrease the rate of oxidation since anaerobic decomposition is slower than aerobic decomposition.  The pre-existing degree of decomposition is also a factor in the subsidence rate since as organic matter is decomposed, the remaining material becomes more resistant to decay.  Acidity in soils tends to slow microbial growth so acid soils are less prone to subsidence.  The degree to which each of the soil properties considered promotes oxidation is rated.  The average degree of accelerating microbial oxidation of organic matter is taken as the overall rating.
+
+The ratings are both verbal and numerical. Numerical ratings indicate the suitability of the individual soil properties. The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil feature has the most severe propensity for subsidence (1.00) and the point at which the soil has no propensity for subsidence, such as a mineral soil (0.00). 
+
+Rating class terms indicate the rate at which the soils are likely to subside considering all the soil features that are examined for this rating. "Severe subsidence" indicates that the soil has features that are very favorable for the aerobic soil organisms that cause subsidence.  Very careful management will be needed to slow the subsidence rate.  "Moderate subsidence" indicates that the soil has features that are moderately favorable for aerobic soil organisms. The soil can be made more sustainable by careful management.  "Low subsidence" indicates that the soil has one or more features that are unfavorable for aerobic soil organisms.  With careful management the soil can be used for crop production and be nearly sustainable.  Soils that are not organic are rated "Mineral soil".  These soils do not subside due to organic matter oxidation.
+
+The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
+
+Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+
+
+

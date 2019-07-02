@@ -1,0 +1,42 @@
+---
+title: "Soil Susceptibility to Compaction"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Soils are rated based on their susceptibility to compaction from the operation of ground-based equipment for planting, harvesting, and site preparation activities when soils are moist.  Soil compaction is the process in which soil particles are pressed together more closely that in the original state.  Typically, the soil must be moist to be compacted because the mineral grains must slide together.  Compaction reduces the abundance mostly of large pores in the soil by damaging the structure of the soil.  This produces several effects that are unwanted in agricultural soils since large pores are most effective at transmitting water and air through the soil.  Compaction also increases the soil strength which can limit root penetration and growth.  The ability of soil to hold water is adversely affected by compaction since the large pores hold water.  The degree of compaction of a soil is measured by its bulk density, which is the mass per unit volume, generally expressed in grams per cubic centimeter.
+
+Compacted soils are less favorable for good plant growth because of high soil bulk density and hardness, reduced pore space, and poor aeration and drainage. Root penetration and growth is decreased in compacted soils because the hardness or strength of these soils prevents the expansion of roots. Supplies of air, water, and nutrients that roots need are also less favorable when compaction decreases soil porosity and drainage.
+
+Interpretation ratings are based on soil properties in the upper 12 inches of the profile.  Factors considered are soil texture, soil organic matter content, soil structure, rock fragment content, and the existing bulk density.  Each of these is thought to contribute to resisting the susceptibility of a soil to compaction when present.  Organic matter in the soil provides resistance to compaction and the resilience to ameliorate the effects with time.  Soil structure adds strength as discrete aggregates and it is the aggregates that are deformed or destroyed by compactive forces, thus strong soil structure lowers the susceptibility to compaction.  Similarly, rock fragments in the soil can bridge and provide a framework to resist compaction.  Finally, if a soil is already fairly dense causing further compaction is more difficult. 
+
+## Definitions of the ratings:
+
+**Low **- The potential for compaction is insignificant.  This soil is able to support standard equipment with minimal compaction. The soil is moisture insensitive, exhibiting only small changes in density with changing moisture content.
+
+**Medium** - The potential for compaction is significant.  The growth rate of seedlings may be reduced following compaction.  After the initial compaction (i.e., the first equipment pass), this soil is able to support standard equipment with only minimal increases in soil density.  The soil is intermediate between moisture insensitive and moisture sensitive.
+
+**High** - The potential for compaction is significant.  The growth rate of seedlings will be reduced following compaction.  After initial compaction, this soil is still able to support standard equipment, but will continue to compact with each subsequent pass.  The soil is moisture sensitive, exhibiting large changes in density with changing moisture content.
+
+The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
+
+Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+### References:
+
+1. Adams, P.W.  1998. Soil Compaction on Woodland Properties.  Oregon State University Extension Publication EC 1109.
+
+2. Adams, P.W.  1981. Compaction of Forest Soils.  Oregon State University Extension Publication PNW 217.
+
+3. Boyer, Don. 1997. Guidelines for Soil Resource Protection and Restoration for Timber Harvest and Post-Harvest Activities.  U.S Forest Service, Pacific Northwest Region, Watershed Management.
+
+4. Geist, J.M.; Hazard, J.W.; Seidel, K.W. 1989. Assessing Physical Conditions of Some Pacific Northwest Volcanic Ash Soils After Forest Harvest.  Soil Science Society of America Journal 53:946-950.
+
+5. Froehlich, Henry A and David H. McNab. 1983. Minimizing Soil Compaction in Pacific Northwest Forests.  Proceedings of Sixth North American Forest Soils Conference, University of Tennessee.
+
+6. Page-Dumrose, Deborah S.  1993. Susceptibility of Volcanic Ash Influenced Soils in Northern Idaho to Mechanical Compaction. U.S. Forest Service Intermountain Research Station.  Research Note INT-409.
+
