@@ -19,7 +19,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |7|Soil Organic Carbon Stock|EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)|
  |8|Drainage Class |EP ||
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|
-|10|Agricultural Organic Soil Subsidence |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Agricultural_Organic_Soil_Subsidence.html)|
+|10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |
 |11|Soil Susceptibility to Compaction |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil_Susceptibility_to_Compaction.html)|
 |12|Organic Matter Depletion |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Organic_Matter_Depletion.html)|
 |13|Surface Salt Concentration |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Surface_Salt_Concentration.html)|
