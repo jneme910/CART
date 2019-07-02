@@ -17,6 +17,19 @@ This Hydric Soil Category rating indicates the components of map units that meet
 4. **"Predominantly Nonhydric"** means that no major component listed for a given map unit is rated as hydric, and at least one contrasting minor component is rated hydric.
 5. **"Nonhydric"** means no major or minor components for the map unit are rated hydric. The assumption is that the map unit is nonhydric even if none of the components within the map unit have been rated.
 
+## Rating Class
+Rating class values for calculating component acres.
+
+
+|Hydric Class Count	|Low|	RV	|High|
+|--------------------|---|---|----|
+|Hydric|	100|	100|	100|
+|Predominantly Hydric| 	80|	85|	99|
+|Partially Hydric	|15|	50|	79|
+|Predominantly Nonhydric|	1|	5|	20|
+|Nonhydric|	0	|0|	0|
+
+
 Hydric soils are defined by the National Technical Committee for Hydric Soils (NTCHS) as soils that formed under conditions of saturation, flooding, or ponding long enough during the growing season to develop anaerobic conditions in the upper part (Federal Register, 1994). Under natural conditions, these soils are either saturated or inundated long enough during the growing season to support the growth and reproduction of hydrophytic vegetation.
 
 If soils are wet enough for a long enough period of time to be considered hydric, they typically exhibit certain properties that can be easily observed in the field. These visible properties are indicators of hydric soils. The indicators used to make onsite determinations of hydric soils are specified in "Field Indicators of Hydric Soils in the United States" (Vasilas, Hurt, and Noble, 2010).
