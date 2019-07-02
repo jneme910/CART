@@ -18,7 +18,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |6|Availible Water Storage |EP ||
 |7|Soil Carbon |EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)|
  |8|Drainage Class |EP ||
-|9|Organic Soils |RA ||
+|9|Organic Soils |RA |See Hydric Rating by Mapunit|
 |10|Agricultural Organic Soil Subsidence |RA ||
 |11|Soil Susceptibility to Compaction |RA ||
 |12|Organic Matter Depletion |RA ||
