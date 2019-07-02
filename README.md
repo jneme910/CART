@@ -25,10 +25,10 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |13|Surface Salt Concentration |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Surface_Salt_Concentration.)|Soil Quality Degradation-Concentration of Salts and Other Chemicals}
 |14|Suitability for Aerobic Soil Organisms |RA |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Suitability_for_Aerobic_Soil_Organisms)|Soil Quality Degradation-Soil Organism Habitat Loss and Degradation|
 |15|Aggregate stability |RA |[Click here](https://jneme910.github.io/CART/chapters/Aggregate_stability) |Soil Quality Degradation-Aggregate Instability|
-|16| Domain Tables||  [Click here](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) |---|
-|17|Soil Property List by Interpretation || [Click here](https://jneme910.github.io/CART/chapters/Soil_Property_List_by_Soil_Interpretation) |---|
-|18|Soil Property List and Column Descriptions ||[Click here](https://jneme910.github.io/CART/chapters/Soil_Propert_List_and_Definition)|---|
-|19|Data Checks | |[Click here](https://jneme910.github.io/CART/chapters/Soil_Data_Checks)|---|
+|16| Domain Tables|---|  [Click here](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) |---|
+|17|Soil Property List by Interpretation |---| [Click here](https://jneme910.github.io/CART/chapters/Soil_Property_List_by_Soil_Interpretation) |---|
+|18|Soil Property List and Column Descriptions |---|[Click here](https://jneme910.github.io/CART/chapters/Soil_Propert_List_and_Definition)|---|
+|19|Data Checks |--- |[Click here](https://jneme910.github.io/CART/chapters/Soil_Data_Checks)|---|
  
  *RA - Resource Assessment; EP- Easement Program; EE - Environmental Evaluation; RT - Ranking Tool
  
