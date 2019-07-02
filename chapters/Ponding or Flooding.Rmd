@@ -1,0 +1,31 @@
+---
+title: "Ponding or Flooding"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Definitions: 
+### Flooding Frequency Class                                    
+
+Flooding is the temporary inundation of an area caused by overflowing streams, by runoff from adjacent slopes, or by tides. Water standing for short periods after rainfall or snowmelt is not considered flooding, and water standing in swamps and marshes is considered ponding rather than flooding.    Frequency is expressed as none, very rare, rare, occasional, frequent, and very frequent.    
+
+* **"None"** means that flooding is not probable. The chance of flooding is nearly 0 percent in any year. Flooding occurs less than once in 500 years.   
+* **"Very rare"** means that flooding is very unlikely but possible under extremely unusual weather conditions. The chance of flooding is less than 1 percent in any year.   
+"Rare" means that flooding is unlikely but possible under unusual weather conditions. The chance of flooding is 1 to 5 percent in any year.     
+* **"Occasional"** means that flooding occurs infrequently under normal weather conditions. The chance of flooding is 5 to 50 percent in any year.    
+* **"Frequent"** means that flooding is likely to occur often under normal weather conditions. The chance of flooding is more than 50 percent in any year but is less than 50 percent in all months in any year.    
+* **"Very frequent"** means that flooding is likely to occur very often under normal weather conditions. The chance of flooding is more than 50 percent in all months of any year.
+
+### Ponding Frequency Class    
+
+Ponding is standing water in a closed depression. The water is removed only by deep percolation, transpiration, or evaporation or by a combination of these processes. Ponding frequency classes are based on the number of times that ponding occurs over a given period. Frequency is expressed as none, rare, occasional, and frequent.    
+
+* **"None"** means that ponding is not probable. The chance of ponding is nearly 0 percent in any year.    
+* ** "Rare"** means that ponding is unlikely but possible under unusual weather conditions. The chance of ponding is nearly 0 percent to 5 percent in any year.    
+* **"Occasional"** means that ponding occurs, on the average, once or less in 2 years. The chance of ponding is 5 to 50 percent in any year.    
+* **"Frequent"**  means that ponding occurs, on the average, more than once in 2 years. The chance of ponding is more than 50 percent in any year.
