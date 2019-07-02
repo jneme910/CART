@@ -40,9 +40,8 @@ include Farmland Classification, T Factor and Wind Erodibility Group.
 
 
 # Resource Concerns
-## [Soil Quality Degradation](https://github.com/jneme910/CART/blob/master/chapters/Soil%20Quality%20Degradation) 
-
-CART has 6 resource concerns related to Soil Quality Degradation and each will involve analysis of soil interpretation data from the Soil Data Access Query service. Soil maps and reports for these interpretations are also available from Web Soil Survey. Both applications are connecting to the same soils database.
+## Soil Quality Degradation 
+CART has 6 resource concerns related to Soil Quality Degradation and each will involve analysis of soil interpretation data from the Soil Data Access Query service. Soil maps and reports for these interpretations are also available from Web Soil Survey. Both applications are connecting to the same soils database. 5 of the resources concerns use traditional soil interpretations whereas Aggregation stability is written entirely in SQL. 
 
 ||Resource Concerns|Soil Interpretation
 |-----|----------|--------|
