@@ -102,7 +102,7 @@ This domain table contains an ordered list of all possible rating values.
 4. [Ponding or Flooding Frequency](https://jneme910.github.io/CART/chapters/Ponding_or_Flooding)
 5. [Depth to Water Table] (https://jneme910.github.io/CART/chapters/Depth_to_Water_Table)
 6. [Drainage Class] (https://jneme910.github.io/CART/chapters/Drainage_Class)
-7. Availible Water Storage (https://jneme910.github.io/CART/chapters/Available_Water_Storage)
+7. [Availible Water Storage] (https://jneme910.github.io/CART/chapters/Available_Water_Storage)
 
 # Environmental Evaluation (CPA-52)
 1. [Farmland Classification] (https://jneme910.github.io/CART/chapters/Farmland_Classification)
