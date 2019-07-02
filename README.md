@@ -12,11 +12,11 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |-----|----------|--------|--------|
 |1| Flooding or Ponding|RA, EP||
 |2|Water Table Depth |RA, EP ||
-|3|Hydric Rating by Map Unit |RA, EP ||
+|3|Hydric Rating by Map Unit |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)|
 |4 |Hydrologic Group |RA ||
  |5|Prime and Unique Farmland |EE, EP ||
 |6|Availible Water Storage |EP ||
-|7|Soil Carbon |EP ||
+|7|Soil Carbon |EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)|
  |8|Drainage Class |EP ||
 |9|Organic Soils |RA ||
 |10|Agricultural Organic Soil Subsidence |RA ||
