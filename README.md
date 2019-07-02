@@ -10,7 +10,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 
  ||Datasets|Purpose* |Location| Section|
 |-----|----------|--------|--------|----------------------------------------|
-|1| Flooding or Ponding|RA, EP||Excess Water-Ponding and Flooding, Easements|
+|1| Ponding or Flooding |RA, EP||Excess Water-Ponding and Flooding, Easements|
 |2|Water Table Depth |RA, EP ||Excess Water-Seasonal High Water Table, Easements|
 |3|Hydric Rating by Map Unit |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)|Excess Water-Seeps, Air Quality-Emmisions of Greenhouse Gases, Easements|
 |4 |Hydrologic Group |RA ||
