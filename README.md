@@ -10,13 +10,13 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 
  ||Datasets|Purpose* |Location| Section|
 |-----|----------|--------|--------|----------------------------------------|
-|1| Ponding or Flooding |RA, EP||Excess Water-Ponding and Flooding, Easements|
-|2|Depth to Water Table |RA, EP ||Excess Water-Seasonal High Water Table, Easements|
+|1| Ponding or Flooding |RA, EP|[Click here](https://jneme910.github.io/CART/chapters/Ponding_or_Flooding)|Excess Water-Ponding and Flooding, Easements|
+|2|Depth to Water Table |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Depth_to_Water_Table) |Excess Water-Seasonal High Water Table, Easements|
 |3|Hydric Rating by Map Unit |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)|Excess Water-Seeps, Air Quality-Emmisions of Greenhouse Gases, Easements|
 |4 |Hydrologic Soils Group |RA | |
- |5|Farmland Classification |EE, EP ||Easements, Environmental Evaluation|
+ |5|Farmland Classification |EE, EP |Click here](https://ncss-tech.github.io/sda-lib/chapters/Farmland_Classification) |Easements, Environmental Evaluation|
 |6|Availible Water Storage |EP ||Easements|
-|7|Soil Organic Carbon Stock|EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks.html)|Easements, Air Quality-Emmisions of Greenhouse Gases |
+|7|Soil Organic Carbon Stock|EP |[Click here](https://ncss-tech.github.io/sda-lib/chapters/Soil%20Organic%20Carbon%20Stocks)|Easements, Air Quality-Emmisions of Greenhouse Gases |
  |8|Drainage Class |EP ||Easements|
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|---|
 |10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation-Subsidence |
