@@ -11,7 +11,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 ### Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool soil.
 1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql)
 2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt)
-2. Area of Interest Geometry examples to insert and replace into sql script. [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
+2. Area of Interest (AOI) Geometry examples to insert and replace into sql script. [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
 
  ||Datasets|Purpose* |Location| Section|
 |-----|----------|--------|--------|----------------------------------------|
