@@ -20,7 +20,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |4 |Nitrogen Leaching |RA | |
  |5|Farmland Classification |EE, EP |[Click here](https://jneme910.github.io/CART/chapters/Farmland_Classification) |Easements, Environmental Evaluation|
 |6|Availible Water Storage |EP |[Click here](https://jneme910.github.io/CART/chapters/Available_Water_Storage) |Easements|
-|7|Soil Organic Carbon Stock|EP |[Click here](https://jneme910.github.io/CART/chapters/Available_Water_Storage)|Easements, Air Quality-Emmisions of Greenhouse Gases |
+|7|Soil Organic Carbon Stock|EP |[Click here](https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock)|Easements, Air Quality-Emmisions of Greenhouse Gases |
  |8|Drainage Class |EP |[Click here](https://jneme910.github.io/CART/chapters/Drainage_Class) |Easements|
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|---|
 |10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation-Subsidence |
@@ -100,7 +100,7 @@ This domain table contains an ordered list of all possible rating values.
 
 # EASEMENTS
 
-1. [Soil Organic Carbon Stock](https://jneme910.github.io/CART/chapters/Available_Water_Storage)
+1. [Soil Organic Carbon Stock](https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock)
 2. [Farmland Classification](https://jneme910.github.io/CART/chapters/Farmland_Classification)
 3. [Hydric Soil Rating by Map Unit](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)
 4. [Ponding or Flooding Frequency](https://jneme910.github.io/CART/chapters/Ponding_or_Flooding)
