@@ -4,7 +4,6 @@
 --RatingDomain -Domain Values
 -- Declare all variables here
 
---Need to think about adding a coulumn in table m4 and add a major component percent sum.  
 
 use sdmONLINE;
 GO
@@ -476,6 +475,7 @@ ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapun
 FROM #AoiSoils2 AS M1
 GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
  
+
 ---Farm Class
 INSERT INTO #FC
 SELECT aoiid, landunit, mu.mukey, mapunit_acres,  CASE WHEN (farmlndcl) IS NULL  THEN ''
@@ -933,10 +933,13 @@ FROM #SOC5
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, SOCSTOCK_0_5, SOCSTOCK_0_30, SOCSTOCK_0_150;
 
 SELECT DISTINCT  landunit, landunit_acres, 
-CASE WHEN SOCSTOCK_0_30_Weighted_Average IS NOT NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
-WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0)
-WHEN SOCSTOCK_0_30_Weighted_Average IS  NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 'Not Rated') 
-END AS rating_key,
+CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0) 
+WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 2) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 3) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 4) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 5)  
+WHEN SOCSTOCK_0_30_Weighted_Average IS  NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 'Not Rated') END AS rating_key,
  'Soil Organic Carbon Stock' AS attributename,
 SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
 SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],

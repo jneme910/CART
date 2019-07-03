@@ -364,6 +364,7 @@ ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapun
 FROM #AoiSoils2 AS M1
 GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
  
+
 ---Farm Class
 INSERT INTO #FC
 SELECT aoiid, landunit, mu.mukey, mapunit_acres,  CASE WHEN (farmlndcl) IS NULL  THEN ''
@@ -821,10 +822,13 @@ FROM #SOC5
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, SOCSTOCK_0_5, SOCSTOCK_0_30, SOCSTOCK_0_150;
 
 SELECT DISTINCT  landunit, landunit_acres, 
-CASE WHEN SOCSTOCK_0_30_Weighted_Average IS NOT NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
-WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0)
-WHEN SOCSTOCK_0_30_Weighted_Average IS  NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 'Not Rated') 
-END AS rating_key,
+CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0) 
+WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 2) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 3) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 4) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 5)  
+WHEN SOCSTOCK_0_30_Weighted_Average IS  NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 'Not Rated') END AS rating_key,
  'Soil Organic Carbon Stock' AS attributename,
 SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
 SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],
@@ -2706,25 +2710,3 @@ INNER JOIN mapunit ON mapunit.mukey = mu.mukey
 INNER JOIN #FC AS FC ON FC.mukey=#AoiSoils.mukey
 LEFT OUTER JOIN #SOC5 AS SOC5 ON SOC5.mukey=mu.mukey
 LEFT OUTER JOIN  #AGG7 AS AGG7 ON AGG7.mukey=mu.mukey;
-
--- Return detailed hydric data for map layer
---: SELECT mukind, SUBSTRING( (SELECT DISTINCT ( ', ' +  cogm2.geomfname ) 
---:FROM mapunit AS m2
---: INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'yes' AND m2.mukey = mu.mukey 
---:INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
-
---:SUBSTRING( (SELECT  DISTINCT ( ', ' +  cogm.geomfname ) 
---:   FROM mapunit AS m1
---:   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'yes' AND m1.mukey = mu.mukey 
-  --: INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
-
---:SUBSTRING( ( SELECT ( ', ' + hydriccriterion ) 
- --:  FROM mapunit AS m
- --:  INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'yes' AND m.mukey = mu.mukey
- --:  INNER JOIN cohydriccriteria AS coh ON c.cokey = coh.cokey GROUP BY m.mukey, hydriccriterion ORDER BY hydriccriterion ASC FOR XML PATH('') ), 3, 1000) AS hydric_criteria, 
---:hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
---:FROM #Hydric2 AS mu
---:INNER JOIN mapunit ON mapunit.mukey = mu.mukey
-
---Select * From  Tempdb.Sys.Columns Where Object_ID = Object_ID('tempdb..#AoiTable') UNION
---Select * From  Tempdb.Sys.Columns Where Object_ID = Object_ID('tempdb..#AoiAcres') UNION
