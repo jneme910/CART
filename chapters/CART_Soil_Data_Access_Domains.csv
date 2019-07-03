@@ -38,9 +38,13 @@ drained"
 37,Availible Water Storage: 0,Availible Water Storage,0
 38,Availible Water Storage: 1,Availible Water Storage,1
 39,Availible Water Storage: 2,Availible Water Storage,Not rated
-40,Soil Organic Carbon Stock: 0,Soil Organic Carbon Stock,0
-41,Soil Organic Carbon Stock: 1,Soil Organic Carbon Stock,1
-42,Soil Organic Carbon Stock: 2,Soil Organic Carbon Stock,Not rated
+40,Soil Organic Carbon Stock: 0,Soil Organic Carbon Stock,None
+41,Soil Organic Carbon Stock: 1,Soil Organic Carbon Stock,Very Low
+42,Soil Organic Carbon Stock: 2,Soil Organic Carbon Stock,Low
+43,Soil Organic Carbon Stock: 3,Soil Organic Carbon Stock,Moderate
+44,Soil Organic Carbon Stock: 4,Soil Organic Carbon Stock,Moderately High
+45,Soil Organic Carbon Stock: 5,Soil Organic Carbon Stock,High
+42,Soil Organic Carbon Stock: 6,Soil Organic Carbon Stock,Not rated
 43,Aggregate Stability:1,Aggregate Stability,Low
 44,Aggregate Stability:2,Aggregate Stability,Moderate
 45,Aggregate Stability:3,Aggregate Stability,Moderately High
