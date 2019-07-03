@@ -60,6 +60,7 @@ The following criteria are used to reduce the nitrate leaching potential numeric
 ![](https://jneme910.github.io/CART/TableImages/Nitrogen1.png)
 
 
+
 NASIS uses a concept known as "fuzzy logic" to assign a numerical value between 0.00 and 1.00 to each factor in the interpretation criteria and the overall rating.  For interpretations that are designed to predict soil limitations for a particular use, the higher the value, the greater the limitation.  The Nitrate Leaching Potential interpretation is designed in this way.
 A curve is constructed for each criteria factor, which assigns a value between 0.00 and 1.00.  These curves are known as Evaluations in NASIS.  The following is an example of the Evaluation curve for the Available Water Capacity (AWC) factor in the Nitrate Leaching Potential interpretation:
  
@@ -69,6 +70,7 @@ Each Evaluation curve is then used to create subrules that can be weighted to ge
 ### AGR - Nitrate Leaching Potential, Nonirrigated 
 
 ![](https://jneme910.github.io/CART/TableImages/Nitrogen2.png)
+
 
 1.	Each of the green boxes represents a subrule for the nitrate leaching potential, nonirrigated interpretation.
 2.	The Water Available for Leaching subrule is weighted by multiplying by 0.60
@@ -81,7 +83,8 @@ Each Evaluation curve is then used to create subrules that can be weighted to ge
 
 ![](https://jneme910.github.io/CART/TableImages/Nitrogen3.png)
 
-1.	Each of the green boxes represents a subrule for the nitrate leaching potential, irrigated interpretation.
+
+	of the green boxes represents a subrule for the nitrate leaching potential, irrigated interpretation.
 2.	The Ksat travel time subrule is weighted by multiplying by 0.7.  
 3.	The Available Water Capacity subrule is weighted by multiplying by 0.3  
 4.	The sum of these two weighted subrules results in a value between 0.00 and 1.00
