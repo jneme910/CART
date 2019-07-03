@@ -36,10 +36,15 @@ CREATE TABLE #AoiTable
  
 -- Insert identifier string and WKT geometry for each AOI polygon after this...
  
-SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-89.41635 43.03728,-89.33979 43.03301,-89.34734 43.00013,-89.42253 42.99485,-89.41635 43.03728)))', 4326);   
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
-VALUES ('T0001 Fld1', @aoiGeomFixed); 
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+
  
  
 
@@ -823,7 +828,16 @@ END AS rating_key,
  'Soil Organic Carbon Stock' AS attributename,
 SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
 SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],
-SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150]
+SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150], 
+CASE WHEN SOCSTOCK_0_30_Weighted_Average IS NULL THEN NULL
+WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN 'None'
+WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN 'Very low'
+WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN 'Low'
+WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN 'Moderate'
+WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN 'Moderately High'
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN 'High' END AS [SOC_0_30_High_Class]
+
+
 FROM #SOC6
 --- END SOC
 
@@ -2692,3 +2706,25 @@ INNER JOIN mapunit ON mapunit.mukey = mu.mukey
 INNER JOIN #FC AS FC ON FC.mukey=#AoiSoils.mukey
 LEFT OUTER JOIN #SOC5 AS SOC5 ON SOC5.mukey=mu.mukey
 LEFT OUTER JOIN  #AGG7 AS AGG7 ON AGG7.mukey=mu.mukey;
+
+-- Return detailed hydric data for map layer
+--: SELECT mukind, SUBSTRING( (SELECT DISTINCT ( ', ' +  cogm2.geomfname ) 
+--:FROM mapunit AS m2
+--: INNER JOIN component AS c2 ON c2.mukey = m2.mukey AND hydricrating = 'yes' AND m2.mukey = mu.mukey 
+--:INNER JOIN cogeomordesc AS cogm2 ON c2.cokey = cogm2.cokey AND cogm2.rvindicator='yes' AND cogm2.geomftname = 'Landform' GROUP  BY  m2.mukey, cogm2.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_landforms,
+
+--:SUBSTRING( (SELECT  DISTINCT ( ', ' +  cogm.geomfname ) 
+--:   FROM mapunit AS m1
+--:   INNER JOIN component AS c1 ON c1.mukey = m1.mukey AND hydricrating = 'yes' AND m1.mukey = mu.mukey 
+  --: INNER JOIN cogeomordesc AS cogm ON c1.cokey = cogm.cokey AND cogm.rvindicator = 'yes' AND cogm.geomftname = 'Microfeature' GROUP BY m1.mukey, cogm.geomfname FOR XML PATH('') ), 3, 1000) AS hydric_microfeatures,  
+
+--:SUBSTRING( ( SELECT ( ', ' + hydriccriterion ) 
+ --:  FROM mapunit AS m
+ --:  INNER JOIN component AS c ON c.mukey = m.mukey AND hydricrating = 'yes' AND m.mukey = mu.mukey
+ --:  INNER JOIN cohydriccriteria AS coh ON c.cokey = coh.cokey GROUP BY m.mukey, hydriccriterion ORDER BY hydriccriterion ASC FOR XML PATH('') ), 3, 1000) AS hydric_criteria, 
+--:hydric_rating, low_pct, rv_pct, high_pct, mu.mukey
+--:FROM #Hydric2 AS mu
+--:INNER JOIN mapunit ON mapunit.mukey = mu.mukey
+
+--Select * From  Tempdb.Sys.Columns Where Object_ID = Object_ID('tempdb..#AoiTable') UNION
+--Select * From  Tempdb.Sys.Columns Where Object_ID = Object_ID('tempdb..#AoiAcres') UNION

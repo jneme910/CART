@@ -940,7 +940,16 @@ END AS rating_key,
  'Soil Organic Carbon Stock' AS attributename,
 SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
 SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],
-SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150]
+SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150], 
+CASE WHEN SOCSTOCK_0_30_Weighted_Average IS NULL THEN NULL
+WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN 'None'
+WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN 'Very low'
+WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN 'Low'
+WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN 'Moderate'
+WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN 'Moderately High'
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN 'High' END AS [SOC_0_30_High_Class]
+
+
 FROM #SOC6
 --- END SOC
 
