@@ -1,12 +1,12 @@
 ---
 title: "Soil Organic Carbon Stocks"
 author: "J. Nemececk and S.A. Wills"
-date: "October 12, 2017"
+date: '`r paste("First created on October 12, 2017. Updated on", Sys.Date())`'
 output: html_document
 ---
 
 
-# Soil Organic Carbon Stocks by Map Unit
+# Soil Organic Carbon Stocks by Landunit
 [SQL Script Soil Organic Carbon Stock](https://github.com/ncss-tech/sda-lib/blob/master/SQL-Library/SDA_SOC_Weighted_Mean_Soil_Organic_Carbon_Stock.sql) This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey. 
 Soil organic carbon  (SOC) stocks are estimates of the total mass of  SOC in total soil profile for a given depth (0 cm to the any predetermined depth) up to the depth  of the soil profile. SOC stocks present in each soil component and mapunit is expressed in metric tons (Mg) per hectare for predetermined depth increments. NULL values are presented where data are incomplete or not available.
 
