@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA. 
 
+Example: RCCP Outcomes Guidance Document. [Click Here](https://github.com/jneme910/CART/blob/master/documents/RCPP%20Outcomes%20Guidance_DRAFT_6.17.docx?raw=true)
 
  ![1](https://jneme910.github.io/CART/TableImages/OutcomePhoto-0.jpg)
 
