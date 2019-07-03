@@ -111,7 +111,7 @@ This domain table contains an ordered list of all possible rating values.
 # Outcomes
 Provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA.  
 
-1. [Outcomes Design](https://jneme910.github.io/CART/chapters/Outcomes)
+1. [Outcomes Design Concept](https://jneme910.github.io/CART/chapters/Outcomes)
 
 
 
