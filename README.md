@@ -9,7 +9,8 @@ The Conservation Assessment Ranking Tool (CART) will assess clients’ resource 
 This query is meant to be run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal. This interface queries current databases maintained by the U.S. National Cooperative Soil Survey. 
 
 ### SQL script for the Conservation Assessment Ranking Tool soil.
-1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql) 2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt)  
+1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql)
+2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt)  
 
  ||Datasets|Purpose* |Location| Section|
 |-----|----------|--------|--------|----------------------------------------|
