@@ -1,0 +1,118 @@
+---
+title: "Nitrogen Leaching Potential"
+author: "Steve Campbell"
+date: "July 3, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Nitrate Leaching Potential Interpretations in the 
+National Soil Information System (NASIS)
+
+Updated - September 2016
+
+The request for the development of nitrate leaching potential soil interpretations originated from the former NRCS State Agronomist in Washington State, Joel Poore.  The purpose of this interpretation is to provide a screening tool for conservation planning to predict the inherent potential for nitrate leaching, based on soil and climate properties stored in the NASIS database.  It does not include land use or management practices in the criteria.
+
+Nitrate contamination of groundwater is a significant issue in Washington State, especially in the irrigated cropland of the Columbia Basin (1). In some counties, more than 20 percent of the wells used for drinking water exceed the EPA maximum contaminant level of 10 mg/l nitrate-nitrogen.  In Franklin County, 32 percent of the wells exceed this level.
+
+In response to the request for a nitrate leaching potential soil interpretation, a review was conducted of research and university extension publications that address soil and climate properties that affect nitrate leaching.  The tools that NRCS is currently using to assess nitrate leaching potential were also reviewed
+
+The Revised Universal Soil Loss Equation (RUSLE2) software contains a nitrate leaching index tool.  It is based on the procedure developed by Williams and Kissel (2).  This tool uses the hydrologic soil group (A, B, C, or D), mean annual precipitation, and seasonal precipitation (October through March) to calculate a leaching index. Precipitation data is from the RUSLE2 climate database.
+
+The largest concern with the RUSLE2 Nitrogen Leaching Index is that the only factor it uses based on soil properties is the hydrologic soil group.   Hydrologic soil groups are defined in the National Engineering Handbook (NEH), Part 630 Hydrology, Chapter 7 (http://directives.sc.egov.usda.gov/viewerFS.aspx?hid=21422)
+They are designed to determine a soil's associated runoff curve number (NEH 630.09). Runoff curve numbers are used to estimate direct runoff from rainfall (NEH 630.10).
+
+Hydrologic soil groups were not designed to predict deep leaching of soil water, but, as stated above, are used to predict surface runoff of precipitation.  All soils are assigned to a hydrologic soil group of A (lowest runoff potential), B, C, or D (highest runoff potential).
+
+Soils with very different properties can be assigned to the same hydrologic soil group.  The following three soils would all be assigned to hydrologic soil group D:
+
+.	Excessively drained , sandy, shallow soil with fractured bedrock at a depth of 20 inches or less
+.	Well drained, very deep, clayey soil with very slow Ksat (permeability) (<= 0.06 inches/hr) in the upper 24 inches 
+.	Poorly drained, very deep, loamy soil with a water table at depths less than 24 inches at some time of the year.
+
+These three soils may have similar potential for surface runoff of precipitation, but not for deep leaching of nitrates.
+
+After a review of the research and university extension publications on soil and climate properties that affect nitrate leaching, two nitrate leaching potential interpretations were developed in the National Soil Information System (NASIS): one for nonirrigated conditions, the other for irrigated.
+
+The following soil and climate factors were selected to develop the NASIS interpretation criteria:
+
+1.	Mean annual precipitation minus potential evapotranspiration - this factor provides an estimate of the amount of water that is available to move through the soil profile on an annual basis.  NASIS contains data for mean annual precipitation and mean annual air temperature.  The NRCS National Soil Survey Center developed an algorithm that estimates this factor, based on the Hamon potential evapotranspiration method (3). 
+2.	Water travel time through entire soil profile - this factor uses the saturated hydraulic conductivity (Ksat) and thickness of each soil horizon, to estimate the number of hours that would be required for a given volume of water to move through the entire soil profile. One advantage of this method for accounting for the rate of water movement is that the properties and thickness of each soil horizon are accounted for, rather than using an overall hydraulic conductivity or permeability class for the entire profile.  This method will account for subtle differences between soils in texture, structure, horizon thickness, and depth to water-restricting layers.   More discussion of this method is available at the Oregon State University Extension Publication available at :  http://ir.library.oregonstate.edu/xmlui/bitstream/handle/1957/15296/em8708.pdf?sequence=4  (4).
+3.	Available water capacity - this factor accounts for the cumulative amount of water available to plants that the entire soil profile can hold at field capacity to a depth of 150 cm.  The more water the soil profile can hold, the less water is available for deep leaching.
+4.	Depth and duration of water table - this factor uses a water table index based on the minimum average depth to a water table, and the number of months that the water table is present during the months of April through October.  It is used to account for the loss of nitrates to the atmosphere as nitrous oxide or nitrogen gas from denitrification under anaerobic conditions caused by water saturation.  The higher the water table and the longer it's duration, the larger the quantity of nitrates that would potentially be lost to the atmosphere, and therefore not be available for deep leaching.
+5.	Slope gradient adjusted for hydrologic soil group - the steeper the slope gradient, the higher the potential surface runoff, resulting in less water available to move through the soil profile.  The following adjustments are made to the slope gradient by hydrologic group to account for potential surface runoff differences:
+Hydrologic group A - slope % x 0.75
+Hydrologic group B - slope % x 0.85
+Hydrologic group C - slope % x 0.95
+Hydrologic group D - no adjustment
+
+6.	Anion exchange capacity (AEC) - this factor was added in the September 2016 revision to account for soils that generate anion exchange capacity under acidic conditions.   Highly weathered Ultisols and Oxisols, volcanic Andisols, and organic Histosols have AEC under acidic conditions (6).  This means that the soil becomes positively charged and attracts, retains, and supplies negatively charged anions, including nitrate, which reduces the risk of nitrate leaching.
+
+The following criteria are used to reduce the nitrate leaching potential numerical ratings if the minimum representative pH in water is 5.5 or less in some part of the 0-100 cm depth.
+
+.	Andisols - subtract 0.30
+.	Oxisols - subtract 0.25
+.	Histosols - subtract 0.20
+.	Ultisols - subtract 0.20
+
+
+Evaluations and Rules for the NASIS Nitrate Leaching Potential Interpretation
+NASIS uses a concept known as "fuzzy logic" to assign a numerical value between 0.00 and 1.00 to each factor in the interpretation criteria and the overall rating.  For interpretations that are designed to predict soil limitations for a particular use, the higher the value, the greater the limitation.  The Nitrate Leaching Potential interpretation is designed in this way.
+A curve is constructed for each criteria factor, which assigns a value between 0.00 and 1.00.  These curves are known as Evaluations in NASIS.  The following is an example of the Evaluation curve for the Available Water Capacity (AWC) factor in the Nitrate Leaching Potential interpretation:
+ 
+A value of 1.00 (most limiting) is assigned if AWC is 15 cm or less.  This corresponds to "low" and "very low" AWC classes.  A value of 0.00 (not limiting) is assigned if AWC is 25 cm or greater, which corresponds to "high" and "very high" AWC classes. Intermediate values are assigned for an AWC greater than 15 but less than 25 cm, according to the curve.
+Each Evaluation curve is then used to create subrules that can be weighted to generate the overall interpretation rating.  The following image displays the weighting factors and relationships of the subrules that are used in the nonirrigated nitrate leaching potential interpretation:
+AGR - Nitrate Leaching Potential, Nonirrigated (WA) NASIS Interpretation 
+
+1.	Each of the green boxes represents a subrule for the nitrate leaching potential, nonirrigated interpretation.
+2.	The Water Available for Leaching subrule is weighted by multiplying by 0.60
+3.	The Ksat travel time subrule is weighted by multiplying by 0.25.  
+4.	The Available Water Capacity subrule is weighted by multiplying by 0.15.  
+5.	The sum of these three weighted subrules results in a value between 0.00 and 1.00
+6.	Adjustments are then made for water table depth and duration, slope gradient adjusted for hydrologic group, and anion exchange capacity.  The sum of the values from these subrules is subtracted from the sum in step 4 above.  The maximum reduction is 0.5 for the water table index subrule, 0.3 for the slope gradient subrule, and 0.3 for the anion exchange capacity subrule.
+
+AGR - Nitrate Leaching Potential, Irrigated (WA) NASIS Interpretation
+
+1.	Each of the green boxes represents a subrule for the nitrate leaching potential, irrigated interpretation.
+2.	The Ksat travel time subrule is weighted by multiplying by 0.7.  
+3.	The Available Water Capacity subrule is weighted by multiplying by 0.3  
+4.	The sum of these two weighted subrules results in a value between 0.00 and 1.00
+5.	Adjustments are then made for water table depth and duration, slope gradient adjusted for hydrologic group, and anion exchange capacity.  The sum of the values from these subrules is subtracted from the sum in step 4 above.  The maximum reduction is 0.5 for the water table index subrule, 0.3 for the slope gradient subrule, and 0.3 for the anion exchange capacity.
+6.	A final adjustment is made based on the water available for leaching from precipitation.  The value for this subrule is added to the results from Steps 3 through 5 above.  The maximum addition for this subrule is 0.6.
+
+The following Nitrate Leaching Potential rating classes have been established based on the final calculation from the subrules above:
+Low:  0.00 - 0.25
+Moderate: 0.26 - 0.50
+Moderately High:  0.51 - 0.75
+High:  0.76 - 1.00
+
+
+
+As with any soil interpretation, professional judgment is involved in selecting the criteria, constructing the evaluation curves, assigning weights to the subrules, and assigning numerical class breaks to the rating classes, after reviewing the available research on the subject. 
+Review and Testing
+A meeting was held with NRCS Washington State Office Soils Staff and State Resource Conservationist in August 2011 to review the nitrate leaching potential interpretation criteria and ratings for a number of Washington soil mapunit components.  We made some minor adjustments to the criteria for the mean annual precipitation minus mean annual potential evapotranspiration factor, based on discussions at this meeting
+The next step was to review the nitrate leaching potential criteria and ratings with key NRCS Washington Field Office personnel in counties where groundwater nitrate contamination is a significant issue.  Maps and tabular reports were created with the nitrate leaching potential ratings for their review.  They had some good questions about the interpretation criteria, and all agreed that the interpretation results identified what they would expect to be the nitrate leaching potential for the soils they are familiar with.
+For the final step, Washington State NRCS included the nitrate leaching potential ratings in their official soil survey information available on Web Soil Survey and the Electronic Field Office Technical Guide.  Field Office staff use the ratings as an assessment tool for conservation planning.  This started in fiscal year 2012.
+Other West Region States were contacted to inform them about the Washington NASIS nitrate leaching potential interpretations and offer my assistance in testing and customizing the interpretation for their States.  The version for irrigated conditions was tested in Arizona and is now included on Web Soil Survey for Arizona soil survey areas.  Oregon, the Pacific Islands Area, and Utah are using both the irrigated and nonirrigated versions. 
+Contact for questions or comments:
+Steve Campbell
+Soil Scientist
+USDA - Natural Resources Conservation Service
+West National Technology Support Center
+1201 NE Lloyd Blvd., Suite 801
+Portland, OR 97232-1208
+Phone:  503-273-2421
+E-mail:  steve.campbell@por.usda.gov
+
+References
+
+1.	Documented Nitrate Contamination in Washington. Washington State University Extension Publication EB1756. 1994. https://pubs.wsu.edu/ItemDetail.aspx?ProductID=13779
+2.	Williams, J. R., and Kissell, D.E., 1991. Water Percolation - An Indicator of N Leaching Potential. In: Follet, R.F., Keeney, D.R., Cruse, R.M. (Eds) Managing Nitrogen for Groundwater Quality and Farm Profitability.  Soil Science of America, Inc. Madison, Wisconsin, USA.
+3.	Hamon, W. R., 1961, Estimating potential evapotranspiration: Proceedings of the American Society of Civil Engineers, Journal of the Hydraulic Division, vol. 87, no. HY3, p.107-120
+4.	Huddleston, J.H; et al.  Determination of Soil Sensitivity Ratings for the Oregon Water Quality Decision Aid.  Oregon State University Extension Publication EM 8708. 1998. http://ir.library.oregonstate.edu/xmlui/bitstream/handle/1957/15296/em8708.pdf?sequence=4  . Accessed September 2016
+5.	Rating Eastern Washington Soils for Potential Nitrogen Losses. Washington State University Extension Publication EB 1258. 1984. https://pubs.wsu.edu/ListItems.aspx?Keyword=EB%201258
+6.	Soil Nutrient Management for Maui County - Soil Mineralogy. University of Hawaii at Manoa.  College of Tropical Agriculture and Human Resources.  Accessed August 2016.  http://www.ctahr.hawaii.edu/mauisoil/a_factor_mineralogy.aspx
+
