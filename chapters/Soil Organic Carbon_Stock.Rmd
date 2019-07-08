@@ -2,7 +2,13 @@
 title: "Soil Organic Carbon Stocks"
 author: "J. Nemececk and S.A. Wills"
 date: '`r paste("First created on October 12, 2017. Updated on", Sys.Date())`'
-output: html_document
+tags: []
+output: 
+  html_document: 
+    toc: true
+    toc_float: true
+    toc_depth: 4
+    highlight: pygments
 ---
 
 
@@ -14,7 +20,9 @@ General Information about this query:
 
    * Uses all components with horizon data.
    * Does not calculate component SOC below the following component restrictions:
-       + Lithic bedrock, Paralithic bedrock, Densic bedrock, Fragipan, Duripan, Sulfuric, Petrocalcic and Petroferic 
+       + Lithic bedrock, Paralithic bedrock, Densic bedrock, Fragipan, Duripan, Sulfuric, Petrocalcic and Petroferic
+       
+
  
    
 $$Layer\ SOC\ stock =  (hz_{T} * ( ( om / 1.724 ) * db3 ) * (100.0 - fragvol) / 100.0)$$
@@ -665,7 +673,7 @@ aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localpha
 
 
 
-## Mapunit Component Composition Table
+### Mapunit Component Composition Table
 
 These tables summarize the proportion of components in each map unit.  The components should sum to 100, but this step ensures that any database errors to not overestimate or underestimate stocks on an areal basis.
 
@@ -979,7 +987,7 @@ mukey|cokey|hzname|restrictiodepth|hzdept_r|hzdepb_r|thickness|texture|dbthirdba
 
 
 
-####Set depths used for increments and organize variables for SOC stock calculations.
+#### Set depths used for increments and organize variables for SOC stock calculations.
 ##### SOC Table
 ```{SQL}
 SELECT hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness,
@@ -1774,7 +1782,6 @@ The SOCstock for 0 - 30cm (high, rv, and low) was exported for further GIS inter
 
 
 ![Soil Organic Carbon Stock - CONUS ](https://jneme910.github.io/CART/TableImages/SOC_0_30cm_gSSURGO_CONUS_FY2019_map.jpg)
-
 
 ## Sources and Citations
 The data source of this data is the STATSGO and SSURGO data from the US National Cooperative Soil Survey.  The following references cover data definitions, derivation and quality procedures.
