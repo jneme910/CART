@@ -1854,6 +1854,10 @@ landunit|landunit_acres|rating_key|attributename|SOC_0_5|SOC_0_30|SOC_0_150|SOC_
 T9981 Fld3          |328.952|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.83|38.96|87.64|Moderate
 T9981 Fld4          |318.722|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.19|37.09|82.56|Moderate
 
+![Final Output by land unit](https://jneme910.github.io/CART/TableImages/SOC_Final_Output_landunit.PNG) 
+
+In field 3 the rating is 'Moderate' with a weaighted average landunit value of 38.96 and in field 4 the rating class is 'Moderate' and the value is 37.09.
+
 ## Global Soil Organic Carbon Output
 The SOCstock for 0 - 30cm (high, rv, and low) was exported for further GIS interpolation and extrapolation.
 
