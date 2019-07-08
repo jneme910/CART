@@ -36,6 +36,24 @@ The map unit components listed for each map unit in the accompanying Summary by 
 
 Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
 
+## Criteria Table
+
+Site or Soil Attribute|Poorly suited|Moderately suited|Well suited|Impact
+----------|----------|----------|----------|----------
+pH 0-30cm|Less than 4.0|Between 4.0 and 6.0|Between 6.0 and 7.0|Micronutrient availability
+Mean annual air temperature (C)|Less than 0 or Greater than 50|Between 0 and 15 or Between 24 and 50|Between 15 and 24|Amount of heat required for adapted species
+Moisture relations Maximum of A-C||||
+A. Mean annual precipitation minus annual potential evapotranspiration (mm)|Less than -100|Between -100 and 100|Greater than 100|Moisture available for organisms
+B. Water table depth during the growing season (cm)|0 or less|Between 0 and 30 or between 50 and 100|Between 30 and 50|Moist but not saturated conditions
+C. Root zone AWC (cm)|Less than 3|3 to 30|Greater than 30|Retains moisture between rainfall events
+Electrical Conductivity (dS/m)|Less than 0.3|Between 0.3 and 0.75 or between 1.5 and 9.0|Between 0.75 and 1.5|Cations for mineral needs but not saline
+|Greater than 9.0|||
+Aluminum saturation 0 to 30cm (percent)|100|Between 2 and 100|Less than 2|Aluminum toxicity
+Organic matter content 0-30cm (percent)|Less than 0.3|Between 0.3 and 3.0|Greater than 3.0|Energy source for soil organisms
+Bulk density difference ratio maximum from 0 to 30cm|Greater than 1.0|0 to 1.0|0 or less|Metric of pore space and soil strength
+Clay content weighted average from 0 to 30cm (percent)|Less than 30|Between 30 and 40|Greater than 40|Surface area for microbes
+
+
 
 ## References
 1. Blanco-Canqui, H., M.M. Mikha, D.R. Presley, and M.M. Claassen. 2011. Addition of cover crops enhances no-till potential for improving soil physical properties. Soil Sci. Soc. Am. J. 75:1471-1482. \ doi:10.2136/\ sssaj2010.0430.

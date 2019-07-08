@@ -9,7 +9,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management.
- 
+
+### Climate  
 Organic soils used in agricultural production are subject to a loss of volume and depth of organic material due to oxidation caused by above normal microbial activity resulting from excessive water drainage, soil disturbance, or extended drought. Microbial mediated oxidation is the primary driver of volume reduction once excess water is removed.   Soil shrinkage and compaction due to dewatering is considered to be secondary. Any drawdown resulting in water levels below soil surface can result in increased subsidence rates.  The subsidence rate can also be influenced by agricultural practices. The type of tillage operation, such as plowing, disc harrowing and switch plowing, moldboard plowing increase the oxidation rate.  The use of no-till practice is recommended to slow the subsidence. Any aggressive tillage measure increases microbiological activity and decreases carbon sequestration.  Drainage water management can be implemented to control water tables to help slow the subsidence rate.
 
 Several soil and site properties influence the rate of organic matter oxidation and subsidence.  Organic soils are generally found in cooler climates, thus, farmed organic soils in warmer climates are vulnerable.  Periodic saturation of the organic soil with water tends to decrease the rate of oxidation since anaerobic decomposition is slower than aerobic decomposition.  The pre-existing degree of decomposition is also a factor in the subsidence rate since as organic matter is decomposed, the remaining material becomes more resistant to decay.  Acidity in soils tends to slow microbial growth so acid soils are less prone to subsidence.  The degree to which each of the soil properties considered promotes oxidation is rated.  The average degree of accelerating microbial oxidation of organic matter is taken as the overall rating.
@@ -21,6 +22,34 @@ Rating class terms indicate the rate at which the soils are likely to subside co
 The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
 
 Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+### Criteria Table:
+
+Soil or Site Feature|Less limiting|Somewhat limiting|Limiting|Impact
+-----------|-----------|-----------|-----------|-----------
+Organic layer thickness (cm)|Less than 40|40 to 130|Greater than 130|Thicker organic layer allows more subsidence
+Mineral layer thickness (percent)|More than 50|1 to 50|0|Mineral layers retard oxidation
+Decay resistance|Highly decomposed plant material, muck|Moderately decomposed plant material, partially decomposed plant material, mucky peat|Undecomposed plant material, slightly decomposed plant material, peat|Humified organic matter is more difficult to oxidize
+Frost-free days|Less than 90|90 to 270|Greater than 270|More heat for a longer time favors decomposition
+Flooding frequency and duration|"long" duration and "frequent" frequency or "very long" duration"|"long" duration, "rare" or "occasional" frequency"|none|Flooding excludes oxygen
+Ponding frequency and duration|"long" duration and "frequent" frequency or "very long" duration"|"long" duration, "rare" or "occasional" frequency"|none|Ponding excludes oxygen
+Electrical conductivity (dS/m)|Greater than 8|4 to 8|Less than 4|Saltiness lowers the activity of water
+Depth to saturation (cm)|Less than 30|30 to 100|Greater than 100|Saturation excludes oxygen
+pH|Less than 3.5 or Greater than 9.5|Between 3.5 and 5.0 or between 7 and 9.5|Between 5.0 and 7.0|There is an optimal pH for microbial activity
+
+
+
+###  References:
+1. Histosols. (2018, March 01). Retrieved from University of Idaho Soil Taxonomy: https://www.cals.uidaho.edu/soilorders/histosols.htm
+
+2. Histosols Organic Soils. (2018, March 01). Retrieved from Reference Soil Group: http://www.fao.org/docrep/003/Y1899E/y1899e04.htm
+
+3. NRCS, U. (2012, March). eFOTG. Retrieved from Soil Subsidence : https://efotg.sc.egov.usda.gov/references/public/AR/Soil_Quality_Degradation_Subsidence.pdf
+
+4. Procedure to Calculate the Soil Conditioning Index for Histosols. (2018, March 01). Retrieved from SCI Histosols: https://www.nrcs.usda.gov/wps/PA.../download?cid...ext=pdf
+
+5. Snyder, A. L. (2018, March 01). University of FL IFAS Extension. Retrieved from Soil Subsidence in the Evergaldes Agrciultural Area Pub #SL 311: http://edis.ifas.ufl.edu/ss523
+
 
 
 

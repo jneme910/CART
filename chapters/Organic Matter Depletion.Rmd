@@ -23,7 +23,16 @@ The map unit components listed for each map unit in the accompanying Summary by 
 
 Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
 
+### Criteria Table
 
+Site or Soil Feature|Low|Moderate|High|Impact
+-----------|-----------|-----------|-----------|-----------
+Organic matter loss sensitivity (%)|>6.0|0.5 to 6.0|<0.5|Soil is not able to accumulate organic matter
+Mean annual air temperature (C)|<3|20-Mar|>20|Temperature drives the rates of accumulation and destruction
+Depth to seasonal high water (cm)|0|0-100|>100|Oxygen is excluded from saturated soils
+Land surface shape|concave|linear|convex|Landform can gather or spread material
+Surface clay content (%)|>40|15-40|<15|Organic matter is protected by clay particles
+Moisture deficit (mm/yr)|>1000|-1000 to 1000|<-1000|Mean annual rainfall minus the potential evapotranspiration
 
 ### References
 

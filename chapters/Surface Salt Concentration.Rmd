@@ -19,3 +19,28 @@ Rating class terms indicate the rate at which the soils are likely to subside co
 The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
 
 Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+### Criteria Table
+
+soil and site properties|low|moderate|high|feature
+----------|----------|----------|----------|----------
+depth to water table (cm)|>100|20-100|<20|salts in the near surface water will be pulled to the surface
+water table persistence (months)|0|0-4|>4|months per year the water table is near the surface
+non-leaching climate (map-pet) (mm/yr)|>10|10-(-200)|<-200|low excess moisture does not leach salts
+presence of salts (EC 0-150cm) (dS/m)|0|0-4|>4|If salts are available, there is a possibility of accumulation
+water gathering surface OR (Maximum of inputs)|convex|linear|concave|concave areas accumulate surface and subsurface materials
+presence of salts (EC 0-150cm) (dS/m)|0|0-4|>4|Soil is already saline
+
+
+### References
+1. J. L. Arndt, J. L. Richardson. 1988. Hydrology, salinity and hydric soil development in a North
+Dakota prairie-pothole wetland system. Wetlands 8:2, 93-108.
+
+2. "J.L. Richardson, L.P. Wilding, R.B. Daniels. 1992. Recharge and discharge of groundwater in aquic
+conditions illustrated with flownet analysis. Geoderma 53:1-2, 65-78."
+
+3. Woods S. A., Dyck M. F., Kachanoski R. G.. 2013. Spatial and temporal variability of soil horizons
+and long-term solute transport under semi-arid conditions. Canadian Journal of Soil Science 93:2,
+173-191.
+
+
