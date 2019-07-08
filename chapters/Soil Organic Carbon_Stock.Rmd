@@ -183,8 +183,7 @@ These tables collect map unit and component information needed. This includes al
 Component variables used in SOC stock calculation (r denotes that the value is representative of the central tendency):
    * comppct_r = the composition of each map unit, reported as the proportion (%) of the map unit made up of that soil component as part of the map unit documentation process (NSSH, 2017 -- Part 627.08)
    
-   
- #### Component level data with cokey, comppct_r and mapunit sum-of-comppct_r (major components only) 
+### Component level data and mapunit sum-of-comppct_r (major components only)    
  
 ```{SQL}
 CREATE TABLE #M4

@@ -676,7 +676,8 @@ div.tocify {
 <h2>Component and Layer Tables</h2>
 <p>These tables collect map unit and component information needed. This includes all map units selected above and all components (typically soil series) within each map unit that do not have a limiting layer within 200cm. The concepts of components are described by the NSSH (Part 627.034). This example is limited to one mapunit, mukey = 2809839. The information needed for further SOC stock calculations, individual layer information, is selected from each component.</p>
 <p>Component variables used in SOC stock calculation (r denotes that the value is representative of the central tendency): * comppct_r = the composition of each map unit, reported as the proportion (%) of the map unit made up of that soil component as part of the map unit documentation process (NSSH, 2017 – Part 627.08)</p>
-<p>#### Component level data with cokey, comppct_r and mapunit sum-of-comppct_r (major components only)</p>
+<div id="component-level-data-and-mapunit-sum-of-comppct_r-major-components-only" class="section level3">
+<h3>Component level data and mapunit sum-of-comppct_r (major components only)</h3>
 <div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">CREATE</span> <span class="kw">TABLE</span> #M4
 (   aoiid <span class="dt">INT</span>,
     landunit <span class="dt">CHAR</span>(<span class="dv">20</span>),
@@ -8462,6 +8463,7 @@ cha.chkey,
 </tr>
 </tbody>
 </table>
+</div>
 </div>
 <div id="mapunit-component-composition-table" class="section level3">
 <h3>Mapunit Component Composition Table</h3>
