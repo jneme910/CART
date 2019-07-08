@@ -1,6 +1,6 @@
 ---
 title: "Soil Organic Carbon Stocks"
-author: "J. Nemececk and S.A. Wills"
+author: "J. Nemececk, S.A. Wills and C. Ferguson"
 date: '`r paste("First created on October 12, 2017. Updated on", Sys.Date())`'
 tags: []
 output: 
