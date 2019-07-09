@@ -1,5 +1,6 @@
 ---
 title: "Soil Susceptibility to Compaction"
+author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
 output: html_document
 date: "`r Sys.Date()`"
 ---
@@ -7,6 +8,11 @@ date: "`r Sys.Date()`"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
 
 Soils are rated based on their susceptibility to compaction from the operation of ground-based equipment for planting, harvesting, and site preparation activities when soils are moist.  Soil compaction is the process in which soil particles are pressed together more closely that in the original state.  Typically, the soil must be moist to be compacted because the mineral grains must slide together.  Compaction reduces the abundance mostly of large pores in the soil by damaging the structure of the soil.  This produces several effects that are unwanted in agricultural soils since large pores are most effective at transmitting water and air through the soil.  Compaction also increases the soil strength which can limit root penetration and growth.  The ability of soil to hold water is adversely affected by compaction since the large pores hold water.  The degree of compaction of a soil is measured by its bulk density, which is the mass per unit volume, generally expressed in grams per cubic centimeter.
 
@@ -29,7 +35,7 @@ Other components with different ratings may be present in each map unit. The rat
 ### Criteria Table
 
 Site or Soil Attribute|Low|Moderate|High|Impact
-----------|----------|----------|----------|----------
+---------------------------|--------------|------------------|------------------|----------------------------------------
 Soil Texture|loamy sand, loamy fine sand, loamy coarse sand, sand, fine sand, coarse sand|silty clay, clay, sandy clay, sandy clay loam, sandy loams with less than 15 percent clay|loam, silt, silt loam, silty clay loam, very fine sandy loam, sandy loams with 15 percent or more clay|
 Strong soil structure||||"Ratings are reduced by one class, such as from ""high"" to ""moderate"" for strong soil structure grade"
 Rock fragment content 35 to 60 percent||||Ratings are reduced by one class

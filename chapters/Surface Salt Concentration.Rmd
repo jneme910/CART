@@ -1,5 +1,6 @@
 ---
 title: "Surface Salt Concentration"
+author: Wade Bott, Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -7,6 +8,12 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
 
 Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management. 
 
@@ -23,7 +30,7 @@ Other components with different ratings may be present in each map unit. The rat
 ### Criteria Table
 
 soil and site properties|low|moderate|high|feature
-----------|----------|----------|----------|----------
+---------------------|----------|----------|----------|-------------------------------------------
 depth to water table (cm)|>100|20-100|<20|salts in the near surface water will be pulled to the surface
 water table persistence (months)|0|0-4|>4|months per year the water table is near the surface
 non-leaching climate (map-pet) (mm/yr)|>10|10-(-200)|<-200|low excess moisture does not leach salts

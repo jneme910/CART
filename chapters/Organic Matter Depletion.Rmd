@@ -1,6 +1,6 @@
 ---
 title: "Organic Matter Depletion"
-
+author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -24,6 +24,12 @@ The map unit components listed for each map unit in the accompanying Summary by 
 Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
 
 ### Criteria Table
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
 
 Site or Soil Feature|Low|Moderate|High|Impact
 -----------|-----------|-----------|-----------|-----------
