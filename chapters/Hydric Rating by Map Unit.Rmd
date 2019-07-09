@@ -1,6 +1,6 @@
 ---
 title: "Hydric Rating By Mapunit"
-author: "Jason Nemecek"
+author: "Jason Nemecek and Doug Slabaugh"
 date: "`r Sys.Date()`"
 output: 
     html_document:
@@ -381,16 +381,7 @@ hydric_inclusions INT, -- cnt_minor_hydric
 hydric_null INT);      -- cnt_null_hydric
 ```
 
-#### Gets counts for major-minor components and different hydric ratings (Yes, No, NULL)
-* mukey,
-* total number of components,
-* number of major components,
-* total number of hydric components,
-* number of major hydric components,
-* number of major non-hydric components,
-* number of minor hydric components,
-* total number of non-hydric components,
-* number of components where hydric is null
+
 
 ```{SQL}
 INSERT INTO #Hydric1 (mukey, comp_count, count_maj_comp, all_hydric, all_not_hydric, maj_hydric, maj_not_hydric, hydric_inclusions, hydric_null)
@@ -429,6 +420,17 @@ SELECT DISTINCT M4.mukey,
 FROM #M4 AS M4;
 ```
 
+#### Gets counts for major-minor components and different hydric ratings (Yes, No, NULL)
+* mukey,
+* total number of components,
+* number of major components,
+* total number of hydric components,
+* number of major hydric components,
+* number of major non-hydric components,
+* number of minor hydric components,
+* total number of non-hydric components,
+* number of components where hydric is null
+
 mukey|comp_count|count_maj_comp|all_hydric|all_not_hydric|maj_hydric|maj_not_hydric|hydric_inclusions|hydric_null
 -------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------
 354627|6|2|0|6|0|2|0|0
@@ -452,36 +454,146 @@ mukey|comp_count|count_maj_comp|all_hydric|all_not_hydric|maj_hydric|maj_not_hyd
 2755648|7|2|0|7|0|2|0|0
 2755654|7|2|0|7|0|2|0|0
 
-### Determines the Low, Rv, and High range for Hydric
+### Converts the hydric component count to a value acreage
 ```{SQL}
 
-CREATE TABLE #Hydric2
-(mukey INT,
-hydric_rating CHAR (25),
-low_pct FLOAT,
-rv_pct FLOAT,
-high_pct FLOAT);
+INSERT INTO #Hydric2 (mukey, hydric_rating, low_pct, rv_pct, high_pct)
+SELECT  
+mukey,
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN  'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND  maj_hydric >= 0.5 THEN 'Partially hydric'
+ELSE 'Error'
+END AS hydric_rating, 
  
-CREATE TABLE #Hydric3
-(aoiid INT,
-landunit CHAR(20),
-attributename CHAR(60),
-AOI_Acres FLOAT,
-rating CHAR(60),
-rating_key CHAR(60),
-mukey INT,
-hydric_flag INT,
-low_acres FLOAT,
-rv_acres FLOAT,
-high_acres  FLOAT);
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.80 --'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN 0.01 --'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND maj_hydric >= 0.5 THEN 0.15 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS low_pct, 
  
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.85 --'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN 0.05 --'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND  maj_hydric >= 0.5 THEN  0.50 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS rv_pct, 
+ 
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.99 --'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND maj_hydric < 0.5 THEN 0.20 --'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND maj_hydric >= 0.5 THEN  0.79 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS high_pct
+FROM #Hydric1;
+```
+
+* Takes hydric count statistics and converts them to interpretation-type rating classes (hydric_rating)
+* Also assigns fuzzy-type values as rating percents. These will be used later in a calculation involving
+* Mapunit acres. If a hydricrating of 'Error' or rating number of 0.0 is returned, there is an error that needs to be checked.
+
+mukey|hydric_rating|low_pct|rv_pct|high_pct|
+-----------|----------------|-----------|-----------|-----------|
+354627|Nonhydric                |0|0|0|
+354648|Predominantly nonydric   |0.01|0.05|0.2|
+2494708|Nonhydric                |0|0|0|
+2525720|Nonhydric                |0|0|0|
+2525724|Nonhydric                |0|0|0|
+2525730|Nonhydric                |0|0|0|
+2525732|Nonhydric                |0|0|0|
+2525733|Nonhydric                |0|0|0|
+2525739|Nonhydric                |0|0|0|
+2525745|Nonhydric                |0|0|0|
+2525746|Nonhydric                |0|0|0|
+2525754|Predominantly hydric     |0.8|0.85|0.99|
+2525764|Predominantly hydric     |0.8|0.85|0.99|
+2525766|Nonhydric                |0|0|0|
+2525767|Nonhydric                |0|0|0|
+2525769|Nonhydric                |0|0|0|
+2755639|Nonhydric                |0|0|0|
+2755643|Nonhydric                |0|0|0|
+2755648|Nonhydric                |0|0|0|
+2755654|Nonhydric                |0|0|0|
+
+### Calculating the polygon map acres based on the class range to get a percentage of each class
+```{SQL}
+INSERT INTO #Hydric3 ( aoiid, landunit, attributename, aoi_acres, mukey, hydric_flag, low_acres, rv_acres, high_acres)
+SELECT DISTINCT aoiid,
+landunit,
+'Hydric Soils' AS attributename,
+ROUND (SUM (mapunit_acres ) OVER(PARTITION BY aoiid), 2) AS aoi_acres,
+H3.mukey,
+CASE WHEN hydric_rating = 'Nonhydric' THEN 0 ELSE 1 END AS hydric_flag,
+mapunit_acres * low_pct AS low_acres, 
+mapunit_acres * rv_pct AS rv_acres , 
+mapunit_acres * high_pct AS high_acres  
+FROM #Hydric2 AS H3
+INNER JOIN #M2 AS MH2 ON MH2.mukey = H3.mukey
+GROUP BY aoiid, landunit, H3.mukey, mapunit_acres, hydric_rating, low_pct, rv_pct, high_pct
+```
+
+aoiid|landunit|attributename|AOI_Acres|rating|rating_key|mukey|hydric_flag|low_acres|rv_acres|high_acres
+------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|354627|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|354648|1|0.00287|0.01435|0.0574
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2494708|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525720|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525732|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525733|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525739|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525745|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525746|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525754|1|10.1104|10.7423|12.51162
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525764|1|14.1528|15.03735|17.51409
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525766|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525769|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2755648|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2755654|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525720|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525724|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525730|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525745|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525746|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525754|1|18.5104|19.6673|22.90662
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525767|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525769|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2755639|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2755643|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2755648|0|0|0|0
+
+
+### Returns hydric by Land Unit
+```{SQL}
+
+-- Return hydric by Land Unit
+SELECT DISTINCT landunit,
+CASE WHEN rv_acres  IS NOT NULL THEN CONCAT ('Hydric Soils' , ':' , 1) 
+WHEN rv_acres  = 0 THEN CONCAT ('Hydric Soils' , ':' , 0)
+WHEN rv_acres IS  NULL THEN CONCAT ('Hydric Soils', ':' , 'Not Rated') 
+END AS rating_key,
+
+attributename,
+ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_low_acres, 
+ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_rv_acres, 
+ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_high_acres,
+ROUND((ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_low_pct, 
+ROUND((ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_rv_pct,
+ROUND((ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_high_pct
+FROM #Hydric3
 ```
 
 
-
-
-
-
+## Final Results Table
+andunit|rating_key|attributename|aoiid_low_acres|aoiid_rv_acres|aoiid_high_acres|aoiid_low_pct|aoiid_rv_pct|aoiid_high_pct|
+--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|
+T9981 Fld3          |Hydric Soils:1|Hydric Soils                                                |24.27|25.79|30.08|7.38|7.84|9.14|
+T9981 Fld4          |Hydric Soils:1|Hydric Soils                                                |18.51|19.67|22.91|5.81|6.17|7.19|
 
 
 

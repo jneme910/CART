@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Jason Nemecek" />
+<meta name="author" content="Jason Nemecek and Doug Slabaugh" />
 
 <meta name="date" content="2019-07-09" />
 
@@ -288,7 +288,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Hydric Rating By Mapunit</h1>
-<h4 class="author">Jason Nemecek</h4>
+<h4 class="author">Jason Nemecek and Doug Slabaugh</h4>
 <h4 class="date">2019-07-09</h4>
 
 </div>
@@ -2590,19 +2590,6 @@ maj_hydric INT,        -- cnt_mjr_hydric
 maj_not_hydric INT,    -- cnt_mjr_nonhydric
 hydric_inclusions INT, -- cnt_minor_hydric
 hydric_null INT);      -- cnt_null_hydric</code></pre>
-<div id="gets-counts-for-major-minor-components-and-different-hydric-ratings-yes-no-null" class="section level4">
-<h4>Gets counts for major-minor components and different hydric ratings (Yes, No, NULL)</h4>
-<ul>
-<li>mukey,</li>
-<li>total number of components,</li>
-<li>number of major components,</li>
-<li>total number of hydric components,</li>
-<li>number of major hydric components,</li>
-<li>number of major non-hydric components,</li>
-<li>number of minor hydric components,</li>
-<li>total number of non-hydric components,</li>
-<li>number of components where hydric is null</li>
-</ul>
 <pre class="sql"><code>INSERT INTO #Hydric1 (mukey, comp_count, count_maj_comp, all_hydric, all_not_hydric, maj_hydric, maj_not_hydric, hydric_inclusions, hydric_null)
 SELECT DISTINCT M4.mukey,   
 (SELECT TOP 1 COUNT(*)
@@ -2637,6 +2624,19 @@ SELECT DISTINCT M4.mukey,
  INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
  AND hydricrating  IS NULL ) AS hydric_null 
 FROM #M4 AS M4;</code></pre>
+<div id="gets-counts-for-major-minor-components-and-different-hydric-ratings-yes-no-null" class="section level4">
+<h4>Gets counts for major-minor components and different hydric ratings (Yes, No, NULL)</h4>
+<ul>
+<li>mukey,</li>
+<li>total number of components,</li>
+<li>number of major components,</li>
+<li>total number of hydric components,</li>
+<li>number of major hydric components,</li>
+<li>number of major non-hydric components,</li>
+<li>number of minor hydric components,</li>
+<li>total number of non-hydric components,</li>
+<li>number of components where hydric is null</li>
+</ul>
 <table style="width:100%;">
 <colgroup>
 <col width="11%"></col>
@@ -2887,29 +2887,661 @@ FROM #M4 AS M4;</code></pre>
 </table>
 </div>
 </div>
-<div id="determines-the-low-rv-and-high-range-for-hydric" class="section level3">
-<h3>Determines the Low, Rv, and High range for Hydric</h3>
+<div id="converts-the-hydric-component-count-to-a-value-acreage" class="section level3">
+<h3>Converts the hydric component count to a value acreage</h3>
 <pre class="sql"><code>
-CREATE TABLE #Hydric2
-(mukey INT,
-hydric_rating CHAR (25),
-low_pct FLOAT,
-rv_pct FLOAT,
-high_pct FLOAT);
+INSERT INTO #Hydric2 (mukey, hydric_rating, low_pct, rv_pct, high_pct)
+SELECT  
+mukey,
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 'Predominantly hydric' 
+WHEN hydric_inclusions &gt;= 0.5 AND  maj_hydric &lt; 0.5 THEN  'Predominantly nonydric' 
+WHEN maj_not_hydric &gt;= 0.5  AND  maj_hydric &gt;= 0.5 THEN 'Partially hydric'
+ELSE 'Error'
+END AS hydric_rating, 
  
-CREATE TABLE #Hydric3
-(aoiid INT,
-landunit CHAR(20),
-attributename CHAR(60),
-AOI_Acres FLOAT,
-rating CHAR(60),
-rating_key CHAR(60),
-mukey INT,
-hydric_flag INT,
-low_acres FLOAT,
-rv_acres FLOAT,
-high_acres  FLOAT);
- </code></pre>
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.80 --'Predominantly hydric' 
+WHEN hydric_inclusions &gt;= 0.5 AND  maj_hydric &lt; 0.5 THEN 0.01 --'Predominantly nonydric' 
+WHEN maj_not_hydric &gt;= 0.5  AND maj_hydric &gt;= 0.5 THEN 0.15 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS low_pct, 
+ 
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.85 --'Predominantly hydric' 
+WHEN hydric_inclusions &gt;= 0.5 AND  maj_hydric &lt; 0.5 THEN 0.05 --'Predominantly nonydric' 
+WHEN maj_not_hydric &gt;= 0.5  AND  maj_hydric &gt;= 0.5 THEN  0.50 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS rv_pct, 
+ 
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.99 --'Predominantly hydric' 
+WHEN hydric_inclusions &gt;= 0.5 AND maj_hydric &lt; 0.5 THEN 0.20 --'Predominantly nonydric' 
+WHEN maj_not_hydric &gt;= 0.5  AND maj_hydric &gt;= 0.5 THEN  0.79 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS high_pct
+FROM #Hydric1;</code></pre>
+<ul>
+<li>Takes hydric count statistics and converts them to interpretation-type rating classes (hydric_rating)</li>
+<li>Also assigns fuzzy-type values as rating percents. These will be used later in a calculation involving</li>
+<li>Mapunit acres. If a hydricrating of ‘Error’ or rating number of 0.0 is returned, there is an error that needs to be checked.</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th>mukey</th>
+<th>hydric_rating</th>
+<th>low_pct</th>
+<th>rv_pct</th>
+<th>high_pct</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>354627</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>354648</td>
+<td>Predominantly nonydric</td>
+<td>0.01</td>
+<td>0.05</td>
+<td>0.2</td>
+</tr>
+<tr class="odd">
+<td>2494708</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2525720</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2525724</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2525730</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2525732</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2525733</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2525739</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2525745</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2525746</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2525754</td>
+<td>Predominantly hydric</td>
+<td>0.8</td>
+<td>0.85</td>
+<td>0.99</td>
+</tr>
+<tr class="odd">
+<td>2525764</td>
+<td>Predominantly hydric</td>
+<td>0.8</td>
+<td>0.85</td>
+<td>0.99</td>
+</tr>
+<tr class="even">
+<td>2525766</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2525767</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2525769</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2755639</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2755643</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2755648</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2755654</td>
+<td>Nonhydric</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="calculating-the-polygon-map-acres-based-on-the-class-range-to-get-a-percentage-of-each-class" class="section level3">
+<h3>Calculating the polygon map acres based on the class range to get a percentage of each class</h3>
+<pre class="sql"><code>INSERT INTO #Hydric3 ( aoiid, landunit, attributename, aoi_acres, mukey, hydric_flag, low_acres, rv_acres, high_acres)
+SELECT DISTINCT aoiid,
+landunit,
+'Hydric Soils' AS attributename,
+ROUND (SUM (mapunit_acres ) OVER(PARTITION BY aoiid), 2) AS aoi_acres,
+H3.mukey,
+CASE WHEN hydric_rating = 'Nonhydric' THEN 0 ELSE 1 END AS hydric_flag,
+mapunit_acres * low_pct AS low_acres, 
+mapunit_acres * rv_pct AS rv_acres , 
+mapunit_acres * high_pct AS high_acres  
+FROM #Hydric2 AS H3
+INNER JOIN #M2 AS MH2 ON MH2.mukey = H3.mukey
+GROUP BY aoiid, landunit, H3.mukey, mapunit_acres, hydric_rating, low_pct, rv_pct, high_pct</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>attributename</th>
+<th>AOI_Acres</th>
+<th>rating</th>
+<th>rating_key</th>
+<th>mukey</th>
+<th>hydric_flag</th>
+<th>low_acres</th>
+<th>rv_acres</th>
+<th>high_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>354627</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>354648</td>
+<td>1</td>
+<td>0.00287</td>
+<td>0.01435</td>
+<td>0.0574</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2494708</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525720</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525732</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525733</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525739</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525745</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525746</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525754</td>
+<td>1</td>
+<td>10.1104</td>
+<td>10.7423</td>
+<td>12.51162</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525764</td>
+<td>1</td>
+<td>14.1528</td>
+<td>15.03735</td>
+<td>17.51409</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525766</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525769</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2755648</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Hydric Soils</td>
+<td>328.95</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2755654</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525720</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525724</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525730</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525745</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525746</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525754</td>
+<td>1</td>
+<td>18.5104</td>
+<td>19.6673</td>
+<td>22.90662</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525767</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2525769</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2755639</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2755643</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Hydric Soils</td>
+<td>318.72</td>
+<td>NULL</td>
+<td>NULL</td>
+<td>2755648</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="returns-hydric-by-land-unit" class="section level3">
+<h3>Returns hydric by Land Unit</h3>
+<pre class="sql"><code>
+-- Return hydric by Land Unit
+SELECT DISTINCT landunit,
+CASE WHEN rv_acres  IS NOT NULL THEN CONCAT ('Hydric Soils' , ':' , 1) 
+WHEN rv_acres  = 0 THEN CONCAT ('Hydric Soils' , ':' , 0)
+WHEN rv_acres IS  NULL THEN CONCAT ('Hydric Soils', ':' , 'Not Rated') 
+END AS rating_key,
+
+attributename,
+ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_low_acres, 
+ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_rv_acres, 
+ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_high_acres,
+ROUND((ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_low_pct, 
+ROUND((ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_rv_pct,
+ROUND((ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_high_pct
+FROM #Hydric3</code></pre>
+</div>
+</div>
+<div id="final-results-table" class="section level2">
+<h2>Final Results Table</h2>
+<table style="width:100%;">
+<colgroup>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>andunit</th>
+<th>rating_key</th>
+<th>attributename</th>
+<th>aoiid_low_acres</th>
+<th>aoiid_rv_acres</th>
+<th>aoiid_high_acres</th>
+<th>aoiid_low_pct</th>
+<th>aoiid_rv_pct</th>
+<th>aoiid_high_pct</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T9981 Fld3</td>
+<td>Hydric Soils:1</td>
+<td>Hydric Soils</td>
+<td>24.27</td>
+<td>25.79</td>
+<td>30.08</td>
+<td>7.38</td>
+<td>7.84</td>
+<td>9.14</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld4</td>
+<td>Hydric Soils:1</td>
+<td>Hydric Soils</td>
+<td>18.51</td>
+<td>19.67</td>
+<td>22.91</td>
+<td>5.81</td>
+<td>6.17</td>
+<td>7.19</td>
+</tr>
+</tbody>
+</table>
 <p>The criteria for hydric soils are represented by codes, for example, 2 or 3. Definitions for the codes are as follows:</p>
 <ol style="list-style-type: decimal">
 <li><p>All Histels except for Folistels, and Histosols except for Folists.</p></li>
@@ -2930,7 +3562,6 @@ high_acres  FLOAT);
 </ol></li>
 </ol>
 <p>Hydric Condition: Food Security Act information regarding the ability to grow a commodity crop without removing woody vegetation or manipulating hydrology.</p>
-</div>
 <div id="references" class="section level3">
 <h3>References:</h3>
 <ol style="list-style-type: decimal">
