@@ -1,6 +1,6 @@
 ---
 title: "Hydric Rating By Mapunit"
-author: "Jason Nemecek and Doug Slabaugh"
+author: "Jason Nemecek,  Doug Slabaugh, Steve Campbell"
 date: "`r Sys.Date()`"
 output: 
     html_document:
@@ -595,7 +595,11 @@ andunit|rating_key|attributename|aoiid_low_acres|aoiid_rv_acres|aoiid_high_acres
 T9981 Fld3          |Hydric Soils:1|Hydric Soils                                                |24.27|25.79|30.08|7.38|7.84|9.14|
 T9981 Fld4          |Hydric Soils:1|Hydric Soils                                                |18.51|19.67|22.91|5.81|6.17|7.19|
 
+## Map Results
 
+![Hydric Rating by Map Unit using Component Count](https://jneme910.github.io/CART/TableImages/Hydric_Map_Final_Results.PNG)
+
+## The criteria for hydric soils
 
 The criteria for hydric soils are represented by codes, for example, 2 or 3. Definitions for the codes are as follows:
 
@@ -621,7 +625,7 @@ The criteria for hydric soils are represented by codes, for example, 2 or 3. Def
 
 Hydric Condition: Food Security Act information regarding the ability to grow a commodity crop without removing woody vegetation or manipulating hydrology.
 
-### References:
+## References:
 
 1. Federal Register. July 13, 1994. Changes in hydric soils of the United States.
 2. Federal Register. February, 28, 2012. Hydric soils of the United States.
