@@ -1,16 +1,26 @@
 ---
+author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
 title: "Agricultural Organic Soil Subsidence"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
 Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management.
 
-### Climate  
+## Climate  
 Organic soils used in agricultural production are subject to a loss of volume and depth of organic material due to oxidation caused by above normal microbial activity resulting from excessive water drainage, soil disturbance, or extended drought. Microbial mediated oxidation is the primary driver of volume reduction once excess water is removed.   Soil shrinkage and compaction due to dewatering is considered to be secondary. Any drawdown resulting in water levels below soil surface can result in increased subsidence rates.  The subsidence rate can also be influenced by agricultural practices. The type of tillage operation, such as plowing, disc harrowing and switch plowing, moldboard plowing increase the oxidation rate.  The use of no-till practice is recommended to slow the subsidence. Any aggressive tillage measure increases microbiological activity and decreases carbon sequestration.  Drainage water management can be implemented to control water tables to help slow the subsidence rate.
 
 Several soil and site properties influence the rate of organic matter oxidation and subsidence.  Organic soils are generally found in cooler climates, thus, farmed organic soils in warmer climates are vulnerable.  Periodic saturation of the organic soil with water tends to decrease the rate of oxidation since anaerobic decomposition is slower than aerobic decomposition.  The pre-existing degree of decomposition is also a factor in the subsidence rate since as organic matter is decomposed, the remaining material becomes more resistant to decay.  Acidity in soils tends to slow microbial growth so acid soils are less prone to subsidence.  The degree to which each of the soil properties considered promotes oxidation is rated.  The average degree of accelerating microbial oxidation of organic matter is taken as the overall rating.
@@ -23,7 +33,7 @@ The map unit components listed for each map unit in the accompanying Summary by 
 
 Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
 
-### Criteria Table:
+## Criteria Table:
 
 Soil or Site Feature|Less limiting|Somewhat limiting|Limiting|Impact
 -----------|-----------|-----------|-----------|-----------
@@ -37,9 +47,172 @@ Electrical conductivity (dS/m)|Greater than 8|4 to 8|Less than 4|Saltiness lower
 Depth to saturation (cm)|Less than 30|30 to 100|Greater than 100|Saturation excludes oxygen
 pH|Less than 3.5 or Greater than 9.5|Between 3.5 and 5.0 or between 7 and 9.5|Between 5.0 and 7.0|There is an optimal pH for microbial activity
 
+## Soil Script breakdown
+```{SQL}
+SELECT @attributeName = 'Agricultural Organic Soil Subsidence';
+SELECT @minPct = 10;
+SELECT @minAcres = 10;
+```
+* Defines the soil interpretion
+* Sets the minimun cutoff pecent for a resource concern at 10 percent or 10 acres for a given landunit
+
+### XML Parsing
+```{SQL}
+SELECT @rating1 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[1]', 'VARCHAR(100)');
+SELECT @rating2 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[2]', 'VARCHAR(100)');
+SELECT @rating3 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[3]', 'VARCHAR(100)');
+SELECT @rating4 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[4]', 'VARCHAR(100)');
+SELECT @rating5 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[5]', 'VARCHAR(100)');
+SELECT @rating6 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[6]', 'VARCHAR(100)');
+```
+Get ordered set of interphrc values from sdvattribute.maplegendxml. This is assumed to begin with the 'worst' rating. Need to double-check this for all interps.
+
+### Set interp rulekey and ruledesign as a variable to be used in cointerp query
+```{SQL}
+SELECT @ruleKey = (SELECT rulekey FROM #SDV WHERE attributename = @attributeName);
+SELECT @ruleDesign = (SELECT ruledesign FROM #SDV WHERE attributename = @attributeName)
+SELECT @notRatedPhrase = (SELECT notratedphrase FROM #SDV WHERE attributename = @attributeName);
+```
+
+###  Add Not rated phrase to @rating variables
+```{SQL}
+IF @notRatedPhrase IS NOT NULL
+  IF @rating1 IS NULL (SELECT @rating1 = @notRatedPhrase)
+  ELSE 
+    IF @rating2 IS NULL (SELECT @rating2 = @notRatedPhrase)
+    ELSE
+      IF @rating3 IS NULL (SELECT @rating3 = @notRatedPhrase)
+      ELSE
+        IF @rating4 IS NULL (SELECT @rating4 = @notRatedPhrase)
+        ELSE 
+          IF @rating5 IS NULL (SELECT @rating5 = @notRatedPhrase)
+          ELSE
+            IF @rating6 IS NULL (SELECT @rating6 = @notRatedPhrase)
+```
 
 
-###  References:
+### Append the rating classes for this interp to the #RatingClasses table
+
+```{SQL }
+INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3, rating4, rating5, rating6)
+SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;
+```
+
+### Populate the #RatingDomain table with a unique rating_key for this interp
+
+```{SQL}
+SELECT @ratingKey = RTRIM(@attributeName) + ':1'
+IF NOT @rating1 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating1, 1)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':2'
+IF NOT @rating2 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating2, 2)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':3'
+IF NOT @rating3 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating3, 3)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':4'
+IF NOT @rating4 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating4, 4)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':5'
+IF NOT @rating5 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating5, 5)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':6'
+IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)
+```
+
+### Populate component level ratings using the currently set soil interpretation
+
+```{SQL}
+TRUNCATE TABLE #M5
+INSERT INTO #M5
+SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
+FROM #M4 AS M4
+LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
+WHERE M4.majcompflag = 'yes';
+```
+
+### Populate component level ratings with adjusted component percent to account for the un-used minor components
+```{SQL}
+TRUNCATE TABLE #M6
+INSERT INTO #M6
+SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
+FROM #M5;
+```
+
+### Populates component acres by multiplying map unit acres with adjusted component percent
+```{SQL}
+TRUNCATE TABLE #M8
+INSERT INTO #M8
+SELECT  aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+FROM #M6;
+```
+
+### Aggregates the classes and sums up the component acres  by landunit (Tract and Field number)
+```{SQL}
+TRUNCATE TABLE #M10
+INSERT INTO #M10
+SELECT landunit, rating, SUM (co_acres) AS rating_acres
+FROM #M8
+GROUP BY landunit, rating
+ORDER BY landunit, rating_acres DESC;
+```
+
+### Group of insert statements to populate the final output tables
+```{SQL}
+INSERT INTO #LandunitRatingsDetailed1 (aoiid, landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres)
+SELECT aoiid, M10.landunit, @attributeName AS attributename, M10.rating, RD.rating_key, RD.rating_num,
+ROUND ((rating_acres/ landunit_acres) * 100.0, 2) AS rating_pct, 
+ROUND (rating_acres,2) AS rating_acres,
+ROUND ( landunit_acres, 2) AS landunit_acres
+FROM #M10 M10
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.landunit = M10.landunit
+INNER JOIN #RatingDomain RD ON M10.rating = RD.rating
+WHERE RD.attributename = @attributeName
+GROUP BY aoiid, M10.landunit, M10.rating, rating_key, rating_acres, landunit_acres, rating_num
+ORDER BY landunit, attributename, rating_num DESC;
+```
+
+* Detailed Landunit Ratings1: rating acres and rating percent by area for each soil-landunit polygon
+* These will be summarized to a single set of interp ratings for each landunit. Currently there are 5 interps.
+
+### Determines Dominant Critical 
+```{SQL}
+INSERT INTO #LandunitRatingsDetailed2 (landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres)
+SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres,
+  rolling_pct = SUM(rating_pct) OVER
+  (
+    PARTITION BY landunit
+    ORDER BY rating_key ROWS UNBOUNDED PRECEDING
+  ),
+  rolling_acres = SUM(rating_acres) OVER
+  (
+    PARTITION BY landunit
+    ORDER BY rating_key ROWS UNBOUNDED PRECEDING
+  )
+  FROM #LandunitRatingsDetailed1
+  WHERE attributename = @attributeName
+  ORDER BY landunit, attributename;
+```
+
+* LandunitRatingsDetailed2 is populated with all information plus rolling_pct and rolling_acres which are using in the landunit summary rating.
+* Detailed Landunit Ratings2 table columns: landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres 
+
+### Landunit Ratings CART
+```{SQL}
+INSERT INTO #LandunitRatingsCART (id, landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres)
+SELECT ROW_NUMBER() OVER(PARTITION BY landunit ORDER BY rating_key ASC) AS "id",
+landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres
+FROM #LandunitRatingsDetailed2
+WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acres >= @minAcres)
+```
+
+
+* Identifies the single, most limiting rating (per landunit) that comprises at least 10% by area or 10 acres.
+* This record will have an id value of 1.
+
+
+
+##  References:
 1. Histosols. (2018, March 01). Retrieved from University of Idaho Soil Taxonomy: https://www.cals.uidaho.edu/soilorders/histosols.htm
 
 2. Histosols Organic Soils. (2018, March 01). Retrieved from Reference Soil Group: http://www.fao.org/docrep/003/Y1899E/y1899e04.htm

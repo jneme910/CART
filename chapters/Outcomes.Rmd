@@ -14,10 +14,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Conservation Assessment Ranking Tool Outcomes
 
-provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA. 
+Provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA. 
 
 1. Example: RCCP Outcomes Guidance Document. [Click Here](https://github.com/jneme910/CART/blob/master/documents/RCPP%20Outcomes%20Guidance_DRAFT_6.17.docx?raw=true)
 2. Data connections (CART-NPAD) [Click Here](https://github.com/jneme910/CART/blob/master/documents/npad_70_051419.pdf)
+3. Measuring the success of conservation practice implementation.
+4. Using soils data to help validate conservation practices.
+5. Providing technical soil services using soil scientist to collect data for validation 
 
 ## Conceptual Data Design
 `The conceptual data design = practice tables, land unit tables, miscellaneous reference tables, and connection to NASIS MU and interps tables.`
