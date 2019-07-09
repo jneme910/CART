@@ -244,7 +244,7 @@ FROM #M2 AS M2
 INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
 ```
 * Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r
-* #M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag
+* M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag
 
 
 ### Component level ratings for the currently selected soil interpretation
@@ -262,7 +262,15 @@ CREATE TABLE #M5
     );
 ```
 
-
+```{SQL}
+TRUNCATE TABLE #M5
+INSERT INTO #M5
+SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
+FROM #M4 AS M4
+LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
+WHERE M4.majcompflag = 'Yes';
+```
+* Populate component level ratings using the currently set soil interpretation
 
  
 ### Component level ratings with adjusted component percent to account for missing minor components
@@ -281,7 +289,13 @@ CREATE TABLE #M6
     );
 ```
 
-
+```{SQL}
+TRUNCATE TABLE #M6
+INSERT INTO #M6
+SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
+FROM #M5;
+```
+* Populate component level ratings using the currently set soil interpretation
  
 ### Component acres by multiplying map unit acres with adjusted component percent
 ```{SQL}
@@ -300,7 +314,13 @@ CREATE TABLE #M8
     );
 ```
 
-
+```{SQL}
+TRUNCATE TABLE #M8
+INSERT INTO #M8
+SELECT  aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+FROM #M6;
+```
+* Populates component acres by multiplying map unit acres with adjusted component percent
  
 ### Aggregated rating class values and sum of component acres  by landunit (Tract and Field number)
 ```{SQL}
@@ -311,37 +331,17 @@ CREATE TABLE #M10
     );
 ```
 
-### Create a table containing the first six rating classes for each interp
-
 ```{SQL}
-CREATE TABLE #RatingClasses
-(attributename CHAR(60),
-ruledesign CHAR(60),
-rating1 CHAR(60),
-rating2 CHAR(60),
-rating3 CHAR(60),
-rating4 CHAR(60),
-rating5 CHAR(60),
-rating6 CHAR(60)
-);
+TRUNCATE TABLE #M10
+INSERT INTO #M10
+SELECT landunit, rating, SUM (co_acres) AS rating_acres
+FROM #M8
+GROUP BY landunit, rating
+ORDER BY landunit, rating_acres DESC;
 ```
+* Aggregates the classes and sums up the component acres  by landunit (Tract and Field number)
 
 
- 
-### Create a table containing the first six rating classes for each interp
-```{SQL}
-CREATE TABLE #RatingDomain
-(id INT IDENTITY (1,1),
-rating_key CHAR(60),
-attributename CHAR(60),
-rating CHAR(60),
-rating_num INT
-);
-```
-
-
-
- 
 ### Create table to store survey area datestamps (sacatalog.saverest)
 ```{SQL}
 CREATE TABLE #DateStamps

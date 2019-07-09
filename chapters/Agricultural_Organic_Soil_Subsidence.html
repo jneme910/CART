@@ -732,7 +732,7 @@ FROM #M2 AS M2
 INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below</code></pre>
 <ul>
 <li>Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r</li>
-<li><h1 id="m4-columns-aoiid-landunit-mukey-mapunit_acres-cokey-compname-comppct_r-majcompflag">M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag</h1></li>
+<li>M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag</li>
 </ul>
 </div>
 <div id="component-level-ratings-for-the-currently-selected-soil-interpretation" class="section level3">
@@ -748,6 +748,15 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --k
     rating CHAR(60),
     mu_pct_sum INT
     );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M5
+INSERT INTO #M5
+SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
+FROM #M4 AS M4
+LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
+WHERE M4.majcompflag = 'Yes';</code></pre>
+<ul>
+<li>Populate component level ratings using the currently set soil interpretation</li>
+</ul>
 </div>
 <div id="component-level-ratings-with-adjusted-component-percent-to-account-for-missing-minor-components" class="section level3">
 <h3>Component level ratings with adjusted component percent to account for missing minor components</h3>
@@ -763,6 +772,13 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --k
     mu_pct_sum INT,
     adj_comp_pct FLOAT
     );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M6
+INSERT INTO #M6
+SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
+FROM #M5;</code></pre>
+<ul>
+<li>Populate component level ratings using the currently set soil interpretation</li>
+</ul>
 </div>
 <div id="component-acres-by-multiplying-map-unit-acres-with-adjusted-component-percent" class="section level3">
 <h3>Component acres by multiplying map unit acres with adjusted component percent</h3>
@@ -779,6 +795,13 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --k
     adj_comp_pct FLOAT,
     co_acres FLOAT
     );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M8
+INSERT INTO #M8
+SELECT  aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+FROM #M6;</code></pre>
+<ul>
+<li>Populates component acres by multiplying map unit acres with adjusted component percent</li>
+</ul>
 </div>
 <div id="aggregated-rating-class-values-and-sum-of-component-acres-by-landunit-tract-and-field-number" class="section level3">
 <h3>Aggregated rating class values and sum of component acres by landunit (Tract and Field number)</h3>
@@ -787,29 +810,15 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --k
     rating CHAR(60),
     rating_acres FLOAT
     );</code></pre>
-</div>
-<div id="create-a-table-containing-the-first-six-rating-classes-for-each-interp" class="section level3">
-<h3>Create a table containing the first six rating classes for each interp</h3>
-<pre class="sql"><code>CREATE TABLE #RatingClasses
-(attributename CHAR(60),
-ruledesign CHAR(60),
-rating1 CHAR(60),
-rating2 CHAR(60),
-rating3 CHAR(60),
-rating4 CHAR(60),
-rating5 CHAR(60),
-rating6 CHAR(60)
-);</code></pre>
-</div>
-<div id="create-a-table-containing-the-first-six-rating-classes-for-each-interp-1" class="section level3">
-<h3>Create a table containing the first six rating classes for each interp</h3>
-<pre class="sql"><code>CREATE TABLE #RatingDomain
-(id INT IDENTITY (1,1),
-rating_key CHAR(60),
-attributename CHAR(60),
-rating CHAR(60),
-rating_num INT
-);</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M10
+INSERT INTO #M10
+SELECT landunit, rating, SUM (co_acres) AS rating_acres
+FROM #M8
+GROUP BY landunit, rating
+ORDER BY landunit, rating_acres DESC;</code></pre>
+<ul>
+<li>Aggregates the classes and sums up the component acres by landunit (Tract and Field number)</li>
+</ul>
 </div>
 <div id="create-table-to-store-survey-area-datestamps-sacatalog.saverest" class="section level3">
 <h3>Create table to store survey area datestamps (sacatalog.saverest)</h3>
