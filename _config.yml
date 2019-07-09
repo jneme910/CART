@@ -1,9 +1,9 @@
  name: "Jason Nemecek"
 output_dir: "."
 navbar:
-  title: "Jason Nemecek"
+  title: "Soil Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool"
   left:
-    - text: "Main"
+    - text: "SOC"
       href: https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock
 
   right:
