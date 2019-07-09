@@ -2,7 +2,11 @@
 title: "Suitability for Aerobic Soil Organisms"
 author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
 date: "`r Sys.Date()`"
-output: html_document
+
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
