@@ -48,6 +48,377 @@ Depth to saturation (cm)|Less than 30|30 to 100|Greater than 100|Saturation excl
 pH|Less than 3.5 or Greater than 9.5|Between 3.5 and 5.0 or between 7 and 9.5|Between 5.0 and 7.0|There is an optimal pH for microbial activity
 
 ## Soil Script breakdown
+
+####  Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon
+
+```{SQL}
+CREATE TABLE #AoiTable 
+    ( aoiid INT IDENTITY (1,1),
+    landunit CHAR(20),
+    aoigeom GEOMETRY);
+```
+ 
+ * Create AOI table with polygon geometry. Coordinate system must be WGS1984 (EPSG 4326)
+ 
+```{SQL}
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+```
+#### Creates Summary Acres for each landunit
+
+```{SQL}
+CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;
+```
+
+|aoiid|	landunit|landunit_acres|
+|------|-------------|----------------|
+|1|	T9981 Fld3|          	328.952|
+|2|	T9981 Fld4  |        	318.722|
+
+
+#### Populate intersected soil polygon table with geometry
+```{SQL}
+-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;
+```
+
+
+
+
+####  Populates Soil geometry with landunit attribute
+```{SQL}
+-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );
+```
+
+```{SQL}
+-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;
+```
+
+
+#### Populate soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+-- Soil map unit acres, aggregated by mukey (merges polygons together)
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );
+```
+
+
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+```
+
+aoiid|landunit|mukey|mapunit_acres
+------|----------|------------|---------------|
+1|T9981 Fld3          |354627|0.426
+1|T9981 Fld3          |354648|0.287
+1|T9981 Fld3          |2494708|1.729
+1|T9981 Fld3          |2525720|56.699
+1|T9981 Fld3          |2525732|1.35
+1|T9981 Fld3          |2525733|0.129
+1|T9981 Fld3          |2525739|28.479
+1|T9981 Fld3          |2525745|4.983
+1|T9981 Fld3          |2525746|16.106
+1|T9981 Fld3          |2525754|12.638
+1|T9981 Fld3          |2525764|17.691
+1|T9981 Fld3          |2525766|0.032
+1|T9981 Fld3          |2525769|181.356
+1|T9981 Fld3          |2755648|2.449
+1|T9981 Fld3          |2755654|4.599
+2|T9981 Fld4          |2525720|8.623
+2|T9981 Fld4          |2525724|0.458
+2|T9981 Fld4          |2525730|31.514
+2|T9981 Fld4          |2525745|62.205
+2|T9981 Fld4          |2525746|63.55
+2|T9981 Fld4          |2525754|23.138
+2|T9981 Fld4          |2525767|3.86
+2|T9981 Fld4          |2525769|103.909
+2|T9981 Fld4          |2755639|0.443
+2|T9981 Fld4          |2755643|9.641
+2|T9981 Fld4          |2755648|11.382
+
+|aoiid	|landunit|	aoigeom|
+|------|-------------|---------------------------------------------------------------------------------------|
+|1	|T9981 Fld3	|POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))|
+|2	|T9981 Fld4|	POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))|
+
+
+### Soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );
+```
+
+
+###  Component level data with cokey, comppct_r and mapunit sum-of-comppct_r (major components only)
+```{SQL}
+CREATE TABLE #M4
+(   aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    majcompflag CHAR(3),
+	mu_pct_sum INT, 
+	major_mu_pct_sum INT, 
+    drainagecl CHAR(254)
+    );
+
+```
+
+
+### Component level ratings for the currently selected soil interpretation
+```{SQL}
+CREATE TABLE #M5
+   ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    rating CHAR(60),
+    mu_pct_sum INT
+    );
+```
+
+
+
+ 
+### Component level ratings with adjusted component percent to account for missing minor components
+```{SQL}
+CREATE TABLE #M6
+   ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    rating CHAR(60),
+    mu_pct_sum INT,
+    adj_comp_pct FLOAT
+    );
+```
+
+
+ 
+### Component acres by multiplying map unit acres with adjusted component percent
+```{SQL}
+CREATE TABLE #M8
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    rating CHAR(60),
+    MU_pct_sum INT,
+    adj_comp_pct FLOAT,
+    co_acres FLOAT
+    );
+```
+
+
+ 
+### Aggregated rating class values and sum of component acres  by landunit (Tract and Field number)
+```{SQL}
+CREATE TABLE #M10
+    ( landunit CHAR(20),
+    rating CHAR(60),
+    rating_acres FLOAT
+    );
+```
+
+### Create a table containing the first six rating classes for each interp
+
+```{SQL}
+CREATE TABLE #RatingClasses
+(attributename CHAR(60),
+ruledesign CHAR(60),
+rating1 CHAR(60),
+rating2 CHAR(60),
+rating3 CHAR(60),
+rating4 CHAR(60),
+rating5 CHAR(60),
+rating6 CHAR(60)
+);
+```
+
+
+ 
+### Create a table containing the first six rating classes for each interp
+```{SQL}
+CREATE TABLE #RatingDomain
+(id INT IDENTITY (1,1),
+rating_key CHAR(60),
+attributename CHAR(60),
+rating CHAR(60),
+rating_num INT
+);
+```
+
+
+
+ 
+### Create table to store survey area datestamps (sacatalog.saverest)
+```{SQL}
+CREATE TABLE #DateStamps
+(landunit CHAR(20),
+datestamp VARCHAR(32));
+```
+
+
+
+ 
+### Create table to store landunit metadata (survey area and saverest) which comes from #DateStamps
+```{SQL}
+CREATE TABLE #LandunitMetadata
+(landunit CHAR(20),
+soils_metadata VARCHAR(150)
+);
+```
+
+
+
+ 
+
+### Populate #SDV with interp metadata
+```{SQL}
+CREATE TABLE #SDV
+(attributekey BIGINT,
+attributename CHAR(60),
+attributetablename CHAR(30),
+attributecolumnname CHAR(30),
+attributelogicaldatatype CHAR(20),
+attributefieldsize SMALLINT,
+attributeprecision TINYINT,
+attributedescription NVARCHAR(MAX),
+attributeuom NVARCHAR(60),
+attributeuomabbrev NVARCHAR(30),
+attributetype CHAR(20),
+nasisrulename CHAR(60),
+ruledesign NVARCHAR(60),
+notratedphrase CHAR(15),
+mapunitlevelattribflag TINYINT,
+complevelattribflag TINYINT,
+cmonthlevelattribflag TINYINT,
+horzlevelattribflag TINYINT,
+tiebreakdomainname CHAR(40),
+tiebreakruleoptionflag TINYINT,
+tiebreaklowlabel CHAR(20),
+tiebreakhighlabel CHAR(20),
+tiebreakrule SMALLINT,
+resultcolumnname CHAR(10),
+sqlwhereclause CHAR(255),
+primaryconcolname CHAR(30),
+pcclogicaldatatype CHAR(20),
+primaryconstraintlabel CHAR(30),
+secondaryconcolname CHAR(30),
+scclogicaldatatype CHAR(20),
+secondaryconstraintlabel CHAR(30),
+dqmodeoptionflag TINYINT,
+depthqualifiermode CHAR(20),
+layerdepthtotop FLOAT,
+layerdepthtobottom FLOAT,
+layerdepthuom CHAR(20),
+monthrangeoptionflag TINYINT,
+beginningmonth CHAR(9),
+endingmonth CHAR(9),
+horzaggmeth CHAR(30),
+interpnullsaszerooptionflag TINYINT,
+interpnullsaszeroflag TINYINT,
+nullratingreplacementvalue CHAR(254),
+basicmodeflag TINYINT,
+maplegendkey SMALLINT,
+maplegendclasses TINYINT,
+maplegendxml XML,
+nasissiteid BIGINT,
+wlupdated DATETIME,
+algorithmname CHAR(50),
+componentpercentcutoff TINYINT,
+readytodistribute TINYINT,
+effectivelogicaldatatype CHAR(20),
+rulekey CHAR(30)
+);
+```
+
+
+```{SQL}
+INSERT INTO #SDV (attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, maplegendxml, attributedescription)
+SELECT sdv.attributename, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname, sdv.maplegendxml, sdv.attributedescription
+FROM sdvattribute sdv
+LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
+WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms', 'Ponding Frequency Class','Flooding Frequency Class',
+'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
+GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;
+```
+
+* Begin populating static tables. These are for the base soils data and metadata. No interp data yet.
+* Create a table containing neccessary interp data
+* Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability
+
+
+
+
+
+
 ```{SQL}
 SELECT @attributeName = 'Agricultural Organic Soil Subsidence';
 SELECT @minPct = 10;
