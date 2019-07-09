@@ -31,21 +31,13 @@ where `hz_{T}` = horizon thickness, `om` = organic matter, `db3` = bulk density 
 
 ## Rating Class and Values
 
- <style>
+
+<style>
    tbody tr:nth-child(odd){
     background-color: #F7FBFF;
   }
 </style>
 
-```{r}
-kable(dt, align = "c") %>%
-  kable_styling(full_width = F) %>%
-  footnote(general = "Here is a general comments of the table. ",
-           number = c("Footnote 1; ", "Footnote 2; "),
-           alphabet = c("Footnote A; ", "Footnote B; "),
-           symbol = c("Footnote Symbol 1; ", "Footnote Symbol 2")
-           )
-```
 
 |Rating Class|Value Range|
 |------------|------------|
@@ -57,6 +49,7 @@ kable(dt, align = "c") %>%
 
 
 ####  Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon
+
 ```{SQL}
 SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
@@ -1870,9 +1863,11 @@ landunit|landunit_acres|rating_key|attributename|SOC_0_5|SOC_0_30|SOC_0_150|SOC_
 T9981 Fld3          |328.952|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.83|38.96|87.64|Moderate
 T9981 Fld4          |318.722|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.19|37.09|82.56|Moderate
 
-![Final Output by land unit](https://jneme910.github.io/CART/TableImages/SOC_Final_Output_landunit.PNG) 
 
-In field 3 the rating is 'Moderate' with a weaighted average landunit value of 38.96 and in field 4 the rating class is 'Moderate' and the value is 37.09.
+![Final Output by land unit](https://jneme910.github.io/CART/TableImages/SOC_Final_Output_landunit.PNG)
+
+
+In field 3 the rating is `'Moderate'` with a weaighted average landunit value of `38.96` and in field 4 the rating class is `'Moderate'` and the value is `37.09`.
 
 ## Global Soil Organic Carbon Output
 The SOCstock for 0 - 30cm (high, rv, and low) was exported for further GIS interpolation and extrapolation.
