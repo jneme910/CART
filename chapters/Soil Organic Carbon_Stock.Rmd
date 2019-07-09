@@ -31,6 +31,14 @@ where `hz_{T}` = horizon thickness, `om` = organic matter, `db3` = bulk density 
 
 ## Rating Class and Values
 
+ <style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+
+
 |Rating Class|Value Range|
 |------------|------------|
 |Very Low| >0 to <10|
@@ -1802,7 +1810,7 @@ GROUP BY  #M4.mukey,  #SOC4.mukey,  #M4.aoiid ,
  landunit_acres, mapunit_acres,WEIGHTED_CO_SOC_0_30, WEIGHTED_CO_SOC_20_50, WEIGHTED_CO_SOC_50_100, WEIGHTED_CO_SOC_0_5, WEIGHTED_CO_SOC_5_15, WEIGHTED_CO_SOC_15_30, WEIGHTED_CO_SOC_30_60, WEIGHTED_CO_SOC_60_100, WEIGHTED_CO_SOC_100_200, #SOC4.WEIGHTED_CO_SOC_0_150
 ```
 
-#### Created Weighted Average by Land Unit
+#### Creates Weighted Average by Land Unit
 ```{SQL}
  CREATE TABLE #SOC6
 ( aoiid INT,

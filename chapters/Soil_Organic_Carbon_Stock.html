@@ -336,7 +336,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Soil Organic Carbon Stocks</h1>
 <h4 class="author">J. Nemececk, S.A. Wills and C. Ferguson</h4>
-<h4 class="date">First created on October 12, 2017. Updated on 2019-07-08</h4>
+<h4 class="date">First created on October 12, 2017. Updated on 2019-07-09</h4>
 
 </div>
 
@@ -356,6 +356,11 @@ div.tocify {
 <p>where <code>hz_{T}</code> = horizon thickness, <code>om</code> = organic matter, <code>db3</code> = bulk density and <code>fragvol</code> = coarse fragment volume.</p>
 <div id="rating-class-and-values" class="section level2">
 <h2>Rating Class and Values</h2>
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
 <table>
 <thead>
 <tr class="header">
@@ -26912,8 +26917,8 @@ CO_SOC_100_200 , CO_SOC_100_200  * adj_comp_pct <span class="kw">AS</span> WEIGH
  landunit_acres, mapunit_acres,WEIGHTED_CO_SOC_0_30, WEIGHTED_CO_SOC_20_50, WEIGHTED_CO_SOC_50_100, WEIGHTED_CO_SOC_0_5, WEIGHTED_CO_SOC_5_15, WEIGHTED_CO_SOC_15_30, WEIGHTED_CO_SOC_30_60, WEIGHTED_CO_SOC_60_100, WEIGHTED_CO_SOC_100_200, #SOC4.WEIGHTED_CO_SOC_0_<span class="dv">150</span></code></pre></div>
 </div>
 </div>
-<div id="created-weighted-average-by-land-unit" class="section level4">
-<h4>Created Weighted Average by Land Unit</h4>
+<div id="creates-weighted-average-by-land-unit" class="section level4">
+<h4>Creates Weighted Average by Land Unit</h4>
 <div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"> <span class="kw">CREATE</span> <span class="kw">TABLE</span> #SOC6
 ( aoiid <span class="dt">INT</span>,
 landunit <span class="dt">CHAR</span>(<span class="dv">20</span>),  
