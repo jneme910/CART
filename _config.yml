@@ -1,1 +1,18 @@
-theme: jekyll-theme-cayman
+ name: "Jason Nemecek"
+output_dir: "."
+navbar:
+  title: "Jason Nemecek"
+  left:
+    - text: "Main"
+      href: https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock
+
+  right:
+    - icon: fa-envelope fa-lg
+      href: contact.html
+    - icon: fa-github fa-lg
+      href: https://github.com/jneme910/CART
+
+output:
+  html_document:
+    theme: paper
+    css: 'styles.css'
