@@ -33,7 +33,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |17|Soil Property List by Interpretation |---| [Click here](https://jneme910.github.io/CART/chapters/Soil_Property_List_by_Soil_Interpretation) |---|
 |18|Soil Property List and Column Descriptions |---|[Click here](https://jneme910.github.io/CART/chapters/Soil_Propert_List_and_Definition)|---|
 |19|Data Checks |--- |[Click here](https://jneme910.github.io/CART/chapters/Soil_Data_Checks)|---|
-|20|Outcomes |--- |[Click here](https://jneme910.github.io/CART/chapters/Outcomes)|---|
+
  *RA - Resource Assessment; EP- Easement Program; EE - Environmental Evaluation; RT - Ranking Tool
  
  Soil properties themselves can be divided into two broad categories, intrinsic soil properties and non-intrinsic soil
