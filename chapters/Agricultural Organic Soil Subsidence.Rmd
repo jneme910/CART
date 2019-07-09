@@ -202,6 +202,18 @@ CREATE TABLE #M2
     );
 ```
 
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+```
+
+* Populate soil map unit acres, aggregated by mukey (merges polygons together)
+
+
+
 
 ###  Component level data with cokey, comppct_r and mapunit sum-of-comppct_r (major components only)
 ```{SQL}
@@ -220,6 +232,19 @@ CREATE TABLE #M4
     );
 
 ```
+
+```{SQL}
+INSERT INTO #M4
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+FROM #M2 AS MM2
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+
+SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+FROM #M2 AS M2
+INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
+```
+* Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r
+* #M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag
 
 
 ### Component level ratings for the currently selected soil interpretation
@@ -325,7 +350,15 @@ datestamp VARCHAR(32));
 ```
 
 
-
+```{SQL}
+INSERT INTO #DateStamps
+SELECT DISTINCT AM.landunit, ([SC].[areasymbol] + ' ' + CONVERT(VARCHAR(32),[SC].[saverest],120) ) AS datestamp
+FROM #M4 AM
+INNER JOIN mapunit Mu ON AM.mukey = Mu.mukey
+INNER JOIN legend LG ON Mu.lkey = LG.lkey
+INNER JOIN sacatalog SC ON Lg.areasymbol = SC.areasymbol;
+```
+* Get survey area dates for all soil mapunits involved 
  
 ### Create table to store landunit metadata (survey area and saverest) which comes from #DateStamps
 ```{SQL}
@@ -334,8 +367,18 @@ CREATE TABLE #LandunitMetadata
 soils_metadata VARCHAR(150)
 );
 ```
+```{SQL}
+INSERT INTO #LandunitMetadata
+SELECT DISTINCT
+landunit,
+STUFF((SELECT ' | ' + CAST([datestamp] AS VARCHAR(30))
+FROM #DateStamps dt2
+WHERE dt1.landunit = dt2.landunit
+FOR XML PATH ('') ), 1, 2, '') AS soils_metadata
+FROM #DateStamps dt1;
+```
 
-
+* Populate landunit soils-metadata
 
  
 
@@ -463,13 +506,40 @@ IF @notRatedPhrase IS NOT NULL
 
 
 ### Append the rating classes for this interp to the #RatingClasses table
+```{SQL}
+CREATE TABLE #RatingClasses
+(attributename CHAR(60),
+ruledesign CHAR(60),
+rating1 CHAR(60),
+rating2 CHAR(60),
+rating3 CHAR(60),
+rating4 CHAR(60),
+rating5 CHAR(60),
+rating6 CHAR(60)
+);
+```
+
+
 
 ```{SQL }
 INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3, rating4, rating5, rating6)
 SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;
 ```
 
+* Create a table containing the first six rating classes for each interp
+
 ### Populate the #RatingDomain table with a unique rating_key for this interp
+
+```{SQL}
+CREATE TABLE #RatingDomain
+(id INT IDENTITY (1,1),
+rating_key CHAR(60),
+attributename CHAR(60),
+rating CHAR(60),
+rating_num INT
+);
+```
+
 
 ```{SQL}
 SELECT @ratingKey = RTRIM(@attributeName) + ':1'
@@ -490,6 +560,8 @@ IF NOT @rating5 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attribute
 SELECT @ratingKey = RTRIM(@attributeName) + ':6'
 IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)
 ```
+
+* Create a table containing the first six rating classes for each interp
 
 ### Populate component level ratings using the currently set soil interpretation
 

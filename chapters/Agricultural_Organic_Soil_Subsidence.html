@@ -697,6 +697,14 @@ GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;</code></pre>
     mukey INT,
     mapunit_acres FLOAT
     );</code></pre>
+<pre class="sql"><code>INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;</code></pre>
+<ul>
+<li>Populate soil map unit acres, aggregated by mukey (merges polygons together)</li>
+</ul>
 </div>
 <div id="component-level-data-with-cokey-comppct_r-and-mapunit-sum-of-comppct_r-major-components-only" class="section level3">
 <h3>Component level data with cokey, comppct_r and mapunit sum-of-comppct_r (major components only)</h3>
@@ -714,6 +722,18 @@ GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;</code></pre>
     drainagecl CHAR(254)
     );
 </code></pre>
+<pre class="sql"><code>INSERT INTO #M4
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+FROM #M2 AS MM2
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+
+SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+FROM #M2 AS M2
+INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below</code></pre>
+<ul>
+<li>Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r</li>
+<li><h1 id="m4-columns-aoiid-landunit-mukey-mapunit_acres-cokey-compname-comppct_r-majcompflag">M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag</h1></li>
+</ul>
 </div>
 <div id="component-level-ratings-for-the-currently-selected-soil-interpretation" class="section level3">
 <h3>Component level ratings for the currently selected soil interpretation</h3>
@@ -796,6 +816,15 @@ rating_num INT
 <pre class="sql"><code>CREATE TABLE #DateStamps
 (landunit CHAR(20),
 datestamp VARCHAR(32));</code></pre>
+<pre class="sql"><code>INSERT INTO #DateStamps
+SELECT DISTINCT AM.landunit, ([SC].[areasymbol] + ' ' + CONVERT(VARCHAR(32),[SC].[saverest],120) ) AS datestamp
+FROM #M4 AM
+INNER JOIN mapunit Mu ON AM.mukey = Mu.mukey
+INNER JOIN legend LG ON Mu.lkey = LG.lkey
+INNER JOIN sacatalog SC ON Lg.areasymbol = SC.areasymbol;</code></pre>
+<ul>
+<li>Get survey area dates for all soil mapunits involved</li>
+</ul>
 </div>
 <div id="create-table-to-store-landunit-metadata-survey-area-and-saverest-which-comes-from-datestamps" class="section level3">
 <h3>Create table to store landunit metadata (survey area and saverest) which comes from #DateStamps</h3>
@@ -803,6 +832,17 @@ datestamp VARCHAR(32));</code></pre>
 (landunit CHAR(20),
 soils_metadata VARCHAR(150)
 );</code></pre>
+<pre class="sql"><code>INSERT INTO #LandunitMetadata
+SELECT DISTINCT
+landunit,
+STUFF((SELECT ' | ' + CAST([datestamp] AS VARCHAR(30))
+FROM #DateStamps dt2
+WHERE dt1.landunit = dt2.landunit
+FOR XML PATH ('') ), 1, 2, '') AS soils_metadata
+FROM #DateStamps dt1;</code></pre>
+<ul>
+<li>Populate landunit soils-metadata</li>
+</ul>
 </div>
 <div id="populate-sdv-with-interp-metadata" class="section level3">
 <h3>Populate #SDV with interp metadata</h3>
@@ -915,11 +955,31 @@ SELECT @notRatedPhrase = (SELECT notratedphrase FROM #SDV WHERE attributename = 
 </div>
 <div id="append-the-rating-classes-for-this-interp-to-the-ratingclasses-table" class="section level3">
 <h3>Append the rating classes for this interp to the #RatingClasses table</h3>
+<pre class="sql"><code>CREATE TABLE #RatingClasses
+(attributename CHAR(60),
+ruledesign CHAR(60),
+rating1 CHAR(60),
+rating2 CHAR(60),
+rating3 CHAR(60),
+rating4 CHAR(60),
+rating5 CHAR(60),
+rating6 CHAR(60)
+);</code></pre>
 <pre class="sql"><code>INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3, rating4, rating5, rating6)
 SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;</code></pre>
+<ul>
+<li>Create a table containing the first six rating classes for each interp</li>
+</ul>
 </div>
 <div id="populate-the-ratingdomain-table-with-a-unique-rating_key-for-this-interp" class="section level3">
 <h3>Populate the #RatingDomain table with a unique rating_key for this interp</h3>
+<pre class="sql"><code>CREATE TABLE #RatingDomain
+(id INT IDENTITY (1,1),
+rating_key CHAR(60),
+attributename CHAR(60),
+rating CHAR(60),
+rating_num INT
+);</code></pre>
 <pre class="sql"><code>SELECT @ratingKey = RTRIM(@attributeName) + ':1'
 IF NOT @rating1 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating1, 1)
  
@@ -937,6 +997,9 @@ IF NOT @rating5 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attribute
  
 SELECT @ratingKey = RTRIM(@attributeName) + ':6'
 IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)</code></pre>
+<ul>
+<li>Create a table containing the first six rating classes for each interp</li>
+</ul>
 </div>
 <div id="populate-component-level-ratings-using-the-currently-set-soil-interpretation" class="section level3">
 <h3>Populate component level ratings using the currently set soil interpretation</h3>
