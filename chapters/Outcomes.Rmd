@@ -2,7 +2,10 @@
 title: "Outcomes"
 author: "Laura Morton and Jason Nemecek"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -15,6 +18,9 @@ provides leadership within NRCS for data modeling and reporting the natural reso
 
 1. Example: RCCP Outcomes Guidance Document. [Click Here](https://github.com/jneme910/CART/blob/master/documents/RCPP%20Outcomes%20Guidance_DRAFT_6.17.docx?raw=true)
 2. Data connections (CART-NPAD) [Click Here](https://github.com/jneme910/CART/blob/master/documents/npad_70_051419.pdf)
+
+## Conceptual Data Design
+`The conceptual data design = practice tables, land unit tables, miscellaneous reference tables, and connection to NASIS MU and interps tables.`
 
 ## Outcomes Talking Points
 
