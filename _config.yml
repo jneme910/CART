@@ -1,17 +1,12 @@
- name: "Jason Nemecek"
+name: "Jason Nemecek"
 output_dir: "."
 navbar:
-  title: "Soil Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool"
+  title: "Soil Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool
   left:
-    - text: "SOC"
-      href: https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock
-
-  right:
-    - icon: fa-envelope fa-lg
-      href: contact.html
+    - text: "by Emily C. Zabor"
+      href: https://github.com/jneme910/CART
     - icon: fa-github fa-lg
       href: https://github.com/jneme910/CART
-
 output:
   html_document:
     theme: paper
