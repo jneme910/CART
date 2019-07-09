@@ -1,13 +1,1 @@
-name: "Jason Nemecek"
-output_dir: "."
-navbar:
-  title: "Soil Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool
-  left:
-    - text: "by Jason Nemecek"
-      href: https://github.com/jneme910/CART
-    - icon: fa-github fa-lg
-      href: https://github.com/jneme910/CART
-output:
-  html_document:
-    theme: paper
-    css: 'styles.css'
+theme: jekyll-theme-cayman

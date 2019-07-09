@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Inherent Suitability for Aerobic Soil Organisms
 
 Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management.
+
  
 Soil is the habitat for a wide variety of organisms, ranging from microscopic viruses, bacteria, archaea, fungi, and protozoa to micro- and meso-fauna including nematodes, mites, and springtails to macrofauna such as earthworms, centipedes and beetles to name just a few.  A healthy soil is a living system that supports an abundant and diverse biological community that aids crop production by providing key services and functions. These include: 
 
