@@ -37,7 +37,15 @@ where `hz_{T}` = horizon thickness, `om` = organic matter, `db3` = bulk density 
   }
 </style>
 
-
+```{r}
+kable(dt, align = "c") %>%
+  kable_styling(full_width = F) %>%
+  footnote(general = "Here is a general comments of the table. ",
+           number = c("Footnote 1; ", "Footnote 2; "),
+           alphabet = c("Footnote A; ", "Footnote B; "),
+           symbol = c("Footnote Symbol 1; ", "Footnote Symbol 2")
+           )
+```
 
 |Rating Class|Value Range|
 |------------|------------|
