@@ -304,8 +304,8 @@ div.tocify {
 <h2>Climate</h2>
 <p>Organic soils used in agricultural production are subject to a loss of volume and depth of organic material due to oxidation caused by above normal microbial activity resulting from excessive water drainage, soil disturbance, or extended drought. Microbial mediated oxidation is the primary driver of volume reduction once excess water is removed. Soil shrinkage and compaction due to dewatering is considered to be secondary. Any drawdown resulting in water levels below soil surface can result in increased subsidence rates. The subsidence rate can also be influenced by agricultural practices. The type of tillage operation, such as plowing, disc harrowing and switch plowing, moldboard plowing increase the oxidation rate. The use of no-till practice is recommended to slow the subsidence. Any aggressive tillage measure increases microbiological activity and decreases carbon sequestration. Drainage water management can be implemented to control water tables to help slow the subsidence rate.</p>
 <p>Several soil and site properties influence the rate of organic matter oxidation and subsidence. Organic soils are generally found in cooler climates, thus, farmed organic soils in warmer climates are vulnerable. Periodic saturation of the organic soil with water tends to decrease the rate of oxidation since anaerobic decomposition is slower than aerobic decomposition. The pre-existing degree of decomposition is also a factor in the subsidence rate since as organic matter is decomposed, the remaining material becomes more resistant to decay. Acidity in soils tends to slow microbial growth so acid soils are less prone to subsidence. The degree to which each of the soil properties considered promotes oxidation is rated. The average degree of accelerating microbial oxidation of organic matter is taken as the overall rating.</p>
-<p>The ratings are both verbal and numerical. Numerical ratings indicate the suitability of the individual soil properties. The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil feature has the most severe propensity for subsidence (1.00) and the point at which the soil has no propensity for subsidence, such as a mineral soil (0.00).</p>
-<p>Rating class terms indicate the rate at which the soils are likely to subside considering all the soil features that are examined for this rating. “Severe subsidence” indicates that the soil has features that are very favorable for the aerobic soil organisms that cause subsidence. Very careful management will be needed to slow the subsidence rate. “Moderate subsidence” indicates that the soil has features that are moderately favorable for aerobic soil organisms. The soil can be made more sustainable by careful management. “Low subsidence” indicates that the soil has one or more features that are unfavorable for aerobic soil organisms. With careful management the soil can be used for crop production and be nearly sustainable. Soils that are not organic are rated “Mineral soil”. These soils do not subside due to organic matter oxidation.</p>
+<p>The ratings are both categorical and numeric. <strong>Numeric ratings indicate the suitability of the individual soil properties</strong> Numeric ratings indicate the liklihood of subsidence for each soil. The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil feature has the most severe propensity for subsidence (1.00) and the point at which the soil has no propensity for subsidence, such as a mineral soil (0.00).</p>
+<p>Categorical or rating class terms indicate the rate at which the soils are likely to subside considering all the soil features that are examined for this rating. “Severe subsidence” indicates that the soil has features that are very favorable for the aerobic soil organisms that cause subsidence. Very careful management will be needed to slow the subsidence rate. “Moderate subsidence” indicates that the soil has features that are moderately favorable for aerobic soil organisms. The soil can be made more sustainable by careful management. “Low subsidence” indicates that the soil has one or more features that are unfavorable for aerobic soil organisms. With careful management the soil can be used for crop production and be nearly sustainable. Soils that are not organic are rated “Mineral soil”. These soils do not subside due to organic matter oxidation.</p>
 <p>The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented.</p>
 <p>Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.</p>
 </div>
@@ -397,9 +397,8 @@ div.tocify {
 </div>
 <div id="soil-script-breakdown" class="section level2">
 <h2>Soil Script breakdown</h2>
-<div id="insert-identifiers-string-and-wkt-geometry-for-each-area-of-interest-aoi-polygon" class="section level4">
-<h4>Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon</h4>
-<pre class="sql"><code>CREATE TABLE #AoiTable 
+<pre class="sql"><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; .mine
+CREATE TABLE #AoiTable 
     ( aoiid INT IDENTITY (1,1),
     landunit CHAR(20),
     aoigeom GEOMETRY);</code></pre>
@@ -414,7 +413,6 @@ SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 4
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
 VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
-</div>
 <div id="creates-summary-acres-for-each-landunit" class="section level4">
 <h4>Creates Summary Acres for each landunit</h4>
 <pre class="sql"><code>CREATE TABLE #AoiAcres
@@ -422,7 +420,7 @@ VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
     landunit CHAR(20),
     landunit_acres FLOAT
     );</code></pre>
-<pre class="sql"><code>INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+<pre class="sql"><code>INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
 SELECT  aoiid, landunit,
 SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
 FROM #AoiTable
@@ -2951,7 +2949,534 @@ GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname,
 <li>Create a table containing neccessary interp data</li>
 <li>Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability</li>
 </ul>
-<pre class="sql"><code>SELECT @attributeName = 'Agricultural Organic Soil Subsidence';
+<pre class="sql"><code>||||||| .r259
+CREATE TABLE #AoiTable 
+    ( aoiid INT IDENTITY (1,1),
+    landunit CHAR(20),
+    aoigeom GEOMETRY);</code></pre>
+<ul>
+<li>Create AOI table with polygon geometry. Coordinate system must be WGS1984 (EPSG 4326)</li>
+</ul>
+<pre class="sql"><code>SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
+<div id="creates-summary-acres-for-each-landunit-1" class="section level4">
+<h4>Creates Summary Acres for each landunit</h4>
+<pre class="sql"><code>CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>landunit_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>328.952</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>318.722</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populate-intersected-soil-polygon-table-with-geometry-1" class="section level4">
+<h4>Populate intersected soil polygon table with geometry</h4>
+<pre class="sql"><code>-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;</code></pre>
+</div>
+<div id="populates-soil-geometry-with-landunit-attribute-1" class="section level4">
+<h4>Populates Soil geometry with landunit attribute</h4>
+<pre class="sql"><code>-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );</code></pre>
+<pre class="sql"><code>-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;</code></pre>
+</div>
+<div id="populate-soil-map-unit-acres-aggregated-by-mukey-merges-polygons-together-1" class="section level4">
+<h4>Populate soil map unit acres, aggregated by mukey (merges polygons together)</h4>
+<pre class="sql"><code>-- Soil map unit acres, aggregated by mukey (merges polygons together)
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525745</td>
+<td>4.983</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525746</td>
+<td>16.106</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525754</td>
+<td>12.638</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525764</td>
+<td>17.691</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525766</td>
+<td>0.032</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525745</td>
+<td>62.205</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525746</td>
+<td>63.55</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525754</td>
+<td>23.138</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525767</td>
+<td>3.86</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+</tr>
+</tbody>
+</table>
+<table style="width:100%;">
+<colgroup>
+<col width="6%"></col>
+<col width="12%"></col>
+<col width="80%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>aoigeom</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="soil-map-unit-acres-aggregated-by-mukey-merges-polygons-together-1" class="section level3">
+<h3>Soil map unit acres, aggregated by mukey (merges polygons together)</h3>
+<pre class="sql"><code>CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;</code></pre>
+<ul>
+<li>Populate soil map unit acres, aggregated by mukey (merges polygons together)</li>
+</ul>
+</div>
+<div id="component-level-data-with-cokey-comppct_r-and-mapunit-sum-of-comppct_r-major-components-only-1" class="section level3">
+<h3>Component level data with cokey, comppct_r and mapunit sum-of-comppct_r (major components only)</h3>
+<pre class="sql"><code>CREATE TABLE #M4
+(   aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    majcompflag CHAR(3),
+    mu_pct_sum INT, 
+    major_mu_pct_sum INT, 
+    drainagecl CHAR(254)
+    );
+</code></pre>
+<pre class="sql"><code>INSERT INTO #M4
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+FROM #M2 AS MM2
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+
+SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+FROM #M2 AS M2
+INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below</code></pre>
+<ul>
+<li>Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r</li>
+<li>M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag</li>
+</ul>
+</div>
+<div id="component-level-ratings-for-the-currently-selected-soil-interpretation" class="section level3">
+<h3>Component level ratings for the currently selected soil interpretation</h3>
+<pre class="sql"><code>CREATE TABLE #M5
+   ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    rating CHAR(60),
+    mu_pct_sum INT
+    );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M5
+INSERT INTO #M5
+SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
+FROM #M4 AS M4
+LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
+WHERE M4.majcompflag = 'Yes';</code></pre>
+<ul>
+<li>Populate component level ratings using the currently set soil interpretation</li>
+</ul>
+</div>
+<div id="component-level-ratings-with-adjusted-component-percent-to-account-for-missing-minor-components" class="section level3">
+<h3>Component level ratings with adjusted component percent to account for missing minor components</h3>
+<pre class="sql"><code>CREATE TABLE #M6
+   ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    rating CHAR(60),
+    mu_pct_sum INT,
+    adj_comp_pct FLOAT
+    );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M6
+INSERT INTO #M6
+SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
+FROM #M5;</code></pre>
+<ul>
+<li>Populate component level ratings using the currently set soil interpretation</li>
+</ul>
+</div>
+<div id="component-acres-by-multiplying-map-unit-acres-with-adjusted-component-percent" class="section level3">
+<h3>Component acres by multiplying map unit acres with adjusted component percent</h3>
+<pre class="sql"><code>CREATE TABLE #M8
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    rating CHAR(60),
+    MU_pct_sum INT,
+    adj_comp_pct FLOAT,
+    co_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M8
+INSERT INTO #M8
+SELECT  aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+FROM #M6;</code></pre>
+<ul>
+<li>Populates component acres by multiplying map unit acres with adjusted component percent</li>
+</ul>
+</div>
+<div id="aggregated-rating-class-values-and-sum-of-component-acres-by-landunit-tract-and-field-number" class="section level3">
+<h3>Aggregated rating class values and sum of component acres by landunit (Tract and Field number)</h3>
+<pre class="sql"><code>CREATE TABLE #M10
+    ( landunit CHAR(20),
+    rating CHAR(60),
+    rating_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #M10
+INSERT INTO #M10
+SELECT landunit, rating, SUM (co_acres) AS rating_acres
+FROM #M8
+GROUP BY landunit, rating
+ORDER BY landunit, rating_acres DESC;</code></pre>
+<ul>
+<li>Aggregates the classes and sums up the component acres by landunit (Tract and Field number)</li>
+</ul>
+</div>
+<div id="create-table-to-store-survey-area-datestamps-sacatalog.saverest-1" class="section level3">
+<h3>Create table to store survey area datestamps (sacatalog.saverest)</h3>
+<pre class="sql"><code>CREATE TABLE #DateStamps
+(landunit CHAR(20),
+datestamp VARCHAR(32));</code></pre>
+<pre class="sql"><code>INSERT INTO #DateStamps
+SELECT DISTINCT AM.landunit, ([SC].[areasymbol] + ' ' + CONVERT(VARCHAR(32),[SC].[saverest],120) ) AS datestamp
+FROM #M4 AM
+INNER JOIN mapunit Mu ON AM.mukey = Mu.mukey
+INNER JOIN legend LG ON Mu.lkey = LG.lkey
+INNER JOIN sacatalog SC ON Lg.areasymbol = SC.areasymbol;</code></pre>
+<ul>
+<li>Get survey area dates for all soil mapunits involved</li>
+</ul>
+</div>
+<div id="create-table-to-store-landunit-metadata-survey-area-and-saverest-which-comes-from-datestamps-1" class="section level3">
+<h3>Create table to store landunit metadata (survey area and saverest) which comes from #DateStamps</h3>
+<pre class="sql"><code>CREATE TABLE #LandunitMetadata
+(landunit CHAR(20),
+soils_metadata VARCHAR(150)
+);</code></pre>
+<pre class="sql"><code>INSERT INTO #LandunitMetadata
+SELECT DISTINCT
+landunit,
+STUFF((SELECT ' | ' + CAST([datestamp] AS VARCHAR(30))
+FROM #DateStamps dt2
+WHERE dt1.landunit = dt2.landunit
+FOR XML PATH ('') ), 1, 2, '') AS soils_metadata
+FROM #DateStamps dt1;</code></pre>
+<ul>
+<li>Populate landunit soils-metadata</li>
+</ul>
+</div>
+<div id="populate-sdv-with-interp-metadata-1" class="section level3">
+<h3>Populate #SDV with interp metadata</h3>
+<pre class="sql"><code>CREATE TABLE #SDV
+(attributekey BIGINT,
+attributename CHAR(60),
+attributetablename CHAR(30),
+attributecolumnname CHAR(30),
+attributelogicaldatatype CHAR(20),
+attributefieldsize SMALLINT,
+attributeprecision TINYINT,
+attributedescription NVARCHAR(MAX),
+attributeuom NVARCHAR(60),
+attributeuomabbrev NVARCHAR(30),
+attributetype CHAR(20),
+nasisrulename CHAR(60),
+ruledesign NVARCHAR(60),
+notratedphrase CHAR(15),
+mapunitlevelattribflag TINYINT,
+complevelattribflag TINYINT,
+cmonthlevelattribflag TINYINT,
+horzlevelattribflag TINYINT,
+tiebreakdomainname CHAR(40),
+tiebreakruleoptionflag TINYINT,
+tiebreaklowlabel CHAR(20),
+tiebreakhighlabel CHAR(20),
+tiebreakrule SMALLINT,
+resultcolumnname CHAR(10),
+sqlwhereclause CHAR(255),
+primaryconcolname CHAR(30),
+pcclogicaldatatype CHAR(20),
+primaryconstraintlabel CHAR(30),
+secondaryconcolname CHAR(30),
+scclogicaldatatype CHAR(20),
+secondaryconstraintlabel CHAR(30),
+dqmodeoptionflag TINYINT,
+depthqualifiermode CHAR(20),
+layerdepthtotop FLOAT,
+layerdepthtobottom FLOAT,
+layerdepthuom CHAR(20),
+monthrangeoptionflag TINYINT,
+beginningmonth CHAR(9),
+endingmonth CHAR(9),
+horzaggmeth CHAR(30),
+interpnullsaszerooptionflag TINYINT,
+interpnullsaszeroflag TINYINT,
+nullratingreplacementvalue CHAR(254),
+basicmodeflag TINYINT,
+maplegendkey SMALLINT,
+maplegendclasses TINYINT,
+maplegendxml XML,
+nasissiteid BIGINT,
+wlupdated DATETIME,
+algorithmname CHAR(50),
+componentpercentcutoff TINYINT,
+readytodistribute TINYINT,
+effectivelogicaldatatype CHAR(20),
+rulekey CHAR(30)
+);</code></pre>
+<pre class="sql"><code>INSERT INTO #SDV (attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, maplegendxml, attributedescription)
+SELECT sdv.attributename, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname, sdv.maplegendxml, sdv.attributedescription
+FROM sdvattribute sdv
+LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
+WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms', 'Ponding Frequency Class','Flooding Frequency Class',
+'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
+GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;</code></pre>
+<ul>
+<li>Begin populating static tables. These are for the base soils data and metadata. No interp data yet.</li>
+<li>Create a table containing neccessary interp data</li>
+<li>Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability</li>
+</ul>
+<pre class="sql"><code>=======
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; .r260
+SELECT @attributeName = 'Agricultural Organic Soil Subsidence';
 SELECT @minPct = 10;
 SELECT @minAcres = 10;</code></pre>
 <ul>
@@ -2994,21 +3519,8 @@ SELECT @notRatedPhrase = (SELECT notratedphrase FROM #SDV WHERE attributename = 
 </div>
 <div id="append-the-rating-classes-for-this-interp-to-the-ratingclasses-table" class="section level3">
 <h3>Append the rating classes for this interp to the #RatingClasses table</h3>
-<pre class="sql"><code>CREATE TABLE #RatingClasses
-(attributename CHAR(60),
-ruledesign CHAR(60),
-rating1 CHAR(60),
-rating2 CHAR(60),
-rating3 CHAR(60),
-rating4 CHAR(60),
-rating5 CHAR(60),
-rating6 CHAR(60)
-);</code></pre>
 <pre class="sql"><code>INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3, rating4, rating5, rating6)
 SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;</code></pre>
-<ul>
-<li>Create a table containing the first six rating classes for each interp</li>
-</ul>
 <table style="width:100%;">
 <colgroup>
 <col width="8%"></col>
@@ -3193,13 +3705,6 @@ SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS r
 </div>
 <div id="populate-the-ratingdomain-table-with-a-unique-rating_key-for-this-interp" class="section level3">
 <h3>Populate the #RatingDomain table with a unique rating_key for this interp</h3>
-<pre class="sql"><code>CREATE TABLE #RatingDomain
-(id INT IDENTITY (1,1),
-rating_key CHAR(60),
-attributename CHAR(60),
-rating CHAR(60),
-rating_num INT
-);</code></pre>
 <pre class="sql"><code>SELECT @ratingKey = RTRIM(@attributeName) + ':1'
 IF NOT @rating1 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating1, 1)
  
@@ -3217,9 +3722,6 @@ IF NOT @rating5 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attribute
  
 SELECT @ratingKey = RTRIM(@attributeName) + ':6'
 IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)</code></pre>
-<ul>
-<li>Create a table containing the first six rating classes for each interp</li>
-</ul>
 <table style="width:76%;">
 <colgroup>
 <col width="15%"></col>
