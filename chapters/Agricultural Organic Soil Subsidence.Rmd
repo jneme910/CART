@@ -51,7 +51,6 @@ pH|Less than 3.5 or Greater than 9.5|Between 3.5 and 5.0 or between 7 and 9.5|Be
 
 ## Soil Script breakdown
 ```{SQL}
-<<<<<<< .mine
 CREATE TABLE #AoiTable 
     ( aoiid INT IDENTITY (1,1),
     landunit CHAR(20),
