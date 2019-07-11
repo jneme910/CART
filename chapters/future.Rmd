@@ -23,6 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 3. Add Soil Organic Carbon Stock to "Air Quality"" resource concern
 4. Develop Soil Property and Interpretation SQL Scripts to assist conservation planning for specific practices
 5.  Develop SQL scripts to help assist in special conservation signups in order to target certain areas that might be a resource concern. i.e. Golden Wing Warblers can be found in Tamarac bogs where soils data could be used to help query certain locations and customers. 
+6. Add thematic maps by map unit and landunit
 
 
 
