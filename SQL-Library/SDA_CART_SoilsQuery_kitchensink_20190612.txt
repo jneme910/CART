@@ -3,23 +3,23 @@
 -- BEGIN CREATING AOI QUERY
 --
 -- Declare all variables here
- ~DeclareChar(@attributeName,60)~
- ~DeclareChar(@ruleDesign,60)~
- ~DeclareChar(@ruleKey,30)~
- ~DeclareChar(@rating1,60)~
- ~DeclareChar(@rating2,60)~
- ~DeclareChar(@rating3,60)~
- ~DeclareChar(@rating4,60)~
- ~DeclareChar(@rating5,60)~
- ~DeclareChar(@rating6,60)~
- ~DeclareVarchar(@dateStamp,20)~
- ~DeclareInt(@minAcres)~
- ~DeclareInt(@minPct)~
- ~DeclareGeometry(@aoiGeom)~
- ~DeclareGeometry(@aoiGeomFixed)~
- ~DeclareChar(@ratingKey,70)~
- ~DeclareChar(@notRatedPhrase,15)~
- ~DeclareInt(@Level)~
+~DeclareChar(@attributeName,60)~
+~DeclareChar(@ruleDesign,60)~
+~DeclareChar(@ruleKey,30)~
+~DeclareChar(@rating1,60)~
+~DeclareChar(@rating2,60)~
+~DeclareChar(@rating3,60)~
+~DeclareChar(@rating4,60)~
+~DeclareChar(@rating5,60)~
+~DeclareChar(@rating6,60)~
+~DeclareVarchar(@dateStamp,20)~
+~DeclareInt(@minAcres)~
+~DeclareInt(@minPct)~
+~DeclareGeometry(@aoiGeom)~
+~DeclareGeometry(@aoiGeomFixed)~
+~DeclareChar(@ratingKey,70)~
+~DeclareChar(@notRatedPhrase,15)~
+~DeclareInt(@Level)~
  
 -- 2019-04-03 T13:16:29 
 
@@ -382,14 +382,14 @@ INNER JOIN mapunit AS mu ON mu.mukey=fcc.mukey;
 -- #M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag
 
 INSERT INTO #M4
-SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, (SELECT SUM (CCO.comppct_r) 
 FROM #M2 AS MM2
-INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  AND M2.landunit=MM2.landunit)  AS  major_mu_pct_sum,
 
-SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+ drainagecl
 FROM #M2 AS M2
-INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
-
+INNER JOIN component AS CO ON CO.mukey = M2.mukey
+GROUP BY  M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, drainagecl
 
 
 -- Get survey area dates for all soil mapunits involved
@@ -1596,7 +1596,7 @@ CREATE TABLE #wet
       );
 
 INSERT INTO #wet
-SELECT 
+SELECT DISTINCT
 aoiid, 
 landunit, 
 M44.mukey, 
@@ -1627,6 +1627,7 @@ WHEN (taxtempregime IN ('thermic', 'hyperthermic') and CM.month IN ('mar', 'apr'
 WHEN (taxtempregime IN ('isothermic', 'isohyperthermic', 'isomesic') AND CM.month IN ('feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov')) THEN 1
 WHEN (CM.month IN ('jun', 'jul')) THEN 1
 ELSE 2 END  = 1
+
 
 
 CREATE TABLE #wet1
@@ -1665,10 +1666,12 @@ CREATE TABLE #wet2
     co_acres FLOAT
     );
 
+
 TRUNCATE TABLE #wet2
 INSERT INTO #wet2
 SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, major_MU_pct_sum, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
 FROM #wet1;
+
 
 -- Aggregated rating class values and sum of component acres  by landunit (Tract and Field number)
 --CREATE TABLE #M10
