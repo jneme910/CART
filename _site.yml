@@ -1,0 +1,33 @@
+name: "Introduction To R"
+navbar:
+#  title: "An Introduction To R"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "How To Use This Series"
+      href: How.html
+    - text: "Part 1: R For Data Science"
+      href: Part1_R_Data_Science.html
+    - text: "Part 2: R Programming"
+      href: Part2_R_Programming.html
+    - text: "R Learning Resources"
+      href: R_Learning_Resources.html
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    css: styles/intro.css
+    df_print: paged
+  word_document:
+    toc: yes
+    toc_depth: 6
+  pdf_document:
+    toc: yes
+    toc_depth: 6
+editor_options: 
+    chunk_output_type: inline

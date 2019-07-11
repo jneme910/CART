@@ -9,9 +9,9 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek" />
+<meta name="author" content="Bob Dobos, Cathy Seybold, Skye Wills, Steve Campbell, Steve Peaslee, Jason Nemecek" />
 
-<meta name="date" content="2019-07-10" />
+<meta name="date" content="2019-07-11" />
 
 <title>Agricultural Organic Soil Subsidence</title>
 
@@ -288,8 +288,8 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Agricultural Organic Soil Subsidence</h1>
-<h4 class="author">Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek</h4>
-<h4 class="date">2019-07-10</h4>
+<h4 class="author">Bob Dobos, Cathy Seybold, Skye Wills, Steve Campbell, Steve Peaslee, Jason Nemecek</h4>
+<h4 class="date">2019-07-11</h4>
 
 </div>
 
@@ -2948,7 +2948,7 @@ GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname,
 <li>Create a table containing neccessary interp data</li>
 <li>Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability</li>
 </ul>
-<pre class="sql"><code>||||||| .r259
+<pre class="sql"><code>
 CREATE TABLE #AoiTable 
     ( aoiid INT IDENTITY (1,1),
     landunit CHAR(20),
@@ -2997,37 +2997,6 @@ GROUP BY aoiid, landunit;</code></pre>
 </tr>
 </tbody>
 </table>
-</div>
-<div id="populate-intersected-soil-polygon-table-with-geometry-1" class="section level4">
-<h4>Populate intersected soil polygon table with geometry</h4>
-<pre class="sql"><code>-- Create intersected soil polygon table with geometry
-CREATE TABLE #AoiSoils 
-    ( polyid INT IDENTITY (1,1),
-    aoiid INT,
-    landunit CHAR(20),
-    mukey INT,
-    soilgeom GEOMETRY
-    );</code></pre>
-<pre class="sql"><code>INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
-SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
-FROM mupolygon M, #AoiTable A
-WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;</code></pre>
-</div>
-<div id="populates-soil-geometry-with-landunit-attribute-1" class="section level4">
-<h4>Populates Soil geometry with landunit attribute</h4>
-<pre class="sql"><code>-- Soil geometry with landunits
-CREATE TABLE #AoiSoils2 
-    ( aoiid INT,
-    polyid INT,
-    landunit CHAR(20),
-    mukey INT,
-    poly_acres FLOAT,
-    soilgeog GEOGRAPHY
-    );</code></pre>
-<pre class="sql"><code>-- Populate Soil geometry with landunit attribute
-INSERT INTO #AoiSoils2   
-SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
-FROM #AoiSoils;</code></pre>
 </div>
 <div id="populate-soil-map-unit-acres-aggregated-by-mukey-merges-polygons-together-1" class="section level4">
 <h4>Populate soil map unit acres, aggregated by mukey (merges polygons together)</h4>
@@ -3402,80 +3371,7 @@ FROM #DateStamps dt1;</code></pre>
 <ul>
 <li>Populate landunit soils-metadata</li>
 </ul>
-</div>
-<div id="populate-sdv-with-interp-metadata-1" class="section level3">
-<h3>Populate #SDV with interp metadata</h3>
-<pre class="sql"><code>CREATE TABLE #SDV
-(attributekey BIGINT,
-attributename CHAR(60),
-attributetablename CHAR(30),
-attributecolumnname CHAR(30),
-attributelogicaldatatype CHAR(20),
-attributefieldsize SMALLINT,
-attributeprecision TINYINT,
-attributedescription NVARCHAR(MAX),
-attributeuom NVARCHAR(60),
-attributeuomabbrev NVARCHAR(30),
-attributetype CHAR(20),
-nasisrulename CHAR(60),
-ruledesign NVARCHAR(60),
-notratedphrase CHAR(15),
-mapunitlevelattribflag TINYINT,
-complevelattribflag TINYINT,
-cmonthlevelattribflag TINYINT,
-horzlevelattribflag TINYINT,
-tiebreakdomainname CHAR(40),
-tiebreakruleoptionflag TINYINT,
-tiebreaklowlabel CHAR(20),
-tiebreakhighlabel CHAR(20),
-tiebreakrule SMALLINT,
-resultcolumnname CHAR(10),
-sqlwhereclause CHAR(255),
-primaryconcolname CHAR(30),
-pcclogicaldatatype CHAR(20),
-primaryconstraintlabel CHAR(30),
-secondaryconcolname CHAR(30),
-scclogicaldatatype CHAR(20),
-secondaryconstraintlabel CHAR(30),
-dqmodeoptionflag TINYINT,
-depthqualifiermode CHAR(20),
-layerdepthtotop FLOAT,
-layerdepthtobottom FLOAT,
-layerdepthuom CHAR(20),
-monthrangeoptionflag TINYINT,
-beginningmonth CHAR(9),
-endingmonth CHAR(9),
-horzaggmeth CHAR(30),
-interpnullsaszerooptionflag TINYINT,
-interpnullsaszeroflag TINYINT,
-nullratingreplacementvalue CHAR(254),
-basicmodeflag TINYINT,
-maplegendkey SMALLINT,
-maplegendclasses TINYINT,
-maplegendxml XML,
-nasissiteid BIGINT,
-wlupdated DATETIME,
-algorithmname CHAR(50),
-componentpercentcutoff TINYINT,
-readytodistribute TINYINT,
-effectivelogicaldatatype CHAR(20),
-rulekey CHAR(30)
-);</code></pre>
-<pre class="sql"><code>INSERT INTO #SDV (attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, maplegendxml, attributedescription)
-SELECT sdv.attributename, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname, sdv.maplegendxml, sdv.attributedescription
-FROM sdvattribute sdv
-LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
-WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms', 'Ponding Frequency Class','Flooding Frequency Class',
-'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
-GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;</code></pre>
-<ul>
-<li>Begin populating static tables. These are for the base soils data and metadata. No interp data yet.</li>
-<li>Create a table containing neccessary interp data</li>
-<li>Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability</li>
-</ul>
-<pre class="sql"><code>=======
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; .r260
-SELECT @attributeName = 'Agricultural Organic Soil Subsidence';
+<pre class="sql"><code>SELECT @attributeName = 'Agricultural Organic Soil Subsidence';
 SELECT @minPct = 10;
 SELECT @minAcres = 10;</code></pre>
 <ul>
