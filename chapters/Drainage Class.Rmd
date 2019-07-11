@@ -6,16 +6,22 @@ output:
     html_document:
         toc: TRUE
         toc_float: TRUE
-        ---
+
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
+
+
+
 <style>
    tbody tr:nth-child(odd){
     background-color: #F7FBFF;
   }
 </style>
+
 
 **"Drainage class (natural)"** refers to the frequency and duration of wet periods under conditions similar to those under which the soil formed. Alterations of the water regime by human activities, either through drainage or irrigation, are not a consideration unless they have significantly changed the morphology of the soil. Seven classes of natural soil drainage are recognized-excessively drained, somewhat excessively drained, well drained, moderately well drained, somewhat poorly drained, poorly drained, and very poorly drained. These classes are defined in the "Soil Survey Manual."
 
