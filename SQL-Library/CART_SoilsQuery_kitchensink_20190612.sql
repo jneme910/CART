@@ -1776,12 +1776,13 @@ CREATE TABLE #wet2
     adj_comp_pct FLOAT,
     co_acres FLOAT
     );
-SELECT * FROM #wet;
+
 
 TRUNCATE TABLE #wet2
 INSERT INTO #wet2
 SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, major_MU_pct_sum, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
 FROM #wet1;
+
 
 -- Aggregated rating class values and sum of component acres  by landunit (Tract and Field number)
 --CREATE TABLE #M10
