@@ -2503,6 +2503,242 @@ GROUP BY aoiid, landunit, M44.mukey, mapunit_acres, major_mu_pct_sum,mu_pct_sum,
 </tr>
 </tbody>
 </table>
+<pre class="sql"><code>CREATE TABLE #pf1
+( aoiid INT, 
+ landunit CHAR(20), 
+  landunit_acres FLOAT,
+ mukey INT, 
+ mapunit_acres FLOAT, 
+  cokey INT , 
+ cname CHAR(60), 
+ copct  INT, 
+ majcompflag CHAR(3), 
+ flodfreq CHAR(20), 
+  pondfreq CHAR(20), 
+ major_mu_pct_sum INT,  mu_pct_sum INT,
+  adj_comp_pct FLOAT
+      );</code></pre>
+<pre class="sql"><code>INSERT INTO #pf1
+SELECT DISTINCT pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq , major_mu_pct_sum,  mu_pct_sum, (1.0 * copct / major_mu_pct_sum) AS adj_comp_pct
+FROM #AoiAcres
+LEFT OUTER JOIN #pf AS pf ON pf.aoiid=#AoiAcres.aoiid
+GROUP BY  pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq ,  major_mu_pct_sum,  mu_pct_sum</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>landunit_acres</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+<th>cokey</th>
+<th>cname</th>
+<th>copct</th>
+<th>majcompflag</th>
+<th>flodfreq</th>
+<th>pondfreq</th>
+<th>major_mu_pct_sum</th>
+<th>mu_pct_sum</th>
+<th>adj_comp_pct</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>328.952</td>
+<td>2525754</td>
+<td>12.64</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Yes</td>
+<td>Occasional</td>
+<td>Rare</td>
+<td>75</td>
+<td>100</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>328.952</td>
+<td>2525764</td>
+<td>17.69</td>
+<td>16663611</td>
+<td>Regan</td>
+<td>55</td>
+<td>Yes</td>
+<td>Occasional</td>
+<td>Rare</td>
+<td>55</td>
+<td>100</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>318.722</td>
+<td>2525754</td>
+<td>23.14</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Yes</td>
+<td>Occasional</td>
+<td>Rare</td>
+<td>75</td>
+<td>100</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<pre class="sql"><code>CREATE TABLE #pf2
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT, 
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    cname CHAR(60),
+    copct INT,
+    major_MU_pct_sum INT, MU_pct_sum INT,
+    adj_comp_pct FLOAT,
+    co_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>TRUNCATE TABLE #pf2
+INSERT INTO #pf2
+SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct,  major_MU_pct_sum, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
+FROM #pf1;</code></pre>
+<table>
+<colgroup>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>landunit_acres</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+<th>cokey</th>
+<th>cname</th>
+<th>copct</th>
+<th>major_MU_pct_sum</th>
+<th>MU_pct_sum</th>
+<th>adj_comp_pct</th>
+<th>co_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>328.952</td>
+<td>2525754</td>
+<td>12.64</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>75</td>
+<td>100</td>
+<td>1</td>
+<td>12.64</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>328.952</td>
+<td>2525764</td>
+<td>17.69</td>
+<td>16663611</td>
+<td>Regan</td>
+<td>55</td>
+<td>55</td>
+<td>100</td>
+<td>1</td>
+<td>17.69</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>318.722</td>
+<td>2525754</td>
+<td>23.14</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>75</td>
+<td>100</td>
+<td>1</td>
+<td>23.14</td>
+</tr>
+</tbody>
+</table>
+<pre class="sql"><code>SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS ponding_flooding_acres, 
+CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Ponding or Flooding' , ':' , 1) 
+WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Ponding or Flooding' , ':' , 0)
+WHEN ROUND (SUM (co_acres),2) IS  NULL THEN CONCAT ('Ponding or Flooding', ':' , 'Not Rated') 
+END AS rating_key,
+
+'Ponding or Flooding' AS attributename 
+FROM #pf2
+GROUP BY landunit, landunit_acres
+ORDER BY landunit;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>landunit</th>
+<th>landunit_acres</th>
+<th>ponding_flooding_acres</th>
+<th>rating_key</th>
+<th>attributename</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T9981 Fld3</td>
+<td>328.95</td>
+<td>30.33</td>
+<td>Ponding or Flooding:1</td>
+<td>Ponding or Flooding</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld4</td>
+<td>318.72</td>
+<td>23.14</td>
+<td>Ponding or Flooding:1</td>
+<td>Ponding or Flooding</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 

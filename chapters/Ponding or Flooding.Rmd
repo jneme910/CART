@@ -379,3 +379,91 @@ aoiid|landunit|mukey|mapunit_acres|cokey|cname|copct|majcompflag|flodfreq|pondfr
 1|T9981 Fld3  |2525754|12.64|16663602|Harriet     |75|Yes|Occasional          |Rare                |75|100|||
 1|T9981 Fld3          |2525764|17.69|16663611|Regan                                                       |55|Yes|Occasional          |Rare                |55|100|
 2|T9981 Fld4          |2525754|23.14|16663602|Harriet                                                     |75|Yes|Occasional          |Rare                |75|100|
+
+
+```{SQL}
+CREATE TABLE #pf1
+( aoiid INT, 
+ landunit CHAR(20), 
+  landunit_acres FLOAT,
+ mukey INT, 
+ mapunit_acres FLOAT, 
+  cokey INT , 
+ cname CHAR(60), 
+ copct  INT, 
+ majcompflag CHAR(3), 
+ flodfreq CHAR(20), 
+  pondfreq CHAR(20), 
+ major_mu_pct_sum INT,  mu_pct_sum INT,
+  adj_comp_pct FLOAT
+      );
+```
+
+
+```{SQL}
+INSERT INTO #pf1
+SELECT DISTINCT pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq , major_mu_pct_sum,  mu_pct_sum, (1.0 * copct / major_mu_pct_sum) AS adj_comp_pct
+FROM #AoiAcres
+LEFT OUTER JOIN #pf AS pf ON pf.aoiid=#AoiAcres.aoiid
+GROUP BY  pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, flodfreq, pondfreq ,  major_mu_pct_sum,  mu_pct_sum
+```
+
+
+
+aoiid|landunit|landunit_acres|mukey|mapunit_acres|cokey|cname|copct|majcompflag|flodfreq|pondfreq|major_mu_pct_sum|mu_pct_sum|adj_comp_pct
+------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------
+1|T9981 Fld3          |328.952|2525754|12.64|16663602|Harriet                                                     |75|Yes|Occasional          |Rare                |75|100|1
+1|T9981 Fld3          |328.952|2525764|17.69|16663611|Regan                                                       |55|Yes|Occasional          |Rare                |55|100|1
+2|T9981 Fld4          |318.722|2525754|23.14|16663602|Harriet                                                     |75|Yes|Occasional          |Rare                |75|100|1
+
+```{SQL}
+CREATE TABLE #pf2
+    ( aoiid INT,
+    landunit CHAR(20),
+	landunit_acres FLOAT, 
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    cname CHAR(60),
+    copct INT,
+    major_MU_pct_sum INT, MU_pct_sum INT,
+    adj_comp_pct FLOAT,
+    co_acres FLOAT
+    );
+```
+
+```{SQL}
+TRUNCATE TABLE #pf2
+INSERT INTO #pf2
+SELECT  aoiid, landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct,  major_MU_pct_sum, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
+FROM #pf1;
+```
+
+aoiid|landunit|landunit_acres|mukey|mapunit_acres|cokey|cname|copct|major_MU_pct_sum|MU_pct_sum|adj_comp_pct|co_acres|
+-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+1|T9981 Fld3          |328.952|2525754|12.64|16663602|Harriet                                                     |75|75|100|1|12.64|
+1|T9981 Fld3          |328.952|2525764|17.69|16663611|Regan                                                       |55|55|100|1|17.69|
+2|T9981 Fld4          |318.722|2525754|23.14|16663602|Harriet                                                     |75|75|100|1|23.14|
+
+
+
+
+```{SQL}
+SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS ponding_flooding_acres, 
+CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Ponding or Flooding' , ':' , 1) 
+WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Ponding or Flooding' , ':' , 0)
+WHEN ROUND (SUM (co_acres),2) IS  NULL THEN CONCAT ('Ponding or Flooding', ':' , 'Not Rated') 
+END AS rating_key,
+
+'Ponding or Flooding' AS attributename 
+FROM #pf2
+GROUP BY landunit, landunit_acres
+ORDER BY landunit;
+```
+
+landunit|landunit_acres|ponding_flooding_acres|rating_key|attributename|
+-----------|-----------|-----------|-----------|-----------|
+T9981 Fld3          |328.95|30.33|Ponding or Flooding:1|Ponding or Flooding|
+T9981 Fld4          |318.72|23.14|Ponding or Flooding:1|Ponding or Flooding|
+
+
