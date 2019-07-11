@@ -493,14 +493,14 @@ INNER JOIN mapunit AS mu ON mu.mukey=fcc.mukey;
 -- #M4 columns: aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag
 
 INSERT INTO #M4
-SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, (SELECT SUM (CCO.comppct_r) 
 FROM #M2 AS MM2
-INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  AND M2.landunit=MM2.landunit)  AS  major_mu_pct_sum,
 
-SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+ drainagecl
 FROM #M2 AS M2
-INNER JOIN component AS CO ON CO.mukey = M2.mukey --AND majcompflag = 'Yes'; --keep major component flag as Yes. It will mess up everything below
-
+INNER JOIN component AS CO ON CO.mukey = M2.mukey
+GROUP BY  M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, drainagecl
 
 
 -- Get survey area dates for all soil mapunits involved
@@ -1707,7 +1707,7 @@ CREATE TABLE #wet
       );
 
 INSERT INTO #wet
-SELECT 
+SELECT DISTINCT
 aoiid, 
 landunit, 
 M44.mukey, 
@@ -1738,6 +1738,7 @@ WHEN (taxtempregime IN ('thermic', 'hyperthermic') and CM.month IN ('mar', 'apr'
 WHEN (taxtempregime IN ('isothermic', 'isohyperthermic', 'isomesic') AND CM.month IN ('feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov')) THEN 1
 WHEN (CM.month IN ('jun', 'jul')) THEN 1
 ELSE 2 END  = 1
+
 
 
 CREATE TABLE #wet1
@@ -1775,6 +1776,7 @@ CREATE TABLE #wet2
     adj_comp_pct FLOAT,
     co_acres FLOAT
     );
+SELECT * FROM #wet;
 
 TRUNCATE TABLE #wet2
 INSERT INTO #wet2
