@@ -1,0 +1,28 @@
+---
+title: "Future Enhancements"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+## Wish List
+1. Develop Nitrogen Leaching Interpretation
+2. Write Soil Data Access Version of Erosion
+3. Add Soil Organic Carbon Stock to "Air Quality"" resource concern
+4. Develop Soil Property and Interpretation SQL Scripts to assist conservation planning for specific practices
+5.  Develop SQL scripts to help assist in special conservation signups in order to target certain areas that might be a resource concern. i.e. Golden Wing Warblers can be found in Tamarac bogs where soils data could be used to help query certain locations and customers. 
+
+
+
