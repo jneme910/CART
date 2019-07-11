@@ -1,0 +1,86 @@
+---
+title: "Aggregate Stability"
+author: "Cathy Seybold, John Hammerly, Anna Courtney, Jeff Glanville, Andrew Brown and Jason Nemecek"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+The Aggregate Stability Interpretation provides soil survey users with an inherent soil property-based ranking of soils and map units for predicting the potential suitability. Onsite investigation may be needed to validate the interpretations in this table and to confirm the identity of the soil on a given site. The numbers in the value columns range from 0 to 100. The larger the value, the greater the potential suitability. The soil may have additional limitations.
+
+Crop varieties, management scenarios vary by location, over time, reflecting choices made by farmers. These factors partially mask inherent soil quality. Except for extreme circumstances, inherent soil quality or inherent soil productivity varies little by location, over time for a specific soil (map unit component) identified by NRCS soil surveys. The interpretation reflects a relative comparison on soils within the top 6 inches for aggregate stability. It does not forecast actual aggregate stability because values are based on weather conditions, soil health, tillage, management conditions, etc.
+
+## Scope
+Surface/near surface horizons, conventional tillage, focus on macroaggregates (>250 micron)
+
+## Definition of What is Estimated
+
+Aggregate stability is defined as the stability of macroaggregates (1-2 mm in size) against flowing water and is expressed as percent stable aggregates of the less than 2mm fraction. It is estimated from the organic matter content, total clay, and sodium adsorption ratio. Aggregate stability values are provided for horizons within the upper 6 inches, but not for sandy and organic surface layers.
+
+## Significance
+
+Soil aggregate stability is an important soil property affecting soil health and crop production. It is important for stabilizing soil structure, increasing water infiltration, and reducing erosion.
+
+Soil aggregates are the smallest unit of soil structure. They are composed of decaying particulate organic matter, clay particles, microbial products, and fine roots. Aggregates are generally divided into macroaggregates (greater than 250 µm) and microaggregates (less than 250 µm). The size, strength, and stability of aggregates depend upon the stabilizing agents involved. They can be classified as temporary, transient, or persistent. Improved aggregate stability leads to increased water infiltration and storage in the profile, reduced erosion, and soil structure that is resistant to compaction. Increases in soil organic carbon improves aggregation and aggregate stability, which protect carbon compounds enmeshed in the aggregates from decomposition, leading to carbon sequestration.
+
+## Factors Affecting Soil Aggregation and Aggregate Stability
+
+### Inherent Factors 
+Microaggregation is generally considered to be an inherent property of the soil. Persistent binding agents include highly decomposed, high molecular weight organic materials (e.g., humic compounds), polymers, and polyvalent cations (e.g., calcium, aluminum, iron) that have a heterogeneous, non-specific structure. These agents are associated with microaggregation as well as soil organic carbon (SOC) sequestration. These persistent compounds are found in the interior of aggregates, forming organo-mineral complexes via the polyvalent cations. These agents are long-lasting, and the degree of aggregation formed by them is considered part of the inherent soil properties. Generally, management does not impact soil microaggregation. Soils naturally high in clay and polyvalent cations are likely to form more microaggregates.
+
+### Dynamic Factors 
+Transient binding agents consist mainly of complex carbohydrates, or polysaccharides, and organic mucilages. As plant residues and compounds extruded by plant roots decompose, bacteria release mucilages that are complex carbon-rich carbohydrates. These carbohydrates serve as binding agents, or "glues," to which clay particles can be adsorbed and bound together. The polysaccharides are non-humic compounds of high molecular weight and comprise about 20 to 25% of the soil humus. They are critical for binding microaggregates together, via polymer and polyvalent cation bridges, to form larger macroaggregates. Although binding with clay particles does provide some protection against decomposition, these binding agents generally decompose within a few weeks and need to be continually renewed through actively growing plants, decaying residues, or organic amendments.
+
+Temporary binding agents consist of plant roots, especially fine roots and root hairs, fungal hyphae, and bacterial and algal cells. These agents develop along with plant roots, forming a network that entangles mineral particles, through adsorption, to form macroaggregates. As roots cease to grow, the amount of these temporary agents is reduced. Planting cover crops or perennial plants maintains living roots longer in the soil, thus maintaining and strengthening the aggregates. Tillage reduces the amount of roots and the microbial biomass, especially in the surface horizon.
+
+### Consequences of Weak Aggregates
+
+The first step in erosion is the breakdown of surface aggregates. Aggregates at the soil surface are weakened if the binding agents degrade at rates exceeding replenishment rates. These aggregates can be broken apart by outside forces, of which raindrops, wind, and tillage are among the most important. Changes in soil chemistry, such as increased sodicity of the soil, can also contribute to aggregate breakdown. As aggregates are broken down, the component particles clog the surface pores and surface sealing and crusting follow. This process results in reduced water infiltration, ponding, increased runoff and erosion, and sediment transport on and off site. Its occurrence can be minimized by strengthening aggregates.
+
+Additionally, reducing the size and strength of the aggregates throughout the profile weakens soil structure so that it is more easily compacted by field operations, especially if the soil is too wet. Poor structure can lead to ponding after rainstorms, which can result in increased evaporation and less water in the profile that might otherwise have been available for crop growth.
+
+Maintaining and increasing aggregation and aggregate strength can be accomplished through the implementation of soil health management systems. These systems may include reduced tillage operations (or preferably no tillage operations) and the incorporation of cover crops or a cash crop (such as winter wheat) into the rotation. Having crops and cover crops with varied rooting structures improves soil structure, as does maintaining living roots in the soil as long as possible. Studies have shown that plants will push into the rhizosphere, via the root system, about 20% of the carbon dioxide is fixed through photosynthesis. Those carbon compounds can support the soil microbial population, which is critical to soil structure, water infiltration, and nutrient cycling. Any management system that leads to increased soil organic carbon is likely to improve aggregate stability.
+
+### Measuring Aggregate Stability
+
+Aggregate stability is determined by a wet sieving technique preceded by vacuum saturation of the 1-2 mm size aggregates as described in USDA-ARS (1966). Stable aggregates are corrected for sand greater than 0.25 mm as follows: Aggregate stability (%) = ((wt. of stable aggregates and sand) - (wt. of sand))/((wt. of sample) - (wt. of sand)).
+
+
+### Criteria Table:
+
+| Property |Not limiting |Somewhat limited |Very limited |Reason|
+|-------------------|-----------------------|------------------------------|------------------------------|-----------------------------------------------------------------------------------------------|
+|% clay |> 36 |21 - 35 |0 - 20 |Lower clay content results in lower aggregate stability. |
+|% OM |> 5 |1 - 5|0 - 1 |Lower organic matter results in lower aggregate stability. |
+Suborder / SMR Depth to Water|||Aqu- / aquic within 50cm|Shallow depth to water table during growing season results in higher moisture status. Soil aggregates are less stable at higher moisture content.
+|Fe2O3 (Fed mass %) |> 2 |0.5 - 2 |< 0.5 |Low free iron oxide (esp. with low % OM) results in lower aggregate stability. |
+|ESP % |0 - 4 |4 - 10|> 10 |High exchangeable sodium percentage results in dispersion of clay and low aggregate stability. |
+|EC (dS/m) |Any (with ESP < 4%) |< 4 (with ESP > 4%) |< 4 (with ESP > 10%) |Low EC (with high ESP) results in dispersion of clay and low aggregate stability.|
+
+## References:
+
+1. Blanco-Canqui, H., and R. Lal. 2004. Mechanisms of carbon sequestration in soil aggregates. Criti. Rev. Plant Sci. 23:481-504. doi: 10.1080/07352680490886842
+
+2. Cambardella, C.A., and E.T. Elliott. 1993. Carbon and nitrogen distribution in aggregates from cultivated and native grassland soils. Soil Sci. Soc. Am. J. 57:1071-1076. doi: 10.2136/sssaj1993.03615995005700040032x
+
+3. Denef, K., J. Six, H. Bossuyt, S.D. Frey, E.T. Elliott, R. Merckx, and K. Paustian. 2001. Influence of dry-wet cycles on the interrelationship between aggregate, particulate organic matter, and microbial community dynamics. Soil Biol. Biochem. 33:1599-1611. doi: 10.1016/s0038-0717(01)00076-1
+
+4. Gale, W.J., and C.A. Cambardella. 2000. Carbon dynamics of surface residue- and root-derived organic matter under simulated no-till. Soil Sci. Soc. Am. J. 64:190-195. doi: 10.2136/sssaj2000.641190x
+
+5. Gale, W.J., C.A. Cambardella, and T.B. Bailey. 2000a. Root-derived carbon and the formation and stabilization of aggregates. Soil Sci. Soc. Am. J. 64:201-207. doi: 10.2136/sssaj2000.641201x
+
+6. Gale, W.J., C.A. Cambardella, and T.B. Bailey. 2000b. Surface residue- and root-derived carbon in stable and unstable aggregates. Soil Sci. Soc. Am. J. 64:196-201. doi: 10.2136/sssaj2000.641196x
+
+7. Martin, J.P. 1971. Decomposition and binding action of polysaccharides in soil. Soil Biol. Biochem. 3:33-41.
+
+8. Six, J., E.T. Elliott, and K. Paustian. 1999. Aggregate and soil organic matter dynamics under conventional and no-tillage systems. Soil Sci. Soc. Am. J. 63:1350-1358.
+
+9. Six, J., K. Paustian, E.T. Elliott, and C. Combrink. 2000. Soil structure and organic matter: I. Distribution of aggregate-size classes and aggregate-associated carbon. Soil Sci. Soc. Am. J. 64:681-689.
+
+10. Tisdall, J.M., and J.M. Oades. 1982. Organic matter and water-stable aggregates in soil. J. Soil Sci. 33:141-163.
+
+11. USDA-ARS. 1966. Aggregate stability of soils from western United States and Canada. Tech. Bull. No. 1355. Agricultural Research Service, United States Department of Agriculture in cooperation with Colorado Agricultural Experiment Station. U.S. Govn't Printing Office. Washington, D.C.

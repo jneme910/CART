@@ -1,0 +1,11 @@
+Number,Data Checks,SSURGO Table
+1,Check Component percent is not null or zero,Component
+2,Check horizon thickness is not null or zero,Component horizon
+3,Check for major components and less than 10 percent ,Component
+4,Check for histic or histosols in taxonomic name where hydric rating is no,Component
+5,Component RV percent total exceeds 100%,Mapunit*
+6,Horizon depths contain either gaps or overlaps,Component*
+7,Horizon bottom depth is NULL,Component horizon
+8,Horizon depths are duplicated,Component horizon
+9,Check for hydric rating where component percent is null or zero,Component
+10,Component RV percent total is less than 100%,Component

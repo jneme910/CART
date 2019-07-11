@@ -1,0 +1,12 @@
+---
+title: "Farmland Classification"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Farmland classification identifies map units as prime farmland, farmland of statewide importance, farmland of local importance, or unique farmland. It identifies the location and extent of the soils that are best suited to food, feed, fiber, forage, and oilseed crops. NRCS policy and procedures on prime and unique farmlands are published in the "Federal Register," Vol. 43, No. 21, January 31, 1978.

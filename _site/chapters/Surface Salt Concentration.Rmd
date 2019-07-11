@@ -1,0 +1,53 @@
+---
+title: "Surface Salt Concentration"
+author: Wade Bott, Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management. 
+
+Salts of sodium, calcium, potassium, and magnesium are produced by the weathering of minerals in soils.  Some salts can be added to the surface due to aeolian deposition.  Excess salts can be concentrated in soils when precipitation is sufficient to move salts within the soil but of insufficient quantity to move the salts out of the soil.  Salts move downward with percolating precipitation from the generally convex recharge areas of the landscape to the generally concave discharge areas.  Net water movement can be upward in these areas due to evapotranspiration or water movement may be more or less horizontal due to restrictive layers or differences in water transmission rates.  Excessive salt concentration in the surface of soil is detrimental to the germination and growth of crops due to the osmotic effects of the ions.  Several soil and site properties influence the movement and distribution of salts on the landscape.  Excess salts must exist in the soil in order to have movement and surface concentration.  The concentration of excess salts in soils is estimated by measuring the electrical conductivity of the soil.  The soil must exist in a non-leaching environment.  In areas where salt accumulates in the soil, precipitation does not exceed evapotranspiration, thus excess salts do not move vertically or laterally through the soil profile and then into ground or surface waters.  The soil surface and subsurface must generally concentrate water flow.  Research has shown that in regions where rainfall is limited the concave parts of the landscape also concentrate subsurface water flow as well as surface flow.  Salts move through soil when water flows.  Most water movement happens when the soil is saturated, thus, the depth to saturation and its temporal persistence influence whether or not salts will remain deep in the profile or be carried to the surface.  If the water table remains deep the salts will accumulate deeper in the profile.  If the water table is close enough to the surface that capillary rise and evapotranspiration can bring water to the soil surface, salts will accumulate at the surface.  The degree to which each of the soil properties considered promotes accumulation of surface salts is rated.  The rating of the attribute that contributes the least to surface salinization is taken as the overall rating.
+
+The ratings are both verbal and numerical. Numerical ratings indicate the contributions of the individual soil properties. The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil has the most severe propensity for surface salinization (1.00) and the point at which the soil has no propensity for surface salinization (0.00). 
+
+Rating class terms indicate the rate at which the soils are likely to subside considering all the soil features that are examined for this rating. "High surface salinization risk or already saline" indicates that the soil has features that are very favorable for the accumulation of salts at the surface or are already saline.  These soils are already limited by excess surface salts.  "Surface salinization risk" indicates that the soil has features that are somewhat favorable for surface salinization.  Careful management will be needed to avoid damage from salinity.  "Low surface salinization risk" indicates that the soil has one or more features that are unfavorable for salinization.  These soils exist in climates where salinization does not occur or on landscape positions where salts are unlikely to accumulate.
+
+The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
+
+Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+### Criteria Table
+
+soil and site properties|low|moderate|high|feature
+---------------------|----------|----------|----------|-------------------------------------------
+depth to water table (cm)|>100|20-100|<20|salts in the near surface water will be pulled to the surface
+water table persistence (months)|0|0-4|>4|months per year the water table is near the surface
+non-leaching climate (map-pet) (mm/yr)|>10|10-(-200)|<-200|low excess moisture does not leach salts
+presence of salts (EC 0-150cm) (dS/m)|0|0-4|>4|If salts are available, there is a possibility of accumulation
+water gathering surface OR (Maximum of inputs)|convex|linear|concave|concave areas accumulate surface and subsurface materials
+presence of salts (EC 0-150cm) (dS/m)|0|0-4|>4|Soil is already saline
+
+
+### References
+1. J. L. Arndt, J. L. Richardson. 1988. Hydrology, salinity and hydric soil development in a North
+Dakota prairie-pothole wetland system. Wetlands 8:2, 93-108.
+
+2. "J.L. Richardson, L.P. Wilding, R.B. Daniels. 1992. Recharge and discharge of groundwater in aquic
+conditions illustrated with flownet analysis. Geoderma 53:1-2, 65-78."
+
+3. Woods S. A., Dyck M. F., Kachanoski R. G.. 2013. Spatial and temporal variability of soil horizons
+and long-term solute transport under semi-arid conditions. Canadian Journal of Soil Science 93:2,
+173-191.
+
+

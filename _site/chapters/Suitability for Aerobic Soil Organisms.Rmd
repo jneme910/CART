@@ -1,0 +1,101 @@
+---
+title: "Suitability for Aerobic Soil Organisms"
+author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
+date: "`r Sys.Date()`"
+
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+## Inherent Suitability for Aerobic Soil Organisms
+
+Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management.
+
+ 
+Soil is the habitat for a wide variety of organisms, ranging from microscopic viruses, bacteria, archaea, fungi, and protozoa to micro- and meso-fauna including nematodes, mites, and springtails to macrofauna such as earthworms, centipedes and beetles to name just a few.  A healthy soil is a living system that supports an abundant and diverse biological community that aids crop production by providing key services and functions. These include: 
+
+1. the decomposition of organic materials and conversion into soil organic matter; 
+2. enhanced nutrient cycling; 
+3. improved soil structure and stability that positively influences water flow, storage and availability; 
+4. plant protection against disease, pests, and environmental stress; and, 
+5. detoxification of pollutants. Soil microbes are generally most abundant in the surface layer around plant roots (termed the rhizosphere).  Soils vary in their inherent ability to foster plant growth and thus also in their ability to support microbial populations.  Although bacteria and archaea possess alternative metabolic strategies to survive under low or no oxygen content (i.e., anaerobic conditions), all other soil organisms require oxygen and the majority of soil bacteria in agricultural soils function more efficiently in aerobic conditions. therefore, only aerobic organisms are considered. 
+
+Several site and soil properties contribute to major attributes in the suitability for aerobic organisms. Those chosen for this table include: 
+*	Soil temperature, since most biological processes increase, often double, with a 10C increase in temperature; 
+*	water, inferred through the average total yearly precipitation since plant productivity is linked to precipitation and soil microbes thrive in the rhizosphere; 
+*	soil organic matter content as organic carbon is required by many soil organisms as an energy and carbon source;  
+* soil pore space influences water and gas movement as well as physical space for organisms to occupy and the tortuosity of paths through which they may move;  
+* soil water content is important as when too much water is present anaerobic processes begin and shifts the population to anaerobic bacteria and when too little is present organisms may die or go dormant; and,  
+* osmotic conditions are also important, as are the presence of toxic materials or the absence of required elements.  .  The degree of favorability of each of these properties is rated for a soil and the degree of limitation of the least favorable attribute determines the overall rating.
+ 
+The ratings are both verbal and numerical. Numerical ratings indicate the suitability of the individual soil properties. The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil feature has the greatest favorability for organisms (1.00) and the point at which the soil feature becomes not favorable (0.00). 
+
+Rating class terms indicate the extent to which the soils are favorable considering all the soil features that are examined for this land use. "Very favorable" indicates that the soil has features that are very favorable for aerobic soil organisms.  Healthy and thriving populations can be expected on properly managed agricultural systems on these soils. "Somewhat favorable" indicates that the soil has features that are moderately favorable for aerobic soil organisms. The soil can be made more favorable by careful management.  Fair performance and moderate maintenance can be expected. "Very limited" indicates that the soil has one or more features that are unfavorable for aerobic soil organisms.  
+
+The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
+
+Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+## Criteria Table
+
+Site or Soil Attribute|Poorly suited|Moderately suited|Well suited|Impact
+------------------|----------------|-------------|------------|----------------------
+pH 0-30cm|Less than 4.0|Between 4.0 and 6.0|Between 6.0 and 7.0|Micronutrient availability
+Mean annual air temperature (C)|Less than 0 or Greater than 50|Between 0 and 15 or Between 24 and 50|Between 15 and 24|Amount of heat required for adapted species
+Moisture relations Maximum of A-C||||
+A. Mean annual precipitation minus annual potential evapotranspiration (mm)|Less than -100|Between -100 and 100|Greater than 100|Moisture available for organisms
+B. Water table depth during the growing season (cm)|0 or less|Between 0 and 30 or between 50 and 100|Between 30 and 50|Moist but not saturated conditions
+C. Root zone AWC (cm)|Less than 3|3 to 30|Greater than 30|Retains moisture between rainfall events
+Electrical Conductivity (dS/m)|Less than 0.3|Between 0.3 and 0.75 or between 1.5 and 9.0|Between 0.75 and 1.5|Cations for mineral needs but not saline
+|Greater than 9.0|||
+Aluminum saturation 0 to 30cm (percent)|100|Between 2 and 100|Less than 2|Aluminum toxicity
+Organic matter content 0-30cm (percent)|Less than 0.3|Between 0.3 and 3.0|Greater than 3.0|Energy source for soil organisms
+Bulk density difference ratio maximum from 0 to 30cm|Greater than 1.0|0 to 1.0|0 or less|Metric of pore space and soil strength
+Clay content weighted average from 0 to 30cm (percent)|Less than 30|Between 30 and 40|Greater than 40|Surface area for microbes
+
+
+
+## References
+1. Blanco-Canqui, H., M.M. Mikha, D.R. Presley, and M.M. Claassen. 2011. Addition of cover crops enhances no-till potential for improving soil physical properties. Soil Sci. Soc. Am. J. 75:1471-1482. \ doi:10.2136/\ sssaj2010.0430.
+ 
+2. Carr, B. 2015. Winter Cover Crop Species Adapted to North-Central West Texas and Southwestern Oklahoma. USDA-NRCS James E. Bud Smith Plant Material Center. Knox City, TX. June 2015. 8p. ID# 12635.
+ 
+3. Duiker, 2014. Effects of Soil Compaction. Penn State Extension. 
+
+4. Fernandez-Calvino, D., E. Baath. 2010.  Growth response of the bacterial community to pH in soils differing in pH. FEMS Microbiol Ecol 73 (2010) 149-156.
+
+5. Fierer, N., and R.B. Jackson. 2006. The diversity and biogeography of soil bacterial communities. Proceedings of the National Academy of Sciences of the United States of America 103:626-631. 
+
+6. Hooper D. U., Bignell D. E., Brown V. K., Brussaard, L. 2000. Interactions between aboveground and belowground biodiversity in terrestrial ecosystems: Patterns, mechanisms, and feedbacks. Bioscience 50 (12):1049-1061. 
+
+7. Kemper W. D., and E.J. Koch. 1966. Aggregate stability of soils from western United States and Canada. Technical Bulletin No. 1355. United States Department of Agriculture Agricultural Research Service. U S Government Printing Office Washington, DC. pp 52. 
+
+8. Kieft, T.L., Soroker, ED., and M. Firestone. Microbial Biomass response to rapid increase in water potential when dry soil is wetted. Soil Biology and Biochemistry, Soil &of. Biochem. Vol. 19. No. 2, pp. I 19-I 26, 1987.
+ 
+9. Lauber, C.L., M. Hamady, R. Knight, and N. Fierer. 2009. Pyrosequencing-based assessment of soil pH as a predictor of soil bacterial community structure at the continental scale. Applied and Environmental Microbiology 75:5111-5120. 
+
+10. Olson, Kenneth, Ebelhar S. E., and James M. Lang. 2014. Long-Term Effects of Cover Crops on Crop Yields, Soil Organic Carbon Stocks and Sequestration. Open Journal of Soil Science Vol.04No.08:9. doi: 10.4236/ojss.2014.48030.
+ 
+11. Owojori, O. J., A. J. Reinecke, P. Voua-Otomo, and S. A. Reinecke. 2009. Comparative study of the effects of salinity on life-cycle parameters of four soil-dwelling species (Folsomia candida, Enchytraeus doerjesi, Eisenia fetida and Aporrectodea caliginosa). Pedobiologia 52 (6):351-360. doi: https://doi.org/10.1016/j.pedobi.2008.12.002. 
+
+12. Porazinska D. L., Bardgett R.D., Blaauw M.B., Hunt W.H., Parsons A.N., Seastedt T.R., and Wall, D.H. 2003. Relationships at the Aboveground-belowground interface: Plants, Soil Biota, and Soil Processes. Ecological Monographs 73 (3):377-395. doi: 10.1890/0012-9615(2003)073[0377:RATAIP]2.0.CO;2. 
+
+13. Schenk, H.R., R.B. Jackson. Rooting depths, lateral root spreads and below-ground/above-ground allometries of plants in water-limited ecosystems. Journal of Ecology. Volume 90, Issue 3. June 2002. Pages 480-494.
+ 
+14. U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, title 430-VI. 
+
+15. U.S. Department of Agriculture, Natural Resources Conservation Service. 2008. Soil Quality Indicators. USDA-NRCS Publication. 
+
+16. U.S. Department of Agriculture, Natural Resources Conservation Service. 2014. Soil Quality Kit - Guide for Educators. Bulk Density, Moisture, Aeration. USDA-NRCS Publication.

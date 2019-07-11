@@ -1,0 +1,70 @@
+Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
+1,Surface Salt Concentration:1,Surface Salt Concentration,High surface salinization risk or already saline
+2,Surface Salt Concentration:2,Surface Salt Concentration,Surface salinization risk
+3,Surface Salt Concentration:3,Surface Salt Concentration,Low surface salinization risk
+4,Surface Salt Concentration:4,Surface Salt Concentration,Not rated
+5,Soil Susceptibility to Compaction:1,Soil Susceptibility to Compaction,High
+6,Soil Susceptibility to Compaction:2,Soil Susceptibility to Compaction,Medium
+7,Soil Susceptibility to Compaction:3,Soil Susceptibility to Compaction,Low
+8,Soil Susceptibility to Compaction:4,Soil Susceptibility to Compaction,Not rated
+9,Organic Matter Depletion:1,Organic Matter Depletion,OM depletion high
+10,Organic Matter Depletion:2,Organic Matter Depletion,OM depletion moderately high
+11,Organic Matter Depletion:3,Organic Matter Depletion,OM depletion moderate
+12,Organic Matter Depletion:4,Organic Matter Depletion,OM depletion moderately low
+13,Organic Matter Depletion:5,Organic Matter Depletion,OM depletion low
+14,Organic Matter Depletion:6,Organic Matter Depletion,Not rated
+15,Agricultural Organic Soil Subsidence:1,Agricultural Organic Soil Subsidence,Severe subsidence
+16,Agricultural Organic Soil Subsidence:2,Agricultural Organic Soil Subsidence,Moderate subsidence
+17,Agricultural Organic Soil Subsidence:3,Agricultural Organic Soil Subsidence,Low subsidence
+18,Agricultural Organic Soil Subsidence:4,Agricultural Organic Soil Subsidence,Mineral soil
+19,Agricultural Organic Soil Subsidence:5,Agricultural Organic Soil Subsidence,Not rated
+20,Suitability for Aerobic Soil Organisms:1,Suitability for Aerobic Soil Organisms,Not favorable
+21,Suitability for Aerobic Soil Organisms:2,Suitability for Aerobic Soil Organisms,Somewhat favorable
+22,Suitability for Aerobic Soil Organisms:3,Suitability for Aerobic Soil Organisms,Very favorable
+23,Suitability for Aerobic Soil Organisms:4,Suitability for Aerobic Soil Organisms,Not rated
+25,Ponding or Flooding:1,Ponding or Flooding,1
+26,Ponding or Flooding:0,Ponding or Flooding,0
+27,Ponding or Flooding:2,Ponding or Flooding,Not rated
+28,Drainage Class: 1,Drainage class,Excessively drained
+29,Drainage Class: 2,Drainage class,"Somewhat excessively
+drained"
+30,Drainage Class: 3,Drainage class,Well drained
+31,Drainage Class: 4,Drainage class,Moderately well drained
+32,Drainage Class: 5,Drainage class,Somewhat poorly drained
+33,Drainage Class: 6,Drainage class,Poorly drained
+34,Drainage Class: 7,Drainage class,Very poorly drained
+35,Drainage Class: 8,Drainage class,Subaqueous
+36,Drainage Class: 9,Drainage class,Null
+37,Availible Water Storage: 0,Availible Water Storage,0
+38,Availible Water Storage: 1,Availible Water Storage,1
+39,Availible Water Storage: 2,Availible Water Storage,Not rated
+40,Soil Organic Carbon Stock: 0,Soil Organic Carbon Stock,None
+41,Soil Organic Carbon Stock: 1,Soil Organic Carbon Stock,Very Low
+42,Soil Organic Carbon Stock: 2,Soil Organic Carbon Stock,Low
+43,Soil Organic Carbon Stock: 3,Soil Organic Carbon Stock,Moderate
+44,Soil Organic Carbon Stock: 4,Soil Organic Carbon Stock,Moderately High
+45,Soil Organic Carbon Stock: 5,Soil Organic Carbon Stock,High
+42,Soil Organic Carbon Stock: 6,Soil Organic Carbon Stock,Not rated
+43,Aggregate Stability:1,Aggregate Stability,Low
+44,Aggregate Stability:2,Aggregate Stability,Moderate
+45,Aggregate Stability:3,Aggregate Stability,Moderately High
+46,Aggregate Stability:4,Aggregate Stability,High
+47,Aggregate Stability:5,Aggregate Stability,Not rated
+48,Water Table: 0,Water Table,0
+49,Water Table: 1,Water Table,1
+50,Water Table: 2,Water Table,Not rated
+51,Farm Class: 1,Farm Class,Null
+52,Farm Class: 2,Farm Class,Prime farmland
+53,Farm Class: 3,Farm Class,Prime farmland if
+54,Farm Class: 4,Farm Class,State importance
+55,Farm Class: 5,Farm Class,State importance if
+56,Farm Class: 6,Farm Class,Local importance
+57,Farm Class: 7,Farm Class,Local importance if
+58,Farm Class: 8,Farm Class,Not Prime farmland
+59,Farm Class: 9,Farm Class,Not rated
+60,Hydric Soils:0,Hydric Soils,0
+61,Hydric Soils:1,Hydric Soils,1
+62,Hydric Soils:2,Hydric Soils,Not rated
+63,Organic Soils: 0,Organic and Hydric Soils,0
+64,Organic Soils: 1,Organic and Hydric Soils,1
+65,Organic Soils: 2,Organic and Hydric Soils,Not rated

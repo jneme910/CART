@@ -1,0 +1,54 @@
+---
+title: "Outcomes"
+author: "Laura Morton and Jason Nemecek"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Conservation Assessment Ranking Tool Outcomes
+
+Provides leadership within NRCS for data modeling and reporting the natural resource impacts and outcomes of conservation practices, systems, programs and initiatives; and facilitates the ability to identify conservation treatment needs and the ability to report outcomes for NRCS and USDA. 
+
+1. Example: RCCP Outcomes Guidance Document. [Click Here](https://github.com/jneme910/CART/blob/master/documents/RCPP%20Outcomes%20Guidance_DRAFT_6.17.docx?raw=true)
+2. Data connections (CART-NPAD) [Click Here](https://github.com/jneme910/CART/blob/master/documents/npad_70_051419.pdf)
+3. Measuring the success of conservation practice implementation.
+4. Using soils data to help validate conservation practices.
+5. Providing technical soil services using soil scientist to collect data for validation 
+
+## Conceptual Data Design
+`The conceptual data design = practice tables, land unit tables, miscellaneous reference tables, and connection to NASIS MU and interps tables.`
+
+## Outcomes Talking Points
+
+1. priority #1 = data design and we are on it
+2. analysis of existing free assets (infrastructure, programmatic, governance, partnerships) and we expect this to be done by end of FY with an action plan
+3. near-term wins will need leadership support and approvals to begin Oct 1 - cost on this TBD by #2
+
+## Leadership help:
+Brainstorm a list of desired outcomes for us to focus data design priorities (jobs, businesses, carbon, water quality, etc)
+
+## Soils Data
+1. We would need to be able to tag PLU attributes to a soil map unit and interps on the fly with data feeds - some would need to have pre-generated reference table values based on a script (to be developed by SMEs) and some could pull direct interps.
+2. We may only be able to do a few outcomes this way with soil data, but we could get the highest confidence stuff running well and see where we land.
+
+
+ ![1](https://jneme910.github.io/CART/TableImages/OutcomePhoto-0.jpg)
+
+ ![2](https://jneme910.github.io/CART/TableImages/OutcomePhoto-1.jpg)
+
+ ![3](https://jneme910.github.io/CART/TableImages/OutcomePhoto-2.jpg)
+
+ ![4](https://jneme910.github.io/CART/TableImages/OutcomePhoto-3.jpg)
+
+ ![5](https://jneme910.github.io/CART/TableImages/OutcomePhoto-4.jpg)
+
+ ![6](https://jneme910.github.io/CART/TableImages/OutcomePhoto-5.jpg)
+
+

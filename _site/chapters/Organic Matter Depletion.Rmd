@@ -1,0 +1,65 @@
+---
+title: "Organic Matter Depletion"
+author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. These interpretations provide information on inherent soil properties that influence our ability to build healthy soils through management. 
+
+A fertile and healthy soil is the basis for healthy plants, animals, and humans. Soil organic matter is the very foundation for healthy and productive soils. Understanding the role of organic matter in maintaining a healthy soil is essential for developing ecologically sound agricultural practices. Perhaps just as important is identifying areas at greater risk of organic matter depletion. For organic matter to accumulate in soil, the processes that synthesize organic matter generally need to be greater than the processes that destroy organic matter. These processes occur at continental and local scales. Continental-scale factors include the mean annual temperature, which ultimately governs the rates of biological processes, including both the synthesizing and destroying of organic matter. Another continental-scale factor is the amount of water generally available for use by plants and soil microbes. The amount of available water is governed by the amount of rainfall or snowmelt that an area receives in relation to evapotranspiration.  This interpretation does not take into account the application of irrigation water.
+
+The continental-scale factors are modified by local factors. Oxygen is needed for both the accumulation and destruction of organic matter. It can be excluded from the soil by seasonal saturation, which generally favors the accumulation processes. The antecedent organic matter content is used as an indicator of the level of a soil's vulnerability to loss of organic matter. In general, well aerated soils tend to have higher oxidation rates but may still accumulate organic matter, depending on other factors, such as ground cover, length of time that living roots are present in the soil, and management practices. Clay-sized particles in the soil help protect organic compounds and so tend to favor organic matter accumulation. The shape of the land surface also influences the organic matter content. Water and sediment tend to accumulate in concave areas while material tends to disperse in convex areas.  The degree of limitation caused by each of these properties is rated for a soil and the sum of the ratings is the overall rating.
+ 
+The ratings are both verbal and numerical. Numerical ratings indicate the propensity of the individual soil properties to influence organic matter degradation.  The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil feature has the greatest ability to enable organic carbon depletion (1.00) and the point at which the soil feature becomes least likely to allow organic matter depletion (0.00). 
+
+Rating class terms indicate the extent to which the soils enable the depletion of organic matter. "Organic matter depletion high"  indicates that the soil and site have features that are very conducive to the depletion of organic matter.  Very careful management will be needed to prevent serious organic matter loss when these soils are farmed.  "Organic matter depletion moderately high", "Organic matter depletion moderate", and "Organic matter depletion moderately low" are a gradient of the level of management needed to avoid organic matter depletion.  "Organic matter depletion low" indicates soils that have features that are favorable for organic matter accumulation. These soils allow more management options while still maintaining favorable organic matter levels.
+
+The map unit components listed for each map unit in the accompanying Summary by Map Unit table in Web Soil Survey or the Aggregation Report in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the percentage of each map unit that has the rating presented. 
+
+Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+### Criteria Table
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+Site or Soil Feature|Low|Moderate|High|Impact
+-----------|-----------|-----------|-----------|-----------
+Organic matter loss sensitivity (%)|>6.0|0.5 to 6.0|<0.5|Soil is not able to accumulate organic matter
+Mean annual air temperature (C)|<3|20-Mar|>20|Temperature drives the rates of accumulation and destruction
+Depth to seasonal high water (cm)|0|0-100|>100|Oxygen is excluded from saturated soils
+Land surface shape|concave|linear|convex|Landform can gather or spread material
+Surface clay content (%)|>40|15-40|<15|Organic matter is protected by clay particles
+Moisture deficit (mm/yr)|>1000|-1000 to 1000|<-1000|Mean annual rainfall minus the potential evapotranspiration
+
+### References
+
+1. Owens, P., E. Winzeler, Z. Libohova, S. Waltman, D. Miller, and B. Waltman. Evaluating U.S. Soil Taxonomy soil climate regimes: Application across scales. 
+https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_053084.pdf (accessed 1 March 2018).
+
+2. Page-Dumrose, D.S. 1993. Susceptibility of volcanic ash-influenced soils in northern Idaho to mechanical compaction. U.S. Forest Service Intermountain Research Station. Research Note INT-409.
+
+3. Pimentel, D. 2006. Soil erosion: A food and environmental threat. Environment, Development and Sustainability 8:119-137.
+
+4. Schmitt, A., and B. Glaser. 2011. Organic matter dynamics in a temperate forest as influenced by soil frost. Journal of Plant Nutrition and Soil Science 174(5):754-764. https://doi.org/10.1002/jpln.201100009.
+
+5. Schmidt, M.W.I., M.S. Torn, S. Abiven, T. Dittmar, G. Guggenberger, I.A. Janssens, and S.E. Trumbore. 2011. Persistence of soil organic matter as an ecosystem property. Nature 478:49-56. http://dx.doi.org/10.1038/nature10386.
+
+6. Soil Survey Staff. 2014. Keys to Soil Taxonomy, 12th edition. USDA Natural Resources Conservation Service, Washington, DC. https://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/survey/class/taxonomy/?cid=nrcs142p2_053580.
+
+7. U.S. Department of Agriculture, Agricultural Research Service. 1997. Predicting soil erosion by water: A guide to conservation planning with the Revised Universal Soil Loss Equation (RUSLE). Agriculture Handbook 703. https://www.ars.usda.gov/ARSUserFiles/64080530/rusle/ah_703.pdf.
+
+U.S. Department of Agriculture, Natural Resources Conservation Service. National Soil Survey Handbook, Title 430-VI. http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242 (accessed 1 March 2018).
+
+U.S. Department of Agriculture, Soil Conservation Service. 1961. Land capability classification. https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_052290.pdf (accessed 1 March 2018).
+
+Zhanyu, Z., L. Sheng, J. Yang, X.-A. Chen, L. Kong, and B. Wagan. 2015. Effects of land use and slope gradient on soil erosion in a red soil hilly watershed of southern China. Sustainability 7(10):14309-14325; doi:10.3390/su71014309.
+
