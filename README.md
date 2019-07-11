@@ -65,7 +65,7 @@ CART has 6 resource concerns related to Soil Quality Degradation and each will i
 3. CART will automatically send the request to Soil Data Access Query Service.
 4. Map layers are processed in the background and will not be displayed.
 
-![Example: Park County, Wyoming](https://github.com/jneme910/CART/blob/master/TableImages/Park_County_WY.png)
+![Example: Park County, Wyoming](https://jneme910.github.io/CART/TableImages/Park_County_WY.png)
 
 ### Map data is processed in the background
  
@@ -77,7 +77,7 @@ The map on the left shows 8 different soils within this land unit. The map on th
 
 In the example below, the Query service has returned soils data for the ‘Risk of Surface Salt Concentration’ within the land unit. The rating data shown in table below is then used to calculate the magnitude of each rating as both a land unit percentage and as land unit acres. 
 
-![Example: Service Data](https://github.com/jneme910/CART/blob/master/TableImages/Service%20Data.PNG)
+![Example: Service Data](https://jneme910.github.io/CART/TableImages/Service%20Data.PNG)
 
 Areas with the highest risk will be assigned a rating number of 1. Areas with a lower risk will be assigned a larger rating number. Rating values are calculated using soils data at the component level.
 
@@ -85,7 +85,7 @@ Areas with the highest risk will be assigned a rating number of 1. Areas with a 
 
 The service request then calculates the rolling sum values for rating_acres and rating percent for each resource concern and finds the single most limiting rating (per land unit) that comprises **at least 10% by area or 10 acres.** 
 
-![Example: Land Unit Detail Ratings](https://github.com/jneme910/CART/blob/master/TableImages/Land%20Unit%20Detail%20Ratings.PNG)
+![Example: Land Unit Detail Ratings](https://jneme910.github.io/CART/TableImages/Land%20Unit%20Detail%20Ratings.PNG)
 
 In this example, it is the second row that meets these criteria and will be provided to the CART application as the land unit rating for Concentration of Salts and Other Chemicals. It is important to understand that the functionality for calculating land unit ratings is not available from Web Soil Survey. It is only designed to provide soil maps and reports. 
 
@@ -93,11 +93,11 @@ In this example, it is the second row that meets these criteria and will be prov
 
 The final Soil Data Access land unit ratings for each of the resource concerns will be returned to CART for awarding of points. The publication date of the soils data will also be returned to CART as metadata. This will ensure that any of the Soil Quality Degradation ratings can be tied back to a particular version of SSURGO soils data.
 
-![Example: Final Land Unit Ratings](https://github.com/jneme910/CART/blob/master/TableImages/Final%20Land%20Unit%20Ratings.PNG)
+![Example: Final Land Unit Ratings](https://jneme910.github.io/CART/TableImages/Final%20Land%20Unit%20Ratings.PNG)
 
 
 This domain table contains an ordered list of all possible rating values.
-![Example: Domain](https://github.com/jneme910/CART/blob/master/TableImages/Domain.PNG)
+![Example: Domain](https://jneme910.github.io/CART/TableImages/Domain.PNG)
 
 # EASEMENTS
 
@@ -118,28 +118,3 @@ Provides leadership within NRCS for data modeling and reporting the natural reso
 
 1. Outcomes Design Concept: [Click here](https://jneme910.github.io/CART/chapters/Outcomes)
 2. Data connections (CART-NPAD): [Click here](https://github.com/jneme910/CART/blob/master/documents/npad_70_051419.pdf)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
-
