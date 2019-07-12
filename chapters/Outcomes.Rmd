@@ -39,8 +39,10 @@ Provides leadership within NRCS the ability to  model data and report the natura
 Brainstorm a list of desired outcomes for us to focus data design priorities (jobs, businesses, carbon, water quality, etc.)
 
 ## Soils Data
-1. We would need to be able to tag PLU attributes to a soil map unit and interps on the fly with data feeds - some would need to have pre-generated reference table values based on a script (to be developed by SMEs) and some could pull direct interps.
-2. We may only be able to do a few outcomes this way with soil data, but we could get the highest confidence stuff running well and see where we land.
+1. We need to be able to tag PLU attributes to a soil map unit and interps on the fly with data feeds.  
+    + some would need to have pre-generated reference table values based on a script (to be developed by SMEs) 
+    + some could pull direct soil interpretations.
+2. 2.	We may only be able to do a few outcomes this way with soil data, but we could get the highest priority completed and evaluate the outcome.
 
 
  ![1](https://jneme910.github.io/CART/TableImages/OutcomePhoto-0.jpg)
