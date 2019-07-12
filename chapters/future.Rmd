@@ -114,10 +114,8 @@ water soluble bedrock such as limestone|map unit description
 
 
 2. https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcseprd1390056.html
-
-AOI= 40055
-
-interpresultid = 2915
+    + AOI= 40055
+    + interpresultid = 2915
 
 
 
