@@ -1,12 +1,214 @@
 ---
 title: "Farmland Classification"
 author: "Jason Nemecek"
+
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+       
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
 
 Farmland classification identifies map units as prime farmland, farmland of statewide importance, farmland of local importance, or unique farmland. It identifies the location and extent of the soils that are best suited to food, feed, fiber, forage, and oilseed crops. NRCS policy and procedures on prime and unique farmlands are published in the "Federal Register," Vol. 43, No. 21, January 31, 1978.
+
+## Script Breakdown
+
+####  Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon
+
+```{SQL}
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+```
+
+
+|aoiid	|landunit|	aoigeom|
+|------|-------------|---------------------------------------------------------------------------------------|
+|1	|T9981 Fld3	|POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))|
+|2	|T9981 Fld4|	POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))|
+
+#### Creates Summary Acres for each landunit
+
+```{SQL}
+CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;
+```
+
+|aoiid|	landunit|landunit_acres|
+|------|-------------|----------------|
+|1|	T9981 Fld3|          	328.952|
+|2|	T9981 Fld4  |        	318.722|
+
+
+#### Populate intersected soil polygon table with geometry
+```{SQL}
+-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;
+```
+
+
+
+
+####  Populates Soil geometry with landunit attribute
+```{SQL}
+-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );
+```
+
+```{SQL}
+-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;
+```
+
+
+
+####  Populate soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+````
+
+
+### Soil map unit acres, aggregated by mukey Farm Class
+
+```{SQL}
+ 
+CREATE TABLE #FC
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT, 
+    farmlndclass CHAR(30)
+    );
+```
+```{SQL}
+INSERT INTO #FC
+SELECT aoiid, landunit, mu.mukey, mapunit_acres,  CASE WHEN (farmlndcl) IS NULL  THEN ''
+                        WHEN farmlndcl =  'All areas are prime farmland' THEN 'Prime farmland' 
+                        WHEN farmlndcl LIKE 'Prime if%' THEN 'Prime farmland if'
+                        WHEN farmlndcl =  'Farmland of statewide importance' THEN 'State importance' 
+						WHEN farmlndcl LIKE  'Farmland of statewide importance, if%' THEN 'State importance if' 
+                        WHEN farmlndcl = 'Farmland of local importance' THEN 'Local importance' 
+						WHEN farmlndcl LIKE 'Farmland of local importance, if%' THEN 'Local importance if' 
+                        WHEN farmlndcl = 'Farmland of unique importance' THEN 'Unique importance' ELSE 'Not Prime farmland' END AS farmlndclass
+FROM #M2 AS fcc
+INNER JOIN mapunit AS mu ON mu.mukey=fcc.mukey;
+```
+
+* Farmland Classification was aggregated down from 28 classes down to 8 classes
+    + Prime farmland
+    + Prime farmland if
+    + State importance
+    + State importance if
+    + Local importance
+    + Local importance if
+    + Unique importance
+    + Not Prime farmland
+    
+
+aoiid|landunit|mukey|mapunit_acres|farmlndclass|
+-----------|-----------|-----------|-----------|-----------|
+1|T9981 Fld3          |354627|0.426|Not Prime farmland            |
+1|T9981 Fld3          |354648|0.287|State importance              |
+1|T9981 Fld3          |2494708|1.729|Not Prime farmland            |
+1|T9981 Fld3          |2525720|56.699|Not Prime farmland            |
+1|T9981 Fld3          |2525732|1.35|Not Prime farmland            |
+1|T9981 Fld3          |2525733|0.129|Not Prime farmland            |
+1|T9981 Fld3          |2525739|28.479|State importance              |
+1|T9981 Fld3          |2525745|4.983|State importance              |
+1|T9981 Fld3          |2525746|16.106|State importance              |
+1|T9981 Fld3          |2525754|12.638|Not Prime farmland            |
+1|T9981 Fld3          |2525764|17.691|Not Prime farmland            |
+1|T9981 Fld3          |2525766|0.032|Not Prime farmland            |
+1|T9981 Fld3          |2525769|181.356|Not Prime farmland            |
+1|T9981 Fld3          |2755648|2.449|Not Prime farmland            |
+1|T9981 Fld3          |2755654|4.599|State importance              |
+2|T9981 Fld4          |2525720|8.623|Not Prime farmland            |
+2|T9981 Fld4          |2525724|0.458|State importance              |
+2|T9981 Fld4          |2525730|31.514|State importance              |
+2|T9981 Fld4          |2525745|62.205|State importance              |
+2|T9981 Fld4          |2525746|63.55|State importance              |
+2|T9981 Fld4          |2525754|23.138|Not Prime farmland            |
+2|T9981 Fld4          |2525767|3.86|Not Prime farmland            |
+2|T9981 Fld4          |2525769|103.909|Not Prime farmland            |
+2|T9981 Fld4          |2755639|0.443|State importance              |
+2|T9981 Fld4          |2755643|9.641|Not Prime farmland            |
+2|T9981 Fld4          |2755648|11.382|Not Prime farmland            |
+
+### Farm Class By Land Unit
+
+```{SQL}
+SELECT DISTINCT landunit, SUM (mapunit_acres) OVER(PARTITION BY aoiid, farmlndclass) AS rating_acres, farmlndclass, 
+CASE WHEN farmlndclass IS NULL THEN  CONCAT ('Farm Class' , ':' , 1) 
+WHEN farmlndclass = 'Prime farmland' THEN  CONCAT ('Farm Class' , ':' , 2) 
+WHEN farmlndclass = 'Prime farmland if' THEN  CONCAT ('Farm Class' , ':' , 3) 
+WHEN farmlndclass = 'State importance' THEN  CONCAT ('Farm Class' , ':' , 4) 
+WHEN farmlndclass = 'State importance if' THEN  CONCAT ('Farm Class' , ':' , 5) 
+WHEN farmlndclass = 'Local importance' THEN  CONCAT ('Farm Class' , ':' , 6) 
+WHEN farmlndclass = 'Local importance if' THEN  CONCAT ('Farm Class' , ':' , 7) 
+WHEN farmlndclass = 'Not Prime farmland' THEN  CONCAT ('Farm Class' , ':' , 8) 
+WHEN farmlndclass = 'Not rated' THEN  CONCAT ('Farm Class' , ':' , 9) 
+END AS rating_key,
+'Farm Class' AS attributename 
+FROM #FC
+GROUP BY aoiid, landunit, mapunit_acres, farmlndclass;
+```
+
+landunit|rating_acres|farmlndclass|rating_key|attributename|
+----------|----------|----------|----------|----------|
+T9981 Fld3          |54.454|State importance              |Farm Class:4|Farm Class|
+T9981 Fld3          |274.499|Not Prime farmland            |Farm Class:8|Farm Class|
+T9981 Fld4          |158.17|State importance              |Farm Class:4|Farm Class|
+T9981 Fld4          |160.553|Not Prime farmland            |Farm Class:8|Farm Class|
+
