@@ -76,7 +76,7 @@ water soluble bedrock such as limestone|map unit description
 #### Organic Matter Depletion (item #6 above)
 
 
-![Field 3 on left and Field 4 on right](https://jneme910.github.io/CART/TableImages/future_pratices_soil2.PNG)
+![Field 3 on left and Field 4 on right](https://jneme910.github.io/CART/TableImages/future_OM_Depletion.PNG)
 
 ## AoiCoords
 https://sdmdataaccess.sc.egov.usda.gov/test/testpost.html
