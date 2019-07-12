@@ -463,6 +463,99 @@ ORDER BY State_sym ASC
 </tr>
 </tbody>
 </table>
+<p>Breakdown Null Component Percent: * 17,115 Components * 76 Major Component * 17,039 Minor Components * 6,885 National Map Unit Symbols</p>
+</div>
+<div id="checks-major-compoents-where-percent-is-less-than-10" class="section level2">
+<h2>Checks Major Compoents where percent is less than 10</h2>
+<pre class="sql"><code>SELECT  areasymbol, areaname,  mapunit.muname, mapunit.mukey, compname, localphase, component.cokey,
+comppct_r, majcompflag , nationalmusym, musym
+INTO #comp2
+FROM (legend INNER JOIN (mapunit   INNER JOIN component ON mapunit.mukey = component.mukey AND majcompflag = 'Yes' ) ON legend.lkey = mapunit.lkey AND areasymbol &lt;&gt; 'US')
+ORDER BY areasymbol ASC, musym ASC, muname ASC,  component.cokey;
+
+---with — recursive common table expression - Organize Complex Queries
+WITH #comp AS (Select areasymbol, areaname, nationalmusym, musym, muname, mukey, compname, cokey, majcompflag, localphase,  SUM (comppct_r) over(partition by mukey) AS  mu_sum_pct, 
+SUM (comppct_r) over(partition by mukey, compname) AS  sum_compname_pct  From #comp2)
+
+
+Select areasymbol, areaname, nationalmusym, musym, muname, mukey, compname, localphase, cokey,  majcompflag,  mu_sum_pct, sum_compname_pct
+From #comp
+Where sum_compname_pct &lt; 10
+ORDER BY areasymbol ASC, musym ASC, muname ASC
+
+
+-- Cleanup all temporary tables 
+IF OBJECT_ID('temp_db..#comp2', 'U') IS NOT NULL
+  DROP TABLE #comp2;
+IF OBJECT_ID('temp_db..#comp', 'U') IS NOT NULL
+  DROP TABLE #comp;</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+<col width="7%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>areasymbol</th>
+<th>areaname</th>
+<th>nationalmusym</th>
+<th>musym</th>
+<th>muname</th>
+<th>mukey</th>
+<th>compname</th>
+<th>localphase</th>
+<th>cokey</th>
+<th>majcompflag</th>
+<th>mu_sum_pct</th>
+<th>sum_compname_pct</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>AK644</td>
+<td>Ketchikan Area, Alaska</td>
+<td>1nsm</td>
+<td>6</td>
+<td>McGilvery-Traitors complex, 60 to 100 percent slopes</td>
+<td>49774</td>
+<td>Helm</td>
+<td>granitic</td>
+<td>15954339</td>
+<td>Yes</td>
+<td>88</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>AK646</td>
+<td>Chatham Area, Alaska</td>
+<td>1nz8</td>
+<td>3553D</td>
+<td>Sitka-Partofshikof complex, smooth, 56 to 75 percent slopes</td>
+<td>49949</td>
+<td>McGilvery</td>
+<td>smooth</td>
+<td>15955701</td>
+<td>Yes</td>
+<td>90</td>
+<td>5</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Example Output</p>
 </div>
 
 
