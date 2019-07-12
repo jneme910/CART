@@ -17,13 +17,51 @@ knitr::opts_chunk$set(echo = TRUE)
     background-color: #F7FBFF;
   }
 </style>
-## Wish List
-1. Develop Nitrogen Leaching Interpretation
+## Wish List:
+1. Develop Nitrogen Leaching Interpretation 
 2. Write Soil Data Access Version of Erosion
-3. Add Soil Organic Carbon Stock to "Air Quality"" resource concern
+3. Add Soil Organic Carbon Stock to "Air Quality" resource concern
 4. Develop Soil Property and Interpretation SQL Scripts to assist conservation planning for specific practices
-5.  Develop SQL scripts to help assist in special conservation signups in order to target certain areas that might be a resource concern. i.e. Golden Wing Warblers can be found in Tamarac bogs where soils data could be used to help query certain locations and customers. 
-6. Add thematic maps by map unit and landunit
+5.  Develop SQL scripts to help assist in special conservation signups in order to identifying opportunities for conservation. Examples:
+    + Golden Wing Warblers can be found in Tamarac bogs where soils data could be used to help query certain locations and customers.
+    + Karner Blue Butterfly Habitat Identification.
+      + The Karner Blue Butterfly (KBB) is a federally listed endanger species
+      + KBB catapillars feed exclusively on the leaves of wild lupine.
+      + NRCS and partner staff wanted to identify likely lupine habitat to prioritize for protection under NRCS easments and releated programs.
+      + NRCS and partner agencies have begun using these results to help identify opportunites for conservation easements funds to identify critical areas.
+      + This process could be used to identify customers.
+6. Add thematic maps by map unit and landunit.
+
+
+## Example for Using Soils Data for a Specific Pratice.
+<center>
+**WASTE STORAGE FACILITY**
+
+**CODE 313 (Credit Georgia NRCS)**
+
+</center>
+
+Soil Concerns Stated in Standard|Web Soil Survey (WSS) Related Items 
+--------------------------------------------|-----------------------------------------------
+bedrock with joints, fractures, or solution channels|depth to bedrock (paralithic bedrock)
+corrosion|corrosion of concrete and steel
+depth to bedrock|depth to bedrock (paralithic bedrock)
+|depth to bedrock (lithic bedrock)
+depth to high water table|depth to water table
+description of soil material|map unit description
+embankments|soil interpretation for embankments, dikes, and levees
+impacts on wetlands|hydric soils^1^
+location outside floodplain|flooding frequency^2^
+runoff|hydrologic soil group
+seepage rate|saturated hydraulic conductivity (Ksat)
+soil permeability|saturated hydraulic conductivity (Ksat)
+Unified soil classification|Unified Soil Classification
+water soluble bedrock such as limestone|map unit description
+
+^1^Hydric soils are not synonymous with wetlands, but hydric soils are one of the 3 wetland factors/parameters required for an area to be considered a wetland.
+^2^Flooding frequencies of rare, occasional, frequent, or very frequent indicate the potential to flood at least once in 100 years.
+
+
 
 
 
