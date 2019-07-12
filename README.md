@@ -35,7 +35,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |19|Data Checks |--- |[Click here](https://jneme910.github.io/CART/chapters/Soil_Data_Checks)|---|
 |20|Outcomes |--- |[Click here](https://jneme910.github.io/CART/chapters/Outcomes) |---|
 |21|Future Development|--- |[Click here](https://jneme910.github.io/CART/chapters/future) |---|
-|22|CART User’s Guide|--- |[Click here(https://github.com/jneme910/CART/blob/master/documents/CART_Resource_Concern_Assessment_Draft.docx) |---|
+|22|CART User’s Guide|--- |[Click here](https://github.com/jneme910/CART/blob/master/documents/CART_Resource_Concern_Assessment_Draft.docx) |---|
 |23|CART Overview |--- |[Click here](https://github.com/jneme910/CART/blob/master/documents/CART_Overview.pdf) |---|
  *RA - Resource Assessment; EP- Easement Program; EE - Environmental Evaluation; RT - Ranking Tool
 
