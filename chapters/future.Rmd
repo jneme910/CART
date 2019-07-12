@@ -1,5 +1,5 @@
 ---
-title: "Future Enhancements"
+title: "Future CART Enhancements"
 author: "Jason Nemecek"
 date: "`r Sys.Date()`"
 output: 
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
     background-color: #F7FBFF;
   }
 </style>
-## Wish List:
+## List:
 1. Develop Nitrogen Leaching Interpretation 
 2. Write Soil Data Access Version of Erosion
 3. Add Soil Organic Carbon Stock to "Air Quality" resource concern
@@ -33,7 +33,7 @@ knitr::opts_chunk$set(echo = TRUE)
 6. Add thematic maps by map unit and landunit.
 
 
-## Example for Using Soils Data for a Specific Pratice.
+## Example for Using Soils Data for a Specific Pratice. (Item #4 above)
 <center>
 **WASTE STORAGE FACILITY**
 
@@ -60,6 +60,19 @@ water soluble bedrock such as limestone|map unit description
 
 ^1^Hydric soils are not synonymous with wetlands, but hydric soils are one of the 3 wetland factors/parameters required for an area to be considered a wetland.
 ^2^Flooding frequencies of rare, occasional, frequent, or very frequent indicate the potential to flood at least once in 100 years.
+
+![Note: The Suitabilities and Limitations, and the Soil Properties and Qualities options in WSS are designed to aggregate data and return a single rating or value for each map unit. The single value is typically either for the surface layer, or it is a weighted average for a specified depth range. This is done to facilitate the creation of a thematic map for the selected item. Representative values (rv’s) are used, rather than the range in properties, and depth measurements are generally displayed in centimeters. The Soil Reports option generally provides the range in values for each soil component and depth measurements are generally displayed in inches or feet; however, results are tabular only.](https://jneme910.github.io/CART/TableImages/future_pratices_soil.PNG)
+
+
+
+
+
+
+![A soil map and map legend of the area can be generated from the WSS through the Soil Map tab.  Soil maps were published at certain scales.  Site specific practices may require onsite investigation.](https://jneme910.github.io/CART/TableImages/future_pratices_soil2.PNG)
+
+
+
+
 
 
 
