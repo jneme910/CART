@@ -212,3 +212,6 @@ T9981 Fld3          |274.499|Not Prime farmland            |Farm Class:8|Farm Cl
 T9981 Fld4          |158.17|State importance              |Farm Class:4|Farm Class|
 T9981 Fld4          |160.553|Not Prime farmland            |Farm Class:8|Farm Class|
 
+![Farmclass by Mapunit](https://jneme910.github.io/CART/TableImages/FarmClass.PNG)
+
+
