@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## List:
 1. Develop Nitrogen Leaching Interpretation 
-2. Write a SQL Scripc  (Soil Data Access) Version of Erosion
+2. Write a SQL Script (Soil Data Access) Version of Erosion
 3. Add Soil Organic Carbon Stock to "Air Quality" resource concern
 4. Develop Soil Property and Interpretation SQL Scripts to assist conservation planning for specific practices
 5.  Develop SQL scripts to help assist in special conservation signups in order to identifying opportunities for conservation. Examples:
