@@ -23,9 +23,8 @@ Provides leadership within NRCS the ability to  model data and report the natura
 5. Providing technical soil services using soil scientist to collect data for validation 
 
 ## Conceptual Data Design
-`The conceptual data design = practice tables, land unit tables, miscellaneous reference tables, and connection to NASIS MU and interps tables.`
 
-`The conceptual data design = practice tables, land unit tables, miscellaneous reference tables, interps tables and connection to Soil (SSURG) Map units.
+`The conceptual data design = practice tables, land unit tables, miscellaneous reference tables, interps tables and connection to Soil (SSURG) Map units.`
 
 ## Outcomes Talking Points
 
