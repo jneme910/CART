@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 3. Add Soil Organic Carbon Stock to "Air Quality" resource concern
 4. Develop Soil Property and Interpretation SQL Scripts to assist conservation planning for specific practices
 5.  Develop SQL scripts to help assist in special conservation signups in order to identifying opportunities for conservation. Examples:
-    + Golden Wing Warblers can be found in Tamarac bogs where soils data could be used to help query certain locations and customers.
+    + Golden Wing Warblers can be found in Alder (swamps-edges) where soils data could be used to help query certain locations and identify customers. (Locating the most productive sights for declining habitats)
     + Karner Blue Butterfly Habitat Identification.
         + The Karner Blue Butterfly (KBB) is a federally listed endanger species
         + KBB catapillars feed exclusively on the leaves of wild lupine.
