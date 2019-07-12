@@ -78,7 +78,7 @@ water soluble bedrock such as limestone|map unit description
 
 ![Field 3 on left and Field 4 on right](https://jneme910.github.io/CART/TableImages/future_OM_Depletion.PNG)
 
-## AoiCoords (json)
+## AoiCoords - JavaScript Object Notation (json)
 1. https://sdmdataaccess.sc.egov.usda.gov/test/testpost.html
 
 ```{SQL}
