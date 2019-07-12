@@ -37,7 +37,7 @@ knitr::opts_chunk$set(echo = TRUE)
 <center>
 **WASTE STORAGE FACILITY**
 
-**CODE 313 (Credit Georgia NRCS)**
+**Concervation Pratice CODE 313 (Credit Georgia NRCS)**
 
 </center>
 
@@ -70,10 +70,10 @@ water soluble bedrock such as limestone|map unit description
 
 ![A soil map and map legend of the area can be generated from the WSS through the Soil Map tab.  Soil maps were published at certain scales.  Site specific practices may require onsite investigation.](https://jneme910.github.io/CART/TableImages/future_pratices_soil2.PNG)
 
-## Example Thematic Soil Map
+## Example Thematic Soil Map (item #6 above)
 
 
-#### Organic Matter Depletion (item #6 above)
+#### Organic Matter Depletion 
 
 
 ![Field 3 on left and Field 4 on right](https://jneme910.github.io/CART/TableImages/future_OM_Depletion.PNG)
