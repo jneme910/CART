@@ -70,6 +70,53 @@ water soluble bedrock such as limestone|map unit description
 
 ![A soil map and map legend of the area can be generated from the WSS through the Soil Map tab.  Soil maps were published at certain scales.  Site specific practices may require onsite investigation.](https://jneme910.github.io/CART/TableImages/future_pratices_soil2.PNG)
 
+## Example Thematic Soil Map
+
+
+#### Organic Matter Depletion (item #6 above)
+
+
+![Field 3 on left and Field 4 on right](https://jneme910.github.io/CART/TableImages/future_pratices_soil2.PNG)
+
+## AoiCoords
+https://sdmdataaccess.sc.egov.usda.gov/test/testpost.html
+
+```{SQL}
+{
+	'type': 'FeatureCollection',
+	'features': [
+		{
+			'type': 'Feature',
+			'geometry': {
+				'type': 'Polygon',
+				'coordinates': [[[-102.12335160658608, 45.959173206572416], [-102.13402890980223, 45.959218442561564], [-102.13386921506947, 45.944643788188387], [ -102.12327175652177, 45.944703605814198], [-102.12335160658608 , 45.959173206572416]
+
+
+]]
+			},
+			'properties': {'partName': 'T9981 Fld3' }
+		},
+		{
+			'type': 'Feature',
+			'geometry': {
+			   'type': 'Polygon',
+			   'coordinates': [[
+[-102.1130336443976, 45.959162795100383], [-102.12335160658608, 45.959173206572416], [-102.12327175652177, 45.944703605814198], [-102.1128892282776, 45.944710506326032], [-102.1130336443976, 45.959162795100383]
+
+]]
+			 },
+			'properties': {'partName': 'T9981 Fld4' }
+		}
+	   ]
+}
+```
+
+
+
+https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcseprd1390056.html
+AOI= 40055
+interpresultid = 2915
+
 
 
 
