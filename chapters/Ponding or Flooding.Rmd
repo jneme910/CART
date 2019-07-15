@@ -480,4 +480,9 @@ landunit|landunit_acres|ponding_flooding_acres|rating_key|attributename|
 T9981 Fld3          |328.95|30.33|Ponding or Flooding:1|Ponding or Flooding|
 T9981 Fld4          |318.72|23.14|Ponding or Flooding:1|Ponding or Flooding|
 
+## References:
 
+1. U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, title 430-VI. http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242 (07/2015).
+
+2. Soil Survey Staff, Natural Resources Conservation Service, United States Department of Agriculture. Soil Survey Geographic (SSURGO) Database. Available online. Accessed [07/2015].
+ 
