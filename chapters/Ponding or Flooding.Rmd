@@ -428,7 +428,7 @@ aoiid|landunit|landunit_acres|mukey|mapunit_acres|cokey|cname|copct|majcompflag|
 1|T9981 Fld3          |328.952|2525764|17.69|16663611|Regan                                                       |55|Yes|Occasional          |Rare                |55|100|1
 2|T9981 Fld4          |318.722|2525754|23.14|16663602|Harriet                                                     |75|Yes|Occasional          |Rare                |75|100|1
 
-# Normalizing conpoent percents and calculating components acres from interceted polygon
+# Normalizing component percent’s and calculating components acres from intercepted polygon
 
 ```{SQL}
 CREATE TABLE #pf2
