@@ -317,7 +317,7 @@ datestamp VARCHAR(32));
 
 
 ```{SQL}
-SELECT @attributeName = 'Suitability for Aerobic Soil Organisms';
+SELECT @attributeName = 'Surface Salt Concentration';
 SELECT @minPct = 10;
 SELECT @minAcres = 10;
 ```
@@ -367,13 +367,8 @@ INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3
 SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;
 ```
 
-id|rating_key|attributename|rating|rating_num
---------|-----------------------------|-----------------------------|-----------------------------|--------
-20|Suitability for Aerobic Soil Organisms:1|Suitability for Aerobic Soil Organisms  |Not favorable     |1
-21|Suitability for Aerobic Soil Organisms:2|Suitability for Aerobic Soil Organisms  |Somewhat favorable|2
-22|Suitability for Aerobic Soil Organisms:3|Suitability for Aerobic Soil Organisms  |Very favorable    |3
-23|Suitability for Aerobic Soil Organisms:4|Suitability for Aerobic Soil Organisms  |Not rated         |4
-
+attributename|	ruledesign|	rating1|	rating2|	rating3	|rating4|	rating5	|rating6
+Surface Salt Concentration | limitation |	High surface salinization risk or already saline |           	Surface salinization risk|  Low surface salinization risk |	Not rated |                               NULL|	NULL
 
 
 ### Populate the #RatingDomain table with a unique rating_key for this interp
@@ -398,12 +393,14 @@ SELECT @ratingKey = RTRIM(@attributeName) + ':6'
 IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)
 ```
 
-id|rating_key|attributename|rating|rating_num|
------------|----------------------------------|-----------------------------|----------------------------------|-----------|
-20|Suitability for Aerobic Soil Organisms:1                    |Suitability for Aerobic Soil Organisms                      |Not favorable                                               |1|
-21|Suitability for Aerobic Soil Organisms:2                    |Suitability for Aerobic Soil Organisms                      |Somewhat favorable                                          |2|
-22|Suitability for Aerobic Soil Organisms:3                    |Suitability for Aerobic Soil Organisms                      |Very favorable                                              |3|
-23|Suitability for Aerobic Soil Organisms:4                    |Suitability for Aerobic Soil Organisms                      |Not rated                                                   |4|
+
+id|rating_key|attributename|rating|rating_num
+----------|-------------------------------------------------|-------------------------------------------------|----------|----------
+1|Surface Salt Concentration:1|Surface Salt Concentration  |High surface salinization risk or already saline            |1
+2|Surface Salt Concentration:2|Surface Salt Concentration  |Surface salinization risk   |2
+3|Surface Salt Concentration:3|Surface Salt Concentration  |Low surface salinization risk                               |3
+4|Surface Salt Concentration:4|Surface Salt Concentration  |Not rated                   |4
+
 
 
 
@@ -417,54 +414,55 @@ FROM #M4 AS M4
 LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
 WHERE M4.majcompflag = 'yes';
 ```
-                                  
+
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|mu_pct_sum
--------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------
-1|T9981 Fld3          |354627|0.426|16464494|Daglum                    |25|Somewhat favorable        |90
-1|T9981 Fld3          |354627|0.426|16464495|Farnuf                    |65|Somewhat favorable        |90
-1|T9981 Fld3          |354648|0.287|16464607|Amor                      |25|Somewhat favorable        |85
-1|T9981 Fld3          |354648|0.287|16464612|Reeder                    |60|Somewhat favorable        |85
-1|T9981 Fld3          |2494708|1.729|16663930|Amor                      |49|Somewhat favorable        |81
-1|T9981 Fld3          |2494708|1.729|16663931|Cabba                     |32|Somewhat favorable        |81
-1|T9981 Fld3          |2525720|56.699|16663899|Daglum                    |33|Somewhat favorable        |88
-1|T9981 Fld3          |2525720|56.699|16663903|Rhoades                   |55|Somewhat favorable        |88
-1|T9981 Fld3          |2525732|1.35|16663796|Ekalaka                   |55|Somewhat favorable        |72
-1|T9981 Fld3          |2525732|1.35|16663797|Yegen                     |17|Somewhat favorable        |72
-1|T9981 Fld3          |2525733|0.129|16663951|Vebar                     |50|Somewhat favorable        |75
-1|T9981 Fld3          |2525733|0.129|16663952|Cohagen                   |25|Somewhat favorable        |75
-1|T9981 Fld3          |2525739|28.479|16663915|Parshall                  |20|Somewhat favorable        |78
-1|T9981 Fld3          |2525739|28.479|16663917|Vebar                     |58|Somewhat favorable        |78
-1|T9981 Fld3          |2525745|4.983|16663921|Shambo                    |75|Somewhat favorable        |75
-1|T9981 Fld3          |2525746|16.106|16663927|Shambo                    |78|Somewhat favorable        |78
-1|T9981 Fld3          |2525754|12.638|16663602|Harriet                   |75|Somewhat favorable        |75
-1|T9981 Fld3          |2525764|17.691|16663611|Regan                     |55|Somewhat favorable        |55
-1|T9981 Fld3          |2525766|0.032|16663539|Water                     |100|Not rated                 |100
-1|T9981 Fld3          |2525769|181.356|16663985|Belfield                  |48|Somewhat favorable        |88
-1|T9981 Fld3          |2525769|181.356|16663987|Daglum                    |40|Somewhat favorable        |88
-1|T9981 Fld3          |2755648|2.449|16663766|Reeder                    |58|Somewhat favorable        |78
-1|T9981 Fld3          |2755648|2.449|16663767|Janesburg                 |20|Somewhat favorable        |78
-1|T9981 Fld3          |2755654|4.599|16663846|Reeder                    |60|Somewhat favorable        |85
-1|T9981 Fld3          |2755654|4.599|16663847|Amor                      |25|Somewhat favorable        |85
-2|T9981 Fld4          |2525720|8.623|16663899|Daglum                    |33|Somewhat favorable        |88
-2|T9981 Fld4          |2525720|8.623|16663903|Rhoades                   |55|Somewhat favorable        |88
-2|T9981 Fld4          |2525724|0.458|16664017|Savage                    |30|Somewhat favorable        |85
-2|T9981 Fld4          |2525724|0.458|16664018|Daglum                    |20|Somewhat favorable        |85
-2|T9981 Fld4          |2525724|0.458|16664022|Belfield                  |35|Somewhat favorable        |85
-2|T9981 Fld4          |2525730|31.514|16663991|Regent                    |68|Somewhat favorable        |85
-2|T9981 Fld4          |2525730|31.514|16663992|Savage                    |17|Somewhat favorable        |85
-2|T9981 Fld4          |2525745|62.205|16663921|Shambo                    |75|Somewhat favorable        |75
-2|T9981 Fld4          |2525746|63.55|16663927|Shambo                    |78|Somewhat favorable        |78
-2|T9981 Fld4          |2525754|23.138|16663602|Harriet                   |75|Somewhat favorable        |75
-2|T9981 Fld4          |2525767|3.86|16663540|Water                     |100|Not rated                 |100
-2|T9981 Fld4          |2525769|103.909|16663985|Belfield                  |48|Somewhat favorable        |88
-2|T9981 Fld4          |2525769|103.909|16663987|Daglum                    |40|Somewhat favorable        |88
-2|T9981 Fld4          |2755639|0.443|16663554|Savage                    |62|Somewhat favorable        |80
-2|T9981 Fld4          |2755639|0.443|16663555|Grail                     |18|Somewhat favorable        |80
-2|T9981 Fld4          |2755643|9.641|16663957|Flasher                   |30|Somewhat favorable        |88
-2|T9981 Fld4          |2755643|9.641|16663958|Vebar                     |40|Somewhat favorable        |88
-2|T9981 Fld4          |2755643|9.641|16663959|Tally                     |18|Somewhat favorable        |88
-2|T9981 Fld4          |2755648|11.382|16663766|Reeder                    |58|Somewhat favorable        |78
-2|T9981 Fld4          |2755648|11.382|16663767|Janesburg                 |20|Somewhat favorable        |78
+-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------------------------------------|-------------
+1|T9981 Fld3          |354627|0.426|16464494|Daglum                      |25|Surface salinization risk   |90
+1|T9981 Fld3          |354627|0.426|16464495|Farnuf                      |65|Low surface salinization risk                               |90
+1|T9981 Fld3          |354648|0.287|16464607|Amor                        |25|Low surface salinization risk                               |85
+1|T9981 Fld3          |354648|0.287|16464612|Reeder                      |60|Low surface salinization risk                               |85
+1|T9981 Fld3          |2494708|1.729|16663930|Amor                        |49|Low surface salinization risk                               |81
+1|T9981 Fld3          |2494708|1.729|16663931|Cabba                       |32|Low surface salinization risk                               |81
+1|T9981 Fld3          |2525720|56.699|16663899|Daglum                      |33|Low surface salinization risk                               |88
+1|T9981 Fld3          |2525720|56.699|16663903|Rhoades                     |55|Surface salinization risk   |88
+1|T9981 Fld3          |2525732|1.35|16663796|Ekalaka                     |55|Low surface salinization risk                               |72
+1|T9981 Fld3          |2525732|1.35|16663797|Yegen                       |17|Low surface salinization risk                               |72
+1|T9981 Fld3          |2525733|0.129|16663951|Vebar                       |50|Low surface salinization risk                               |75
+1|T9981 Fld3          |2525733|0.129|16663952|Cohagen                     |25|Low surface salinization risk                               |75
+1|T9981 Fld3          |2525739|28.479|16663915|Parshall                    |20|Low surface salinization risk                               |78
+1|T9981 Fld3          |2525739|28.479|16663917|Vebar                       |58|Low surface salinization risk                               |78
+1|T9981 Fld3          |2525745|4.983|16663921|Shambo                      |75|Low surface salinization risk                               |75
+1|T9981 Fld3          |2525746|16.106|16663927|Shambo                      |78|Low surface salinization risk                               |78
+1|T9981 Fld3          |2525754|12.638|16663602|Harriet                     |75|High surface salinization risk or already saline            |75
+1|T9981 Fld3          |2525764|17.691|16663611|Regan                       |55|High surface salinization risk or already saline            |55
+1|T9981 Fld3          |2525766|0.032|16663539|Water                       |100|Not rated                   |100
+1|T9981 Fld3          |2525769|181.356|16663985|Belfield                    |48|Low surface salinization risk                               |88
+1|T9981 Fld3          |2525769|181.356|16663987|Daglum                      |40|Low surface salinization risk                               |88
+1|T9981 Fld3          |2755648|2.449|16663766|Reeder                      |58|Low surface salinization risk                               |78
+1|T9981 Fld3          |2755648|2.449|16663767|Janesburg                   |20|Low surface salinization risk                               |78
+1|T9981 Fld3          |2755654|4.599|16663846|Reeder                      |60|Low surface salinization risk                               |85
+1|T9981 Fld3          |2755654|4.599|16663847|Amor                        |25|Low surface salinization risk                               |85
+2|T9981 Fld4          |2525720|8.623|16663899|Daglum                      |33|Low surface salinization risk                               |88
+2|T9981 Fld4          |2525720|8.623|16663903|Rhoades                     |55|Surface salinization risk   |88
+2|T9981 Fld4          |2525724|0.458|16664017|Savage                      |30|Low surface salinization risk                               |85
+2|T9981 Fld4          |2525724|0.458|16664018|Daglum                      |20|Low surface salinization risk                               |85
+2|T9981 Fld4          |2525724|0.458|16664022|Belfield                    |35|Low surface salinization risk                               |85
+2|T9981 Fld4          |2525730|31.514|16663991|Regent                      |68|Low surface salinization risk                               |85
+2|T9981 Fld4          |2525730|31.514|16663992|Savage                      |17|Low surface salinization risk                               |85
+2|T9981 Fld4          |2525745|62.205|16663921|Shambo                      |75|Low surface salinization risk                               |75
+2|T9981 Fld4          |2525746|63.55|16663927|Shambo                      |78|Low surface salinization risk                               |78
+2|T9981 Fld4          |2525754|23.138|16663602|Harriet                     |75|High surface salinization risk or already saline            |75
+2|T9981 Fld4          |2525767|3.86|16663540|Water                       |100|Not rated                   |100
+2|T9981 Fld4          |2525769|103.909|16663985|Belfield                    |48|Low surface salinization risk                               |88
+2|T9981 Fld4          |2525769|103.909|16663987|Daglum                      |40|Low surface salinization risk                               |88
+2|T9981 Fld4          |2755639|0.443|16663554|Savage                      |62|Low surface salinization risk                               |80
+2|T9981 Fld4          |2755639|0.443|16663555|Grail                       |18|Low surface salinization risk                               |80
+2|T9981 Fld4          |2755643|9.641|16663957|Flasher                     |30|Low surface salinization risk                               |88
+2|T9981 Fld4          |2755643|9.641|16663958|Vebar                       |40|Low surface salinization risk                               |88
+2|T9981 Fld4          |2755643|9.641|16663959|Tally                       |18|Low surface salinization risk                               |88
+2|T9981 Fld4          |2755648|11.382|16663766|Reeder                      |58|Low surface salinization risk                               |78
+2|T9981 Fld4          |2755648|11.382|16663767|Janesburg                   |20|Low surface salinization risk                               |78
+                                  
 
 ### Populate component level ratings with adjusted component percent to account for the un-used minor components
 ```{SQL}
@@ -473,53 +471,54 @@ INSERT INTO #M6
 SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
 FROM #M5;
 ```
-aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|MU_pct_sum|adj_comp_pct|co_acres
--------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------
-1|T9981 Fld3          |354627|0.426|16464494|Daglum   |25|Somewhat favorable |90|0.277777778|0.1183
-1|T9981 Fld3          |354627|0.426|16464495|Farnuf   |65|Somewhat favorable |90|0.722222222|0.3077
-1|T9981 Fld3          |354648|0.287|16464607|Amor     |25|Somewhat favorable |85|0.294117647|0.0844
-1|T9981 Fld3          |354648|0.287|16464612|Reeder   |60|Somewhat favorable |85|0.705882353|0.2026
-1|T9981 Fld3          |2494708|1.729|16663930|Amor     |49|Somewhat favorable |81|0.604938272|1.0459
-1|T9981 Fld3          |2494708|1.729|16663931|Cabba    |32|Somewhat favorable |81|0.395061728|0.6831
-1|T9981 Fld3          |2525720|56.699|16663899|Daglum   |33|Somewhat favorable |88|0.375|21.2621
-1|T9981 Fld3          |2525720|56.699|16663903|Rhoades  |55|Somewhat favorable |88|0.625|35.4369
-1|T9981 Fld3          |2525732|1.35|16663796|Ekalaka  |55|Somewhat favorable |72|0.763888889|1.0312
-1|T9981 Fld3          |2525732|1.35|16663797|Yegen    |17|Somewhat favorable |72|0.236111111|0.3187
-1|T9981 Fld3          |2525733|0.129|16663951|Vebar    |50|Somewhat favorable |75|0.666666667|0.086
-1|T9981 Fld3          |2525733|0.129|16663952|Cohagen  |25|Somewhat favorable |75|0.333333333|0.043
-1|T9981 Fld3          |2525739|28.479|16663915|Parshall |20|Somewhat favorable |78|0.256410256|7.3023
-1|T9981 Fld3          |2525739|28.479|16663917|Vebar    |58|Somewhat favorable |78|0.743589744|21.1767
-1|T9981 Fld3          |2525745|4.983|16663921|Shambo   |75|Somewhat favorable |75|1|4.983
-1|T9981 Fld3          |2525746|16.106|16663927|Shambo   |78|Somewhat favorable |78|1|16.106
-1|T9981 Fld3          |2525754|12.638|16663602|Harriet  |75|Somewhat favorable |75|1|12.638
-1|T9981 Fld3          |2525764|17.691|16663611|Regan    |55|Somewhat favorable |55|1|17.691
-1|T9981 Fld3          |2525766|0.032|16663539|Water    |100|Not rated|100|1|0.032
-1|T9981 Fld3          |2525769|181.356|16663985|Belfield |48|Somewhat favorable |88|0.545454545|98.9215
-1|T9981 Fld3          |2525769|181.356|16663987|Daglum   |40|Somewhat favorable |88|0.454545455|82.4345
-1|T9981 Fld3          |2755648|2.449|16663766|Reeder   |58|Somewhat favorable |78|0.743589744|1.8211
-1|T9981 Fld3          |2755648|2.449|16663767|Janesburg|20|Somewhat favorable |78|0.256410256|0.6279
-1|T9981 Fld3          |2755654|4.599|16663846|Reeder   |60|Somewhat favorable |85|0.705882353|3.2464
-1|T9981 Fld3          |2755654|4.599|16663847|Amor     |25|Somewhat favorable |85|0.294117647|1.3526
-2|T9981 Fld4          |2525720|8.623|16663899|Daglum   |33|Somewhat favorable |88|0.375|3.2336
-2|T9981 Fld4          |2525720|8.623|16663903|Rhoades  |55|Somewhat favorable |88|0.625|5.3894
-2|T9981 Fld4          |2525724|0.458|16664017|Savage   |30|Somewhat favorable |85|0.352941176|0.1616
-2|T9981 Fld4          |2525724|0.458|16664018|Daglum   |20|Somewhat favorable |85|0.235294118|0.1078
-2|T9981 Fld4          |2525724|0.458|16664022|Belfield |35|Somewhat favorable |85|0.411764706|0.1886
-2|T9981 Fld4          |2525730|31.514|16663991|Regent   |68|Somewhat favorable |85|0.8|25.2112
-2|T9981 Fld4          |2525730|31.514|16663992|Savage   |17|Somewhat favorable |85|0.2|6.3028
-2|T9981 Fld4          |2525745|62.205|16663921|Shambo   |75|Somewhat favorable |75|1|62.205
-2|T9981 Fld4          |2525746|63.55|16663927|Shambo   |78|Somewhat favorable |78|1|63.55
-2|T9981 Fld4          |2525754|23.138|16663602|Harriet  |75|Somewhat favorable |75|1|23.138
-2|T9981 Fld4          |2525767|3.86|16663540|Water    |100|Not rated|100|1|3.86
-2|T9981 Fld4          |2525769|103.909|16663985|Belfield |48|Somewhat favorable |88|0.545454545|56.6776
-2|T9981 Fld4          |2525769|103.909|16663987|Daglum   |40|Somewhat favorable |88|0.454545455|47.2314
-2|T9981 Fld4          |2755639|0.443|16663554|Savage   |62|Somewhat favorable |80|0.775|0.3433
-2|T9981 Fld4          |2755639|0.443|16663555|Grail    |18|Somewhat favorable |80|0.225|0.0997
-2|T9981 Fld4          |2755643|9.641|16663957|Flasher  |30|Somewhat favorable |88|0.340909091|3.2867
-2|T9981 Fld4          |2755643|9.641|16663958|Vebar    |40|Somewhat favorable |88|0.454545455|4.3823
-2|T9981 Fld4          |2755643|9.641|16663959|Tally    |18|Somewhat favorable |88|0.204545455|1.972
-2|T9981 Fld4          |2755648|11.382|16663766|Reeder   |58|Somewhat favorable |78|0.743589744|8.4635
-2|T9981 Fld4          |2755648|11.382|16663767|Janesburg|20|Somewhat favorable |78|0.256410256|2.9185
+
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|mu_pct_sum|adj_comp_pct
+--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------
+1|T9981 Fld3          |354627|0.426|16464494|Daglum                      |25|Surface salinization risk   |90|0.277777778
+1|T9981 Fld3          |354627|0.426|16464495|Farnuf                      |65|Low surface salinization risk                               |90|0.722222222
+1|T9981 Fld3          |354648|0.287|16464607|Amor                        |25|Low surface salinization risk                               |85|0.294117647
+1|T9981 Fld3          |354648|0.287|16464612|Reeder                      |60|Low surface salinization risk                               |85|0.705882353
+1|T9981 Fld3          |2494708|1.729|16663930|Amor                        |49|Low surface salinization risk                               |81|0.604938272
+1|T9981 Fld3          |2494708|1.729|16663931|Cabba                       |32|Low surface salinization risk                               |81|0.395061728
+1|T9981 Fld3          |2525720|56.699|16663899|Daglum                      |33|Low surface salinization risk                               |88|0.375
+1|T9981 Fld3          |2525720|56.699|16663903|Rhoades                     |55|Surface salinization risk   |88|0.625
+1|T9981 Fld3          |2525732|1.35|16663796|Ekalaka                     |55|Low surface salinization risk                               |72|0.763888889
+1|T9981 Fld3          |2525732|1.35|16663797|Yegen                       |17|Low surface salinization risk                               |72|0.236111111
+1|T9981 Fld3          |2525733|0.129|16663951|Vebar                       |50|Low surface salinization risk                               |75|0.666666667
+1|T9981 Fld3          |2525733|0.129|16663952|Cohagen                     |25|Low surface salinization risk                               |75|0.333333333
+1|T9981 Fld3          |2525739|28.479|16663915|Parshall                    |20|Low surface salinization risk                               |78|0.256410256
+1|T9981 Fld3          |2525739|28.479|16663917|Vebar                       |58|Low surface salinization risk                               |78|0.743589744
+1|T9981 Fld3          |2525745|4.983|16663921|Shambo                      |75|Low surface salinization risk                               |75|1
+1|T9981 Fld3          |2525746|16.106|16663927|Shambo                      |78|Low surface salinization risk                               |78|1
+1|T9981 Fld3          |2525754|12.638|16663602|Harriet                     |75|High surface salinization risk or already saline            |75|1
+1|T9981 Fld3          |2525764|17.691|16663611|Regan                       |55|High surface salinization risk or already saline            |55|1
+1|T9981 Fld3          |2525766|0.032|16663539|Water                       |100|Not rated                   |100|1
+1|T9981 Fld3          |2525769|181.356|16663985|Belfield                    |48|Low surface salinization risk                               |88|0.545454545
+1|T9981 Fld3          |2525769|181.356|16663987|Daglum                      |40|Low surface salinization risk                               |88|0.454545455
+1|T9981 Fld3          |2755648|2.449|16663766|Reeder                      |58|Low surface salinization risk                               |78|0.743589744
+1|T9981 Fld3          |2755648|2.449|16663767|Janesburg                   |20|Low surface salinization risk                               |78|0.256410256
+1|T9981 Fld3          |2755654|4.599|16663846|Reeder                      |60|Low surface salinization risk                               |85|0.705882353
+1|T9981 Fld3          |2755654|4.599|16663847|Amor                        |25|Low surface salinization risk                               |85|0.294117647
+2|T9981 Fld4          |2525720|8.623|16663899|Daglum                      |33|Low surface salinization risk                               |88|0.375
+2|T9981 Fld4          |2525720|8.623|16663903|Rhoades                     |55|Surface salinization risk   |88|0.625
+2|T9981 Fld4          |2525724|0.458|16664017|Savage                      |30|Low surface salinization risk                               |85|0.352941176
+2|T9981 Fld4          |2525724|0.458|16664018|Daglum                      |20|Low surface salinization risk                               |85|0.235294118
+2|T9981 Fld4          |2525724|0.458|16664022|Belfield                    |35|Low surface salinization risk                               |85|0.411764706
+2|T9981 Fld4          |2525730|31.514|16663991|Regent                      |68|Low surface salinization risk                               |85|0.8
+2|T9981 Fld4          |2525730|31.514|16663992|Savage                      |17|Low surface salinization risk                               |85|0.2
+2|T9981 Fld4          |2525745|62.205|16663921|Shambo                      |75|Low surface salinization risk                               |75|1
+2|T9981 Fld4          |2525746|63.55|16663927|Shambo                      |78|Low surface salinization risk                               |78|1
+2|T9981 Fld4          |2525754|23.138|16663602|Harriet                     |75|High surface salinization risk or already saline            |75|1
+2|T9981 Fld4          |2525767|3.86|16663540|Water                       |100|Not rated                   |100|1
+2|T9981 Fld4          |2525769|103.909|16663985|Belfield                    |48|Low surface salinization risk                               |88|0.545454545
+2|T9981 Fld4          |2525769|103.909|16663987|Daglum                      |40|Low surface salinization risk                               |88|0.454545455
+2|T9981 Fld4          |2755639|0.443|16663554|Savage                      |62|Low surface salinization risk                               |80|0.775
+2|T9981 Fld4          |2755639|0.443|16663555|Grail                       |18|Low surface salinization risk                               |80|0.225
+2|T9981 Fld4          |2755643|9.641|16663957|Flasher                     |30|Low surface salinization risk                               |88|0.340909091
+2|T9981 Fld4          |2755643|9.641|16663958|Vebar                       |40|Low surface salinization risk                               |88|0.454545455
+2|T9981 Fld4          |2755643|9.641|16663959|Tally                       |18|Low surface salinization risk                               |88|0.204545455
+2|T9981 Fld4          |2755648|11.382|16663766|Reeder                      |58|Low surface salinization risk                               |78|0.743589744
+2|T9981 Fld4          |2755648|11.382|16663767|Janesburg                   |20|Low surface salinization risk                               |78|0.256410256
 
 
 
@@ -532,52 +531,53 @@ FROM #M6;
 ```
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|MU_pct_sum|adj_comp_pct|co_acres
------------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------
-1|T9981 Fld3  |354627|0.426|16464494|Daglum|25|Mineral soil  |90|0.277777778|0.1183
-1|T9981 Fld3  |354627|0.426|16464495|Farnuf|65|Mineral soil  |90|0.722222222|0.3077
-1|T9981 Fld3  |354648|0.287|16464607|Amor  |25|Mineral soil  |85|0.294117647|0.0844
-1|T9981 Fld3  |354648|0.287|16464612|Reeder|60|Mineral soil  |85|0.705882353|0.2026
-1|T9981 Fld3  |2494708|1.729|16663930|Amor  |49|Mineral soil  |81|0.604938272|1.0459
-1|T9981 Fld3  |2494708|1.729|16663931|Cabba |32|Mineral soil  |81|0.395061728|0.6831
-1|T9981 Fld3  |2525720|56.699|16663899|Daglum|33|Mineral soil  |88|0.375|21.2621
-1|T9981 Fld3  |2525720|56.699|16663903|Rhoades       |55|Mineral soil  |88|0.625|35.4369
-1|T9981 Fld3  |2525732|1.35|16663796|Ekalaka       |55|Mineral soil  |72|0.763888889|1.0312
-1|T9981 Fld3  |2525732|1.35|16663797|Yegen |17|Mineral soil  |72|0.236111111|0.3187
-1|T9981 Fld3  |2525733|0.129|16663951|Vebar |50|Mineral soil  |75|0.666666667|0.086
-1|T9981 Fld3  |2525733|0.129|16663952|Cohagen       |25|Mineral soil  |75|0.333333333|0.043
-1|T9981 Fld3  |2525739|28.479|16663915|Parshall      |20|Mineral soil  |78|0.256410256|7.3023
-1|T9981 Fld3  |2525739|28.479|16663917|Vebar |58|Mineral soil  |78|0.743589744|21.1767
-1|T9981 Fld3  |2525745|4.983|16663921|Shambo|75|Mineral soil  |75|1|4.983
-1|T9981 Fld3  |2525746|16.106|16663927|Shambo|78|Mineral soil  |78|1|16.106
-1|T9981 Fld3  |2525754|12.638|16663602|Harriet       |75|Mineral soil  |75|1|12.638
-1|T9981 Fld3  |2525764|17.691|16663611|Regan |55|Mineral soil  |55|1|17.691
-1|T9981 Fld3  |2525766|0.032|16663539|Water |100|Not rated     |100|1|0.032
-1|T9981 Fld3  |2525769|181.356|16663985|Belfield      |48|Mineral soil  |88|0.545454545|98.9215
-1|T9981 Fld3  |2525769|181.356|16663987|Daglum|40|Mineral soil  |88|0.454545455|82.4345
-1|T9981 Fld3  |2755648|2.449|16663766|Reeder|58|Mineral soil  |78|0.743589744|1.8211
-1|T9981 Fld3  |2755648|2.449|16663767|Janesburg     |20|Mineral soil  |78|0.256410256|0.6279
-1|T9981 Fld3  |2755654|4.599|16663846|Reeder|60|Mineral soil  |85|0.705882353|3.2464
-1|T9981 Fld3  |2755654|4.599|16663847|Amor  |25|Mineral soil  |85|0.294117647|1.3526
-2|T9981 Fld4  |2525720|8.623|16663899|Daglum|33|Mineral soil  |88|0.375|3.2336
-2|T9981 Fld4  |2525720|8.623|16663903|Rhoades       |55|Mineral soil  |88|0.625|5.3894
-2|T9981 Fld4  |2525724|0.458|16664017|Savage|30|Mineral soil  |85|0.352941176|0.1616
-2|T9981 Fld4  |2525724|0.458|16664018|Daglum|20|Mineral soil  |85|0.235294118|0.1078
-2|T9981 Fld4  |2525724|0.458|16664022|Belfield      |35|Mineral soil  |85|0.411764706|0.1886
-2|T9981 Fld4  |2525730|31.514|16663991|Regent|68|Mineral soil  |85|0.8|25.2112
-2|T9981 Fld4  |2525730|31.514|16663992|Savage|17|Mineral soil  |85|0.2|6.3028
-2|T9981 Fld4  |2525745|62.205|16663921|Shambo|75|Mineral soil  |75|1|62.205
-2|T9981 Fld4  |2525746|63.55|16663927|Shambo|78|Mineral soil  |78|1|63.55
-2|T9981 Fld4  |2525754|23.138|16663602|Harriet       |75|Mineral soil  |75|1|23.138
-2|T9981 Fld4  |2525767|3.86|16663540|Water |100|Not rated     |100|1|3.86
-2|T9981 Fld4  |2525769|103.909|16663985|Belfield      |48|Mineral soil  |88|0.545454545|56.6776
-2|T9981 Fld4  |2525769|103.909|16663987|Daglum|40|Mineral soil  |88|0.454545455|47.2314
-2|T9981 Fld4  |2755639|0.443|16663554|Savage|62|Mineral soil  |80|0.775|0.3433
-2|T9981 Fld4  |2755639|0.443|16663555|Grail |18|Mineral soil  |80|0.225|0.0997
-2|T9981 Fld4  |2755643|9.641|16663957|Flasher       |30|Mineral soil  |88|0.340909091|3.2867
-2|T9981 Fld4  |2755643|9.641|16663958|Vebar |40|Mineral soil  |88|0.454545455|4.3823
-2|T9981 Fld4  |2755643|9.641|16663959|Tally |18|Mineral soil  |88|0.204545455|1.972
-2|T9981 Fld4  |2755648|11.382|16663766|Reeder|58|Mineral soil  |78|0.743589744|8.4635
-2|T9981 Fld4  |2755648|11.382|16663767|Janesburg     |20|Mineral soil  |78|0.256410256|2.9185
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------
+1|T9981 Fld3          |354627|0.426|16464494|Daglum    |25|Surface salinization risk          |90|0.277777778|0.1183
+1|T9981 Fld3          |354627|0.426|16464495|Farnuf    |65|Low surface salinization risk      |90|0.722222222|0.3077
+1|T9981 Fld3          |354648|0.287|16464607|Amor      |25|Low surface salinization risk      |85|0.294117647|0.0844
+1|T9981 Fld3          |354648|0.287|16464612|Reeder    |60|Low surface salinization risk      |85|0.705882353|0.2026
+1|T9981 Fld3          |2494708|1.729|16663930|Amor      |49|Low surface salinization risk      |81|0.604938272|1.0459
+1|T9981 Fld3          |2494708|1.729|16663931|Cabba     |32|Low surface salinization risk      |81|0.395061728|0.6831
+1|T9981 Fld3          |2525720|56.699|16663899|Daglum    |33|Low surface salinization risk      |88|0.375|21.2621
+1|T9981 Fld3          |2525720|56.699|16663903|Rhoades   |55|Surface salinization risk          |88|0.625|35.4369
+1|T9981 Fld3          |2525732|1.35|16663796|Ekalaka   |55|Low surface salinization risk      |72|0.763888889|1.0312
+1|T9981 Fld3          |2525732|1.35|16663797|Yegen     |17|Low surface salinization risk      |72|0.236111111|0.3187
+1|T9981 Fld3          |2525733|0.129|16663951|Vebar     |50|Low surface salinization risk      |75|0.666666667|0.086
+1|T9981 Fld3          |2525733|0.129|16663952|Cohagen   |25|Low surface salinization risk      |75|0.333333333|0.043
+1|T9981 Fld3          |2525739|28.479|16663915|Parshall  |20|Low surface salinization risk      |78|0.256410256|7.3023
+1|T9981 Fld3          |2525739|28.479|16663917|Vebar     |58|Low surface salinization risk      |78|0.743589744|21.1767
+1|T9981 Fld3          |2525745|4.983|16663921|Shambo    |75|Low surface salinization risk      |75|1|4.983
+1|T9981 Fld3          |2525746|16.106|16663927|Shambo    |78|Low surface salinization risk      |78|1|16.106
+1|T9981 Fld3          |2525754|12.638|16663602|Harriet   |75|High surface salinization risk or already saline            |75|1|12.638
+1|T9981 Fld3          |2525764|17.691|16663611|Regan     |55|High surface salinization risk or already saline            |55|1|17.691
+1|T9981 Fld3          |2525766|0.032|16663539|Water     |100|Not rated |100|1|0.032
+1|T9981 Fld3          |2525769|181.356|16663985|Belfield  |48|Low surface salinization risk      |88|0.545454545|98.9215
+1|T9981 Fld3          |2525769|181.356|16663987|Daglum    |40|Low surface salinization risk      |88|0.454545455|82.4345
+1|T9981 Fld3          |2755648|2.449|16663766|Reeder    |58|Low surface salinization risk      |78|0.743589744|1.8211
+1|T9981 Fld3          |2755648|2.449|16663767|Janesburg |20|Low surface salinization risk      |78|0.256410256|0.6279
+1|T9981 Fld3          |2755654|4.599|16663846|Reeder    |60|Low surface salinization risk      |85|0.705882353|3.2464
+1|T9981 Fld3          |2755654|4.599|16663847|Amor      |25|Low surface salinization risk      |85|0.294117647|1.3526
+2|T9981 Fld4          |2525720|8.623|16663899|Daglum    |33|Low surface salinization risk      |88|0.375|3.2336
+2|T9981 Fld4          |2525720|8.623|16663903|Rhoades   |55|Surface salinization risk          |88|0.625|5.3894
+2|T9981 Fld4          |2525724|0.458|16664017|Savage    |30|Low surface salinization risk      |85|0.352941176|0.1616
+2|T9981 Fld4          |2525724|0.458|16664018|Daglum    |20|Low surface salinization risk      |85|0.235294118|0.1078
+2|T9981 Fld4          |2525724|0.458|16664022|Belfield  |35|Low surface salinization risk      |85|0.411764706|0.1886
+2|T9981 Fld4          |2525730|31.514|16663991|Regent    |68|Low surface salinization risk      |85|0.8|25.2112
+2|T9981 Fld4          |2525730|31.514|16663992|Savage    |17|Low surface salinization risk      |85|0.2|6.3028
+2|T9981 Fld4          |2525745|62.205|16663921|Shambo    |75|Low surface salinization risk      |75|1|62.205
+2|T9981 Fld4          |2525746|63.55|16663927|Shambo    |78|Low surface salinization risk      |78|1|63.55
+2|T9981 Fld4          |2525754|23.138|16663602|Harriet   |75|High surface salinization risk or already saline            |75|1|23.138
+2|T9981 Fld4          |2525767|3.86|16663540|Water     |100|Not rated |100|1|3.86
+2|T9981 Fld4          |2525769|103.909|16663985|Belfield  |48|Low surface salinization risk      |88|0.545454545|56.6776
+2|T9981 Fld4          |2525769|103.909|16663987|Daglum    |40|Low surface salinization risk      |88|0.454545455|47.2314
+2|T9981 Fld4          |2755639|0.443|16663554|Savage    |62|Low surface salinization risk      |80|0.775|0.3433
+2|T9981 Fld4          |2755639|0.443|16663555|Grail     |18|Low surface salinization risk      |80|0.225|0.0997
+2|T9981 Fld4          |2755643|9.641|16663957|Flasher   |30|Low surface salinization risk      |88|0.340909091|3.2867
+2|T9981 Fld4          |2755643|9.641|16663958|Vebar     |40|Low surface salinization risk      |88|0.454545455|4.3823
+2|T9981 Fld4          |2755643|9.641|16663959|Tally     |18|Low surface salinization risk      |88|0.204545455|1.972
+2|T9981 Fld4          |2755648|11.382|16663766|Reeder    |58|Low surface salinization risk      |78|0.743589744|8.4635
+2|T9981 Fld4          |2755648|11.382|16663767|Janesburg |20|Low surface salinization risk      |78|0.256410256|2.9185
+
 
 
 ### Aggregates the classes and sums up the component acres  by landunit (Tract and Field number)
@@ -590,12 +590,17 @@ GROUP BY landunit, rating
 ORDER BY landunit, rating_acres DESC;
 ```
 
-landunit	rating	rating_acres
-----------	----------	----------
-T9981 Fld3          	Not rated                                                   	0.032
-T9981 Fld4          	Not rated                                                   	3.86
-T9981 Fld3          	Somewhat favorable                                          	328.9209
-T9981 Fld4          	Somewhat favorable                                          	314.863
+landunit|rating|rating_acres
+-----------|-----------|-----------
+T9981 Fld3 |High surface salinization risk or already saline   |30.329
+T9981 Fld4 |High surface salinization risk or already saline   |23.138
+T9981 Fld3 |Low surface salinization risk    |263.0367
+T9981 Fld4 |Low surface salinization risk    |286.3356
+T9981 Fld3 |Not rated      |0.032
+T9981 Fld4 |Not rated      |3.86
+T9981 Fld3 |Surface salinization risk        |35.5552
+T9981 Fld4 |Surface salinization risk        |5.3894
+
 
 
 
@@ -614,12 +619,17 @@ GROUP BY aoiid, M10.landunit, M10.rating, rating_key, rating_acres, landunit_acr
 ORDER BY landunit, attributename, rating_num DESC;
 ```
 
-aoiid|landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres|
-------------|------------|------------|------------|------------|------------|------------|------------|------------|
-1|T9981 Fld3          |Suitability for Aerobic Soil Organisms |Not rated         |4|Suitability for Aerobic Soil Organisms:4                    |0.01|0.03|328.95|
-1|T9981 Fld3          |Suitability for Aerobic Soil Organisms |Somewhat favorable|2|Suitability for Aerobic Soil Organisms:2                    |99.99|328.92|328.95|
-2|T9981 Fld4          |Suitability for Aerobic Soil Organisms |Not rated         |4|Suitability for Aerobic Soil Organisms:4                    |1.21|3.86|318.72|
-2|T9981 Fld4          |Suitability for Aerobic Soil Organisms |Somewhat favorable|2|Suitability for Aerobic Soil Organisms:2                    |98.79|314.86|318.72|
+aoiid|landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres||
+----------|----------|----------|----------|----------|----------|----------|----------|----------||
+1|T9981 Fld3 |Surface Salt Concentration       |High surface salinization risk or already saline   |1|Surface Salt Concentration:1     |9.22|30.33|328.95||
+1|T9981 Fld3 |Surface Salt Concentration       |Low surface salinization risk    |3|Surface Salt Concentration:3     |79.96|263.04|328.95||
+1|T9981 Fld3 |Surface Salt Concentration       |Not rated      |4|Surface Salt Concentration:4     |0.01|0.03|328.95||
+1|T9981 Fld3 |Surface Salt Concentration       |Surface salinization risk        |2|Surface Salt Concentration:2     |10.81|35.56|328.95||
+2|T9981 Fld4 |Surface Salt Concentration       |High surface salinization risk or already saline   |1|Surface Salt Concentration:1     |7.26|23.14|318.72||
+2|T9981 Fld4 |Surface Salt Concentration       |Low surface salinization risk    |3|Surface Salt Concentration:3     |89.84|286.34|318.72||
+2|T9981 Fld4 |Surface Salt Concentration       |Not rated      |4|Surface Salt Concentration:4     |1.21|3.86|318.72||
+2|T9981 Fld4 |Surface Salt Concentration       |Surface salinization risk        |2|Surface Salt Concentration:2     |1.69|5.39|318.72||
+
 
 * Detailed Landunit Ratings1: rating acres and rating percent by area for each soil-landunit polygon
 * These will be summarized to a single set of interp ratings for each landunit. Currently there are 5 interps.
@@ -642,12 +652,15 @@ SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rati
   WHERE attributename = @attributeName
   ORDER BY landunit, attributename;
 ```
-landunit	attributename	rating	rating_num	rating_key	rating_pct	rating_acres	landunit_acres	rolling_pct	rolling_acres
-------------	------------	-----------------------------------------------	------------	------------	------------	------------	------------	------------	------------
-T9981 Fld3          	Suitability for Aerobic Soil Organisms                      	Somewhat favorable                                          	2	Suitability for Aerobic Soil Organisms:2                    	99.99	328.92	328.95	99.99	328.92
-T9981 Fld3          	Suitability for Aerobic Soil Organisms                      	Not rated                                                   	4	Suitability for Aerobic Soil Organisms:4                    	0.01	0.03	328.95	100	328.95
-T9981 Fld4          	Suitability for Aerobic Soil Organisms                      	Somewhat favorable                                          	2	Suitability for Aerobic Soil Organisms:2                    	98.79	314.86	318.72	98.79	314.86
-T9981 Fld4          	Suitability for Aerobic Soil Organisms                      	Not rated                                                   	4	Suitability for Aerobic Soil Organisms:4                    	1.21	3.86	318.72	100	318.72
+landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres|rolling_pct|rolling_acres|
+---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
+T9981 Fld3 |Surface Salt Concentration       |High surface salinization risk or already saline   |1|Surface Salt Concentration:1     |9.22|30.33|328.95|9.22|30.33|
+T9981 Fld3 |Surface Salt Concentration       |Surface salinization risk        |2|Surface Salt Concentration:2     |10.81|35.56|328.95|20.03|65.89|
+T9981 Fld3 |Surface Salt Concentration       |Low surface salinization risk    |3|Surface Salt Concentration:3     |79.96|263.04|328.95|99.99|328.93|
+T9981 Fld3 |Surface Salt Concentration       |Not rated      |4|Surface Salt Concentration:4     |0.01|0.03|328.95|100|328.96|
+T9981 Fld4 |Surface Salt Concentration       |High surface salinization risk or already saline   |1|Surface Salt Concentration:1     |7.26|23.14|318.72|7.26|23.14|
+T9981 Fld4 |Surface Salt Concentration       |Surface salinization risk        |2|Surface Salt Concentration:2     |1.69|5.39|318.72|8.95|28.53|
+T9981 Fld4 |Surface Salt Concentration       |Low surface salinization risk    |3|Surface Salt Concentration:3     |89.84|286.34|318.72|98.79|314.87|
 
 
 
@@ -666,12 +679,16 @@ WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acre
 * Identifies the single, most limiting rating (per landunit) that comprises at least 10% by area or 10 acres.
 * This record will have an id value of 1.
 
-id|landunit|attributename|rating|rating_key|rolling_pct|rolling_acres|landunit_acres|
------------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
-1|T9981 Fld3          |Suitability for Aerobic Soil Organisms   |Somewhat favorable    |Suitability for Aerobic Soil Organisms:2 |99.99|328.92|328.95|
-2|T9981 Fld3          |Suitability for Aerobic Soil Organisms   |Not rated             |Suitability for Aerobic Soil Organisms:4 |100|328.95|328.95|
-1|T9981 Fld4          |Suitability for Aerobic Soil Organisms   |Somewhat favorable    |Suitability for Aerobic Soil Organisms:2 |98.79|314.86|318.72|
-2|T9981 Fld4          |Suitability for Aerobic Soil Organisms   |Not rated             |Suitability for Aerobic Soil Organisms:4 |100|318.72|318.72|
+id|landunit|attributename|rating|rating_key|rolling_pct|rolling_acres|landunit_acres
+----------|----------|----------|----------|----------|----------|----------|----------
+1|T9981 Fld3 |Surface Salt Concentration       |High surface salinization risk or already saline   |Surface Salt Concentration:1     |9.22|30.33|328.95
+2|T9981 Fld3 |Surface Salt Concentration       |Surface salinization risk        |Surface Salt Concentration:2     |20.03|65.89|328.95
+3|T9981 Fld3 |Surface Salt Concentration       |Low surface salinization risk    |Surface Salt Concentration:3     |99.99|328.93|328.95
+4|T9981 Fld3 |Surface Salt Concentration       |Not rated      |Surface Salt Concentration:4     |100|328.96|328.95
+1|T9981 Fld4 |Surface Salt Concentration       |High surface salinization risk or already saline   |Surface Salt Concentration:1     |7.26|23.14|318.72
+2|T9981 Fld4 |Surface Salt Concentration       |Surface salinization risk        |Surface Salt Concentration:2     |8.95|28.53|318.72
+3|T9981 Fld4 |Surface Salt Concentration       |Low surface salinization risk    |Surface Salt Concentration:3     |98.79|314.87|318.72
+4|T9981 Fld4 |Surface Salt Concentration       |Not rated      |Surface Salt Concentration:4     |100|318.73|318.72
 
 
 ### Final CART soil interpretation ratings for each landunit
@@ -688,9 +705,8 @@ ORDER BY landunit, rating_key;
 * The LandunitRatingsCART table will have all data, but the record for the overall landunit rating will have an id = 1.
 
 landunit|	rating_key|	soils_metadata
-------------------------|	------------------------------------	|------------------------------------
-T9981 Fld3   |       	Suitability for Aerobic Soil Organisms:2 |  ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29
-T9981 Fld4 |         	Suitability for Aerobic Soil Organisms:2 | ND001 2018-09-12 19:21:50
+T9981 Fld3  |        	Surface Salt Concentration:1  |                              	 ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29
+T9981 Fld4 |         	Surface Salt Concentration:1  |                              	 ND001 2018-09-12 19:21:50
 
 
 
