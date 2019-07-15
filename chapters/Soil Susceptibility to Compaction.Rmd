@@ -1,6 +1,6 @@
 ---
 title: "Soil Susceptibility to Compaction"
-author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek
+author: Jason Nemecek, Steve Peaslee, Bob Dobos, Cathy Seybold, Steve Campbell
 output: html_document
 date: "`r Sys.Date()`"
 

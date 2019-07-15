@@ -1,5 +1,5 @@
 ---
-author: Bob Dobos, Cathy Seybold, Skye Wills, Steve Campbell, Steve Peaslee, Jason Nemecek
+author: Jason Nemecek, Steve Peaslee, Bob Dobos, Cathy Seybold, Skye Wills, Steve Campbell 
 title: "Agricultural Organic Soil Subsidence"
 date: "`r Sys.Date()`"
 output: 
