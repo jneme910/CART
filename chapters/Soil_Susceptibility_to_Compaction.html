@@ -11,7 +11,7 @@
 
 <meta name="author" content="Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek" />
 
-<meta name="date" content="2019-07-09" />
+<meta name="date" content="2019-07-15" />
 
 <title>Soil Susceptibility to Compaction</title>
 
@@ -192,7 +192,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Soil Susceptibility to Compaction</h1>
 <h4 class="author">Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, Jason Nemecek</h4>
-<h4 class="date">2019-07-09</h4>
+<h4 class="date">2019-07-15</h4>
 
 </div>
 
@@ -259,6 +259,2713 @@ $(document).ready(function () {
 <td></td>
 <td></td>
 <td>Ratings are reduced by two classes</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="soil-script-breakdown" class="section level2">
+<h2>Soil Script breakdown</h2>
+<pre class="sql"><code>CREATE TABLE #AoiTable 
+    ( aoiid INT IDENTITY (1,1),
+    landunit CHAR(20),
+    aoigeom GEOMETRY);</code></pre>
+<ul>
+<li>Create AOI table with polygon geometry. Coordinate system must be WGS1984 (EPSG 4326)</li>
+</ul>
+<pre class="sql"><code>SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
+<div id="creates-summary-acres-for-each-landunit" class="section level4">
+<h4>Creates Summary Acres for each landunit</h4>
+<pre class="sql"><code>CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>landunit_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>328.952</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>318.722</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populate-intersected-soil-polygon-table-with-geometry" class="section level4">
+<h4>Populate intersected soil polygon table with geometry</h4>
+<pre class="sql"><code>-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;</code></pre>
+</div>
+<div id="populates-soil-geometry-with-landunit-attribute" class="section level4">
+<h4>Populates Soil geometry with landunit attribute</h4>
+<pre class="sql"><code>-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );</code></pre>
+<pre class="sql"><code>-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;</code></pre>
+</div>
+<div id="create-table-to-store-survey-area-datestamps-sacatalog.saverest" class="section level3">
+<h3>Create table to store survey area datestamps (sacatalog.saverest)</h3>
+<pre class="sql"><code>CREATE TABLE #DateStamps
+(landunit CHAR(20),
+datestamp VARCHAR(32));</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>landunit</th>
+<th>datestamp</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T9981 Fld3</td>
+<td>ND001 2018-09-12 19:21:50</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld3</td>
+<td>SD105 2018-09-12 23:49:29</td>
+</tr>
+<tr class="odd">
+<td>T9981 Fld4</td>
+<td>ND001 2018-09-12 19:21:50</td>
+</tr>
+</tbody>
+</table>
+<pre class="sql"><code>INSERT INTO #DateStamps
+SELECT DISTINCT AM.landunit, ([SC].[areasymbol] + ' ' + CONVERT(VARCHAR(32),[SC].[saverest],120) ) AS datestamp
+FROM #M4 AM
+INNER JOIN mapunit Mu ON AM.mukey = Mu.mukey
+INNER JOIN legend LG ON Mu.lkey = LG.lkey
+INNER JOIN sacatalog SC ON Lg.areasymbol = SC.areasymbol;</code></pre>
+<ul>
+<li>Get survey area dates for all soil mapunits involved</li>
+</ul>
+</div>
+<div id="create-table-to-store-landunit-metadata-survey-area-and-saverest-which-comes-from-datestamps" class="section level3">
+<h3>Create table to store landunit metadata (survey area and saverest) which comes from #DateStamps</h3>
+<pre class="sql"><code>CREATE TABLE #LandunitMetadata
+(landunit CHAR(20),
+soils_metadata VARCHAR(150)
+);</code></pre>
+<pre class="sql"><code>INSERT INTO #LandunitMetadata
+SELECT DISTINCT
+landunit,
+STUFF((SELECT ' | ' + CAST([datestamp] AS VARCHAR(30))
+FROM #DateStamps dt2
+WHERE dt1.landunit = dt2.landunit
+FOR XML PATH ('') ), 1, 2, '') AS soils_metadata
+FROM #DateStamps dt1;</code></pre>
+<ul>
+<li>Populate landunit soils-metadata</li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th>landunit</th>
+<th>soils_metadata</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T9981 Fld3</td>
+<td>ND001 2018-09-12 19:21:50 SD105 2018-09-12 23:49:29</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld4</td>
+<td>ND001 2018-09-12 19:21:50</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populate-sdv-with-interp-metadata" class="section level3">
+<h3>Populate #SDV with interp metadata</h3>
+<pre class="sql"><code>CREATE TABLE #SDV
+(attributekey BIGINT,
+attributename CHAR(60),
+attributetablename CHAR(30),
+attributecolumnname CHAR(30),
+attributelogicaldatatype CHAR(20),
+attributefieldsize SMALLINT,
+attributeprecision TINYINT,
+attributedescription NVARCHAR(MAX),
+attributeuom NVARCHAR(60),
+attributeuomabbrev NVARCHAR(30),
+attributetype CHAR(20),
+nasisrulename CHAR(60),
+ruledesign NVARCHAR(60),
+notratedphrase CHAR(15),
+mapunitlevelattribflag TINYINT,
+complevelattribflag TINYINT,
+cmonthlevelattribflag TINYINT,
+horzlevelattribflag TINYINT,
+tiebreakdomainname CHAR(40),
+tiebreakruleoptionflag TINYINT,
+tiebreaklowlabel CHAR(20),
+tiebreakhighlabel CHAR(20),
+tiebreakrule SMALLINT,
+resultcolumnname CHAR(10),
+sqlwhereclause CHAR(255),
+primaryconcolname CHAR(30),
+pcclogicaldatatype CHAR(20),
+primaryconstraintlabel CHAR(30),
+secondaryconcolname CHAR(30),
+scclogicaldatatype CHAR(20),
+secondaryconstraintlabel CHAR(30),
+dqmodeoptionflag TINYINT,
+depthqualifiermode CHAR(20),
+layerdepthtotop FLOAT,
+layerdepthtobottom FLOAT,
+layerdepthuom CHAR(20),
+monthrangeoptionflag TINYINT,
+beginningmonth CHAR(9),
+endingmonth CHAR(9),
+horzaggmeth CHAR(30),
+interpnullsaszerooptionflag TINYINT,
+interpnullsaszeroflag TINYINT,
+nullratingreplacementvalue CHAR(254),
+basicmodeflag TINYINT,
+maplegendkey SMALLINT,
+maplegendclasses TINYINT,
+maplegendxml XML,
+nasissiteid BIGINT,
+wlupdated DATETIME,
+algorithmname CHAR(50),
+componentpercentcutoff TINYINT,
+readytodistribute TINYINT,
+effectivelogicaldatatype CHAR(20),
+rulekey CHAR(30)
+);</code></pre>
+<pre class="sql"><code>INSERT INTO #SDV (attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, maplegendxml, attributedescription)
+SELECT sdv.attributename, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname, sdv.maplegendxml, sdv.attributedescription
+FROM sdvattribute sdv
+LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
+WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms', 'Ponding Frequency Class','Flooding Frequency Class',
+'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
+GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;</code></pre>
+<ul>
+<li>Begin populating static tables. These are for the base soils data and metadata. No interp data yet.</li>
+<li>Create a table containing neccessary interp data</li>
+<li>Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability</li>
+</ul>
+<div id="populate-soil-map-unit-acres-aggregated-by-mukey-merges-polygons-together" class="section level4">
+<h4>Populate soil map unit acres, aggregated by mukey (merges polygons together)</h4>
+<pre class="sql"><code>-- Soil map unit acres, aggregated by mukey (merges polygons together)
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );</code></pre>
+<pre class="sql"><code>INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525745</td>
+<td>4.983</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525746</td>
+<td>16.106</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525754</td>
+<td>12.638</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525764</td>
+<td>17.691</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525766</td>
+<td>0.032</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525745</td>
+<td>62.205</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525746</td>
+<td>63.55</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525754</td>
+<td>23.138</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525767</td>
+<td>3.86</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+</tr>
+</tbody>
+</table>
+<table style="width:100%;">
+<colgroup>
+<col width="6%"></col>
+<col width="12%"></col>
+<col width="80%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>aoigeom</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="create-table-to-store-survey-area-datestamps-sacatalog.saverest-1" class="section level3">
+<h3>Create table to store survey area datestamps (sacatalog.saverest)</h3>
+<pre class="sql"><code>CREATE TABLE #DateStamps
+(landunit CHAR(20),
+datestamp VARCHAR(32));</code></pre>
+<pre class="sql"><code>SELECT @attributeName = 'Suitability for Aerobic Soil Organisms';
+SELECT @minPct = 10;
+SELECT @minAcres = 10;</code></pre>
+<ul>
+<li>Defines the soil interpretion</li>
+<li>Sets the minimun cutoff pecent for a resource concern at 10 percent or 10 acres for a given landunit</li>
+</ul>
+</div>
+<div id="xml-parsing" class="section level3">
+<h3>XML Parsing</h3>
+<pre class="sql"><code>SELECT @rating1 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[1]', 'VARCHAR(100)');
+SELECT @rating2 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[2]', 'VARCHAR(100)');
+SELECT @rating3 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[3]', 'VARCHAR(100)');
+SELECT @rating4 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[4]', 'VARCHAR(100)');
+SELECT @rating5 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[5]', 'VARCHAR(100)');
+SELECT @rating6 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[6]', 'VARCHAR(100)');</code></pre>
+<ul>
+<li>Get ordered set of interphrc values from sdvattribute.maplegendxml. This is assumed to begin with the ‘worst’ rating. Need to double-check this for all interps.</li>
+</ul>
+</div>
+<div id="set-interp-rulekey-and-ruledesign-as-a-variable-to-be-used-in-cointerp-query" class="section level3">
+<h3>Set interp rulekey and ruledesign as a variable to be used in cointerp query</h3>
+<pre class="sql"><code>SELECT @ruleKey = (SELECT rulekey FROM #SDV WHERE attributename = @attributeName);
+SELECT @ruleDesign = (SELECT ruledesign FROM #SDV WHERE attributename = @attributeName)
+SELECT @notRatedPhrase = (SELECT notratedphrase FROM #SDV WHERE attributename = @attributeName);</code></pre>
+</div>
+<div id="add-not-rated-phrase-to-rating-variables" class="section level3">
+<h3>Add Not rated phrase to <span class="citation">@rating</span> variables</h3>
+<pre class="sql"><code>IF @notRatedPhrase IS NOT NULL
+  IF @rating1 IS NULL (SELECT @rating1 = @notRatedPhrase)
+  ELSE 
+    IF @rating2 IS NULL (SELECT @rating2 = @notRatedPhrase)
+    ELSE
+      IF @rating3 IS NULL (SELECT @rating3 = @notRatedPhrase)
+      ELSE
+        IF @rating4 IS NULL (SELECT @rating4 = @notRatedPhrase)
+        ELSE 
+          IF @rating5 IS NULL (SELECT @rating5 = @notRatedPhrase)
+          ELSE
+            IF @rating6 IS NULL (SELECT @rating6 = @notRatedPhrase)</code></pre>
+</div>
+<div id="append-the-rating-classes-for-this-interp-to-the-ratingclasses-table" class="section level3">
+<h3>Append the rating classes for this interp to the #RatingClasses table</h3>
+<pre class="sql"><code>INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3, rating4, rating5, rating6)
+SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="8%"></col>
+<col width="27%"></col>
+<col width="27%"></col>
+<col width="27%"></col>
+<col width="8%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>id</th>
+<th>rating_key</th>
+<th>attributename</th>
+<th>rating</th>
+<th>rating_num</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>20</td>
+<td>Suitability for Aerobic Soil Organisms:1</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not favorable</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>21</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>22</td>
+<td>Suitability for Aerobic Soil Organisms:3</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Very favorable</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>23</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populate-the-ratingdomain-table-with-a-unique-rating_key-for-this-interp" class="section level3">
+<h3>Populate the #RatingDomain table with a unique rating_key for this interp</h3>
+<pre class="sql"><code>SELECT @ratingKey = RTRIM(@attributeName) + ':1'
+IF NOT @rating1 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating1, 1)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':2'
+IF NOT @rating2 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating2, 2)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':3'
+IF NOT @rating3 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating3, 3)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':4'
+IF NOT @rating4 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating4, 4)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':5'
+IF NOT @rating5 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating5, 5)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':6'
+IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="9%"></col>
+<col width="28%"></col>
+<col width="24%"></col>
+<col width="28%"></col>
+<col width="9%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>id</th>
+<th>rating_key</th>
+<th>attributename</th>
+<th>rating</th>
+<th>rating_num</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>20</td>
+<td>Suitability for Aerobic Soil Organisms:1</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not favorable</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>21</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>22</td>
+<td>Suitability for Aerobic Soil Organisms:3</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Very favorable</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>23</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populate-component-level-ratings-using-the-currently-set-soil-interpretation" class="section level3">
+<h3>Populate component level ratings using the currently set soil interpretation</h3>
+<pre class="sql"><code>TRUNCATE TABLE #M5
+INSERT INTO #M5
+SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
+FROM #M4 AS M4
+LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
+WHERE M4.majcompflag = 'yes';</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+<th>cokey</th>
+<th>compname</th>
+<th>comppct_r</th>
+<th>rating</th>
+<th>mu_pct_sum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+<td>16464494</td>
+<td>Daglum</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>90</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+<td>16464495</td>
+<td>Farnuf</td>
+<td>65</td>
+<td>Somewhat favorable</td>
+<td>90</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+<td>16464607</td>
+<td>Amor</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+<td>16464612</td>
+<td>Reeder</td>
+<td>60</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+<td>16663930</td>
+<td>Amor</td>
+<td>49</td>
+<td>Somewhat favorable</td>
+<td>81</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+<td>16663931</td>
+<td>Cabba</td>
+<td>32</td>
+<td>Somewhat favorable</td>
+<td>81</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+<td>16663899</td>
+<td>Daglum</td>
+<td>33</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+<td>16663903</td>
+<td>Rhoades</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+<td>16663796</td>
+<td>Ekalaka</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>72</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+<td>16663797</td>
+<td>Yegen</td>
+<td>17</td>
+<td>Somewhat favorable</td>
+<td>72</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+<td>16663951</td>
+<td>Vebar</td>
+<td>50</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+<td>16663952</td>
+<td>Cohagen</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+<td>16663915</td>
+<td>Parshall</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+<td>16663917</td>
+<td>Vebar</td>
+<td>58</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525745</td>
+<td>4.983</td>
+<td>16663921</td>
+<td>Shambo</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525746</td>
+<td>16.106</td>
+<td>16663927</td>
+<td>Shambo</td>
+<td>78</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525754</td>
+<td>12.638</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525764</td>
+<td>17.691</td>
+<td>16663611</td>
+<td>Regan</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>55</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525766</td>
+<td>0.032</td>
+<td>16663539</td>
+<td>Water</td>
+<td>100</td>
+<td>Not rated</td>
+<td>100</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+<td>16663985</td>
+<td>Belfield</td>
+<td>48</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+<td>16663987</td>
+<td>Daglum</td>
+<td>40</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+<td>16663766</td>
+<td>Reeder</td>
+<td>58</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+<td>16663767</td>
+<td>Janesburg</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+<td>16663846</td>
+<td>Reeder</td>
+<td>60</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+<td>16663847</td>
+<td>Amor</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+<td>16663899</td>
+<td>Daglum</td>
+<td>33</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+<td>16663903</td>
+<td>Rhoades</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664017</td>
+<td>Savage</td>
+<td>30</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664018</td>
+<td>Daglum</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664022</td>
+<td>Belfield</td>
+<td>35</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+<td>16663991</td>
+<td>Regent</td>
+<td>68</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+<td>16663992</td>
+<td>Savage</td>
+<td>17</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525745</td>
+<td>62.205</td>
+<td>16663921</td>
+<td>Shambo</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525746</td>
+<td>63.55</td>
+<td>16663927</td>
+<td>Shambo</td>
+<td>78</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525754</td>
+<td>23.138</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525767</td>
+<td>3.86</td>
+<td>16663540</td>
+<td>Water</td>
+<td>100</td>
+<td>Not rated</td>
+<td>100</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+<td>16663985</td>
+<td>Belfield</td>
+<td>48</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+<td>16663987</td>
+<td>Daglum</td>
+<td>40</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+<td>16663554</td>
+<td>Savage</td>
+<td>62</td>
+<td>Somewhat favorable</td>
+<td>80</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+<td>16663555</td>
+<td>Grail</td>
+<td>18</td>
+<td>Somewhat favorable</td>
+<td>80</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663957</td>
+<td>Flasher</td>
+<td>30</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663958</td>
+<td>Vebar</td>
+<td>40</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663959</td>
+<td>Tally</td>
+<td>18</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+<td>16663766</td>
+<td>Reeder</td>
+<td>58</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+<td>16663767</td>
+<td>Janesburg</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populate-component-level-ratings-with-adjusted-component-percent-to-account-for-the-un-used-minor-components" class="section level3">
+<h3>Populate component level ratings with adjusted component percent to account for the un-used minor components</h3>
+<pre class="sql"><code>TRUNCATE TABLE #M6
+INSERT INTO #M6
+SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
+FROM #M5;</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+<th>cokey</th>
+<th>compname</th>
+<th>comppct_r</th>
+<th>rating</th>
+<th>MU_pct_sum</th>
+<th>adj_comp_pct</th>
+<th>co_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+<td>16464494</td>
+<td>Daglum</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>90</td>
+<td>0.277777778</td>
+<td>0.1183</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+<td>16464495</td>
+<td>Farnuf</td>
+<td>65</td>
+<td>Somewhat favorable</td>
+<td>90</td>
+<td>0.722222222</td>
+<td>0.3077</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+<td>16464607</td>
+<td>Amor</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.294117647</td>
+<td>0.0844</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+<td>16464612</td>
+<td>Reeder</td>
+<td>60</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.705882353</td>
+<td>0.2026</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+<td>16663930</td>
+<td>Amor</td>
+<td>49</td>
+<td>Somewhat favorable</td>
+<td>81</td>
+<td>0.604938272</td>
+<td>1.0459</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+<td>16663931</td>
+<td>Cabba</td>
+<td>32</td>
+<td>Somewhat favorable</td>
+<td>81</td>
+<td>0.395061728</td>
+<td>0.6831</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+<td>16663899</td>
+<td>Daglum</td>
+<td>33</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.375</td>
+<td>21.2621</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+<td>16663903</td>
+<td>Rhoades</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.625</td>
+<td>35.4369</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+<td>16663796</td>
+<td>Ekalaka</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>72</td>
+<td>0.763888889</td>
+<td>1.0312</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+<td>16663797</td>
+<td>Yegen</td>
+<td>17</td>
+<td>Somewhat favorable</td>
+<td>72</td>
+<td>0.236111111</td>
+<td>0.3187</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+<td>16663951</td>
+<td>Vebar</td>
+<td>50</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+<td>0.666666667</td>
+<td>0.086</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+<td>16663952</td>
+<td>Cohagen</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+<td>0.333333333</td>
+<td>0.043</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+<td>16663915</td>
+<td>Parshall</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>0.256410256</td>
+<td>7.3023</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+<td>16663917</td>
+<td>Vebar</td>
+<td>58</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>0.743589744</td>
+<td>21.1767</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525745</td>
+<td>4.983</td>
+<td>16663921</td>
+<td>Shambo</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+<td>1</td>
+<td>4.983</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525746</td>
+<td>16.106</td>
+<td>16663927</td>
+<td>Shambo</td>
+<td>78</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>1</td>
+<td>16.106</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525754</td>
+<td>12.638</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+<td>1</td>
+<td>12.638</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525764</td>
+<td>17.691</td>
+<td>16663611</td>
+<td>Regan</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>55</td>
+<td>1</td>
+<td>17.691</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525766</td>
+<td>0.032</td>
+<td>16663539</td>
+<td>Water</td>
+<td>100</td>
+<td>Not rated</td>
+<td>100</td>
+<td>1</td>
+<td>0.032</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+<td>16663985</td>
+<td>Belfield</td>
+<td>48</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.545454545</td>
+<td>98.9215</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+<td>16663987</td>
+<td>Daglum</td>
+<td>40</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.454545455</td>
+<td>82.4345</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+<td>16663766</td>
+<td>Reeder</td>
+<td>58</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>0.743589744</td>
+<td>1.8211</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+<td>16663767</td>
+<td>Janesburg</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>0.256410256</td>
+<td>0.6279</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+<td>16663846</td>
+<td>Reeder</td>
+<td>60</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.705882353</td>
+<td>3.2464</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+<td>16663847</td>
+<td>Amor</td>
+<td>25</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.294117647</td>
+<td>1.3526</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+<td>16663899</td>
+<td>Daglum</td>
+<td>33</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.375</td>
+<td>3.2336</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+<td>16663903</td>
+<td>Rhoades</td>
+<td>55</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.625</td>
+<td>5.3894</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664017</td>
+<td>Savage</td>
+<td>30</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.352941176</td>
+<td>0.1616</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664018</td>
+<td>Daglum</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.235294118</td>
+<td>0.1078</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664022</td>
+<td>Belfield</td>
+<td>35</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.411764706</td>
+<td>0.1886</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+<td>16663991</td>
+<td>Regent</td>
+<td>68</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.8</td>
+<td>25.2112</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+<td>16663992</td>
+<td>Savage</td>
+<td>17</td>
+<td>Somewhat favorable</td>
+<td>85</td>
+<td>0.2</td>
+<td>6.3028</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525745</td>
+<td>62.205</td>
+<td>16663921</td>
+<td>Shambo</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+<td>1</td>
+<td>62.205</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525746</td>
+<td>63.55</td>
+<td>16663927</td>
+<td>Shambo</td>
+<td>78</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>1</td>
+<td>63.55</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525754</td>
+<td>23.138</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Somewhat favorable</td>
+<td>75</td>
+<td>1</td>
+<td>23.138</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525767</td>
+<td>3.86</td>
+<td>16663540</td>
+<td>Water</td>
+<td>100</td>
+<td>Not rated</td>
+<td>100</td>
+<td>1</td>
+<td>3.86</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+<td>16663985</td>
+<td>Belfield</td>
+<td>48</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.545454545</td>
+<td>56.6776</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+<td>16663987</td>
+<td>Daglum</td>
+<td>40</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.454545455</td>
+<td>47.2314</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+<td>16663554</td>
+<td>Savage</td>
+<td>62</td>
+<td>Somewhat favorable</td>
+<td>80</td>
+<td>0.775</td>
+<td>0.3433</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+<td>16663555</td>
+<td>Grail</td>
+<td>18</td>
+<td>Somewhat favorable</td>
+<td>80</td>
+<td>0.225</td>
+<td>0.0997</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663957</td>
+<td>Flasher</td>
+<td>30</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.340909091</td>
+<td>3.2867</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663958</td>
+<td>Vebar</td>
+<td>40</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.454545455</td>
+<td>4.3823</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663959</td>
+<td>Tally</td>
+<td>18</td>
+<td>Somewhat favorable</td>
+<td>88</td>
+<td>0.204545455</td>
+<td>1.972</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+<td>16663766</td>
+<td>Reeder</td>
+<td>58</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>0.743589744</td>
+<td>8.4635</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+<td>16663767</td>
+<td>Janesburg</td>
+<td>20</td>
+<td>Somewhat favorable</td>
+<td>78</td>
+<td>0.256410256</td>
+<td>2.9185</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="populates-component-acres-by-multiplying-map-unit-acres-with-adjusted-component-percent" class="section level3">
+<h3>Populates component acres by multiplying map unit acres with adjusted component percent</h3>
+<pre class="sql"><code>TRUNCATE TABLE #M8
+INSERT INTO #M8
+SELECT  aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+FROM #M6;</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>mukey</th>
+<th>mapunit_acres</th>
+<th>cokey</th>
+<th>compname</th>
+<th>comppct_r</th>
+<th>rating</th>
+<th>MU_pct_sum</th>
+<th>adj_comp_pct</th>
+<th>co_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+<td>16464494</td>
+<td>Daglum</td>
+<td>25</td>
+<td>Mineral soil</td>
+<td>90</td>
+<td>0.277777778</td>
+<td>0.1183</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354627</td>
+<td>0.426</td>
+<td>16464495</td>
+<td>Farnuf</td>
+<td>65</td>
+<td>Mineral soil</td>
+<td>90</td>
+<td>0.722222222</td>
+<td>0.3077</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+<td>16464607</td>
+<td>Amor</td>
+<td>25</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.294117647</td>
+<td>0.0844</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>354648</td>
+<td>0.287</td>
+<td>16464612</td>
+<td>Reeder</td>
+<td>60</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.705882353</td>
+<td>0.2026</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+<td>16663930</td>
+<td>Amor</td>
+<td>49</td>
+<td>Mineral soil</td>
+<td>81</td>
+<td>0.604938272</td>
+<td>1.0459</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2494708</td>
+<td>1.729</td>
+<td>16663931</td>
+<td>Cabba</td>
+<td>32</td>
+<td>Mineral soil</td>
+<td>81</td>
+<td>0.395061728</td>
+<td>0.6831</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+<td>16663899</td>
+<td>Daglum</td>
+<td>33</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.375</td>
+<td>21.2621</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525720</td>
+<td>56.699</td>
+<td>16663903</td>
+<td>Rhoades</td>
+<td>55</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.625</td>
+<td>35.4369</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+<td>16663796</td>
+<td>Ekalaka</td>
+<td>55</td>
+<td>Mineral soil</td>
+<td>72</td>
+<td>0.763888889</td>
+<td>1.0312</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525732</td>
+<td>1.35</td>
+<td>16663797</td>
+<td>Yegen</td>
+<td>17</td>
+<td>Mineral soil</td>
+<td>72</td>
+<td>0.236111111</td>
+<td>0.3187</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+<td>16663951</td>
+<td>Vebar</td>
+<td>50</td>
+<td>Mineral soil</td>
+<td>75</td>
+<td>0.666666667</td>
+<td>0.086</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525733</td>
+<td>0.129</td>
+<td>16663952</td>
+<td>Cohagen</td>
+<td>25</td>
+<td>Mineral soil</td>
+<td>75</td>
+<td>0.333333333</td>
+<td>0.043</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+<td>16663915</td>
+<td>Parshall</td>
+<td>20</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>0.256410256</td>
+<td>7.3023</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525739</td>
+<td>28.479</td>
+<td>16663917</td>
+<td>Vebar</td>
+<td>58</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>0.743589744</td>
+<td>21.1767</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525745</td>
+<td>4.983</td>
+<td>16663921</td>
+<td>Shambo</td>
+<td>75</td>
+<td>Mineral soil</td>
+<td>75</td>
+<td>1</td>
+<td>4.983</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525746</td>
+<td>16.106</td>
+<td>16663927</td>
+<td>Shambo</td>
+<td>78</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>1</td>
+<td>16.106</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525754</td>
+<td>12.638</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Mineral soil</td>
+<td>75</td>
+<td>1</td>
+<td>12.638</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525764</td>
+<td>17.691</td>
+<td>16663611</td>
+<td>Regan</td>
+<td>55</td>
+<td>Mineral soil</td>
+<td>55</td>
+<td>1</td>
+<td>17.691</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525766</td>
+<td>0.032</td>
+<td>16663539</td>
+<td>Water</td>
+<td>100</td>
+<td>Not rated</td>
+<td>100</td>
+<td>1</td>
+<td>0.032</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+<td>16663985</td>
+<td>Belfield</td>
+<td>48</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.545454545</td>
+<td>98.9215</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2525769</td>
+<td>181.356</td>
+<td>16663987</td>
+<td>Daglum</td>
+<td>40</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.454545455</td>
+<td>82.4345</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+<td>16663766</td>
+<td>Reeder</td>
+<td>58</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>0.743589744</td>
+<td>1.8211</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755648</td>
+<td>2.449</td>
+<td>16663767</td>
+<td>Janesburg</td>
+<td>20</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>0.256410256</td>
+<td>0.6279</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+<td>16663846</td>
+<td>Reeder</td>
+<td>60</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.705882353</td>
+<td>3.2464</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>2755654</td>
+<td>4.599</td>
+<td>16663847</td>
+<td>Amor</td>
+<td>25</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.294117647</td>
+<td>1.3526</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+<td>16663899</td>
+<td>Daglum</td>
+<td>33</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.375</td>
+<td>3.2336</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525720</td>
+<td>8.623</td>
+<td>16663903</td>
+<td>Rhoades</td>
+<td>55</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.625</td>
+<td>5.3894</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664017</td>
+<td>Savage</td>
+<td>30</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.352941176</td>
+<td>0.1616</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664018</td>
+<td>Daglum</td>
+<td>20</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.235294118</td>
+<td>0.1078</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525724</td>
+<td>0.458</td>
+<td>16664022</td>
+<td>Belfield</td>
+<td>35</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.411764706</td>
+<td>0.1886</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+<td>16663991</td>
+<td>Regent</td>
+<td>68</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.8</td>
+<td>25.2112</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525730</td>
+<td>31.514</td>
+<td>16663992</td>
+<td>Savage</td>
+<td>17</td>
+<td>Mineral soil</td>
+<td>85</td>
+<td>0.2</td>
+<td>6.3028</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525745</td>
+<td>62.205</td>
+<td>16663921</td>
+<td>Shambo</td>
+<td>75</td>
+<td>Mineral soil</td>
+<td>75</td>
+<td>1</td>
+<td>62.205</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525746</td>
+<td>63.55</td>
+<td>16663927</td>
+<td>Shambo</td>
+<td>78</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>1</td>
+<td>63.55</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525754</td>
+<td>23.138</td>
+<td>16663602</td>
+<td>Harriet</td>
+<td>75</td>
+<td>Mineral soil</td>
+<td>75</td>
+<td>1</td>
+<td>23.138</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525767</td>
+<td>3.86</td>
+<td>16663540</td>
+<td>Water</td>
+<td>100</td>
+<td>Not rated</td>
+<td>100</td>
+<td>1</td>
+<td>3.86</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+<td>16663985</td>
+<td>Belfield</td>
+<td>48</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.545454545</td>
+<td>56.6776</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2525769</td>
+<td>103.909</td>
+<td>16663987</td>
+<td>Daglum</td>
+<td>40</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.454545455</td>
+<td>47.2314</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+<td>16663554</td>
+<td>Savage</td>
+<td>62</td>
+<td>Mineral soil</td>
+<td>80</td>
+<td>0.775</td>
+<td>0.3433</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755639</td>
+<td>0.443</td>
+<td>16663555</td>
+<td>Grail</td>
+<td>18</td>
+<td>Mineral soil</td>
+<td>80</td>
+<td>0.225</td>
+<td>0.0997</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663957</td>
+<td>Flasher</td>
+<td>30</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.340909091</td>
+<td>3.2867</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663958</td>
+<td>Vebar</td>
+<td>40</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.454545455</td>
+<td>4.3823</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755643</td>
+<td>9.641</td>
+<td>16663959</td>
+<td>Tally</td>
+<td>18</td>
+<td>Mineral soil</td>
+<td>88</td>
+<td>0.204545455</td>
+<td>1.972</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+<td>16663766</td>
+<td>Reeder</td>
+<td>58</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>0.743589744</td>
+<td>8.4635</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>2755648</td>
+<td>11.382</td>
+<td>16663767</td>
+<td>Janesburg</td>
+<td>20</td>
+<td>Mineral soil</td>
+<td>78</td>
+<td>0.256410256</td>
+<td>2.9185</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="aggregates-the-classes-and-sums-up-the-component-acres-by-landunit-tract-and-field-number" class="section level3">
+<h3>Aggregates the classes and sums up the component acres by landunit (Tract and Field number)</h3>
+<pre class="sql"><code>TRUNCATE TABLE #M10
+INSERT INTO #M10
+SELECT landunit, rating, SUM (co_acres) AS rating_acres
+FROM #M8
+GROUP BY landunit, rating
+ORDER BY landunit, rating_acres DESC;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">landunit</th>
+<th>rating rati</th>
+<th align="left">ng_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">T9981 Fld3</td>
+<td></td>
+<td align="left">Not rated 0.032</td>
+</tr>
+<tr class="even">
+<td align="left">T9981 Fld4</td>
+<td></td>
+<td align="left">Not rated 3.86</td>
+</tr>
+<tr class="odd">
+<td align="left">T9981 Fld3</td>
+<td></td>
+<td align="left">Somewhat favorable 328.9209</td>
+</tr>
+<tr class="even">
+<td align="left">T9981 Fld4</td>
+<td></td>
+<td align="left">Somewhat favorable 314.863</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="group-of-insert-statements-to-populate-the-final-output-tables" class="section level3">
+<h3>Group of insert statements to populate the final output tables</h3>
+<pre class="sql"><code>INSERT INTO #LandunitRatingsDetailed1 (aoiid, landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres)
+SELECT aoiid, M10.landunit, @attributeName AS attributename, M10.rating, RD.rating_key, RD.rating_num,
+ROUND ((rating_acres/ landunit_acres) * 100.0, 2) AS rating_pct, 
+ROUND (rating_acres,2) AS rating_acres,
+ROUND ( landunit_acres, 2) AS landunit_acres
+FROM #M10 M10
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.landunit = M10.landunit
+INNER JOIN #RatingDomain RD ON M10.rating = RD.rating
+WHERE RD.attributename = @attributeName
+GROUP BY aoiid, M10.landunit, M10.rating, rating_key, rating_acres, landunit_acres, rating_num
+ORDER BY landunit, attributename, rating_num DESC;</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+<col width="11%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>aoiid</th>
+<th>landunit</th>
+<th>attributename</th>
+<th>rating</th>
+<th>rating_num</th>
+<th>rating_key</th>
+<th>rating_pct</th>
+<th>rating_acres</th>
+<th>landunit_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
+<td>4</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>0.01</td>
+<td>0.03</td>
+<td>328.95</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>2</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>99.99</td>
+<td>328.92</td>
+<td>328.95</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
+<td>4</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>1.21</td>
+<td>3.86</td>
+<td>318.72</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>2</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>98.79</td>
+<td>314.86</td>
+<td>318.72</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Detailed Landunit Ratings1: rating acres and rating percent by area for each soil-landunit polygon</li>
+<li>These will be summarized to a single set of interp ratings for each landunit. Currently there are 5 interps.</li>
+</ul>
+</div>
+<div id="determines-dominant-critical" class="section level3">
+<h3>Determines Dominant Critical</h3>
+<pre class="sql"><code>INSERT INTO #LandunitRatingsDetailed2 (landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres)
+SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres,
+  rolling_pct = SUM(rating_pct) OVER
+  (
+    PARTITION BY landunit
+    ORDER BY rating_key ROWS UNBOUNDED PRECEDING
+  ),
+  rolling_acres = SUM(rating_acres) OVER
+  (
+    PARTITION BY landunit
+    ORDER BY rating_key ROWS UNBOUNDED PRECEDING
+  )
+  FROM #LandunitRatingsDetailed1
+  WHERE attributename = @attributeName
+  ORDER BY landunit, attributename;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>landunit attr</th>
+<th>ibutename rati</th>
+<th>ng rating_num rating_key rating_pct rating_a</th>
+<th>cres landunit</th>
+<th><em>acres rolling</em></th>
+<th>pct rolling_acre</th>
+<th align="left">s</th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T9981 Fld3</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Somewhat</td>
+<td>favorable</td>
+<td></td>
+<td align="left"></td>
+<td>2 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:2 99.99 328.92 328.95 99.99 328.92</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld3</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Not rate</td>
+<td>d</td>
+<td></td>
+<td align="left"></td>
+<td>4 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:4 0.01 0.03 328.95 100 328.95</td>
+</tr>
+<tr class="odd">
+<td>T9981 Fld4</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Somewhat</td>
+<td>favorable</td>
+<td></td>
+<td align="left"></td>
+<td>2 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:2 98.79 314.86 318.72 98.79 314.86</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld4</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Not rate</td>
+<td>d</td>
+<td></td>
+<td align="left"></td>
+<td>4 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:4 1.21 3.86 318.72 100 318.72</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>LandunitRatingsDetailed2 is populated with all information plus rolling_pct and rolling_acres which are using in the landunit summary rating.</li>
+<li>Detailed Landunit Ratings2 table columns: landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres</li>
+</ul>
+</div>
+<div id="landunit-ratings-cart" class="section level3">
+<h3>Landunit Ratings CART</h3>
+<pre class="sql"><code>INSERT INTO #LandunitRatingsCART (id, landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres)
+SELECT ROW_NUMBER() OVER(PARTITION BY landunit ORDER BY rating_key ASC) AS &quot;id&quot;,
+landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres
+FROM #LandunitRatingsDetailed2
+WHERE attributename = @attributeName AND (rolling_pct &gt;= @minPct OR rolling_acres &gt;= @minAcres)</code></pre>
+<ul>
+<li>Identifies the single, most limiting rating (per landunit) that comprises at least 10% by area or 10 acres.</li>
+<li>This record will have an id value of 1.</li>
+</ul>
+<table>
+<colgroup>
+<col width="12%"></col>
+<col width="12%"></col>
+<col width="12%"></col>
+<col width="12%"></col>
+<col width="12%"></col>
+<col width="12%"></col>
+<col width="12%"></col>
+<col width="12%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>id</th>
+<th>landunit</th>
+<th>attributename</th>
+<th>rating</th>
+<th>rating_key</th>
+<th>rolling_pct</th>
+<th>rolling_acres</th>
+<th>landunit_acres</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld3</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>99.99</td>
+<td>328.92</td>
+<td>328.95</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld3</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>100</td>
+<td>328.95</td>
+<td>328.95</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>T9981 Fld4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>98.79</td>
+<td>314.86</td>
+<td>318.72</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>T9981 Fld4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>100</td>
+<td>318.72</td>
+<td>318.72</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="final-cart-soil-interpretation-ratings-for-each-landunit" class="section level3">
+<h3>Final CART soil interpretation ratings for each landunit</h3>
+<pre class="sql"><code>INSERT INTO #LandunitRatingsCART2 (landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres, soils_metadata)
+SELECT LC.landunit, LC.attributename, LC.rating, LC.rating_key, rolling_pct, rolling_acres, landunit_acres, MD.soils_metadata
+FROM #LandunitRatingsCART LC
+INNER JOIN #RatingDomain RD ON LC.attributename = RD.attributename AND LC.rating = RD.rating
+INNER JOIN #LandunitMetadata MD ON LC.landunit = MD.landunit
+WHERE LC.id = 1
+ORDER BY landunit, rating_key;</code></pre>
+<ul>
+<li>The LandunitRatingsCART table will have all data, but the record for the overall landunit rating will have an id = 1.</li>
+</ul>
+<table>
+<colgroup>
+<col width="25%"></col>
+<col width="37%"></col>
+<col width="37%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>landunit</th>
+<th>rating_key</th>
+<th>soils_metadata</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>T9981 Fld3</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>ND001 2018-09-12 19:21:50 SD105 2018-09-12 23:49:29</td>
+</tr>
+<tr class="even">
+<td>T9981 Fld4</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>ND001 2018-09-12 19:21:50</td>
 </tr>
 </tbody>
 </table>

@@ -616,12 +616,13 @@ GROUP BY landunit, rating
 ORDER BY landunit, rating_acres DESC;
 ```
 
-landunit|rating|rating_acres|
------------------|-----------------|-----------------|
-T9981 Fld3|Mineral soil        |328.9209|
-T9981 Fld4|Mineral soil        |314.863|
-T9981 Fld3|Not rated |0.032|
-T9981 Fld4|Not rated |3.86|
+landunit	rating	rating_acres
+----------	----------	----------
+T9981 Fld3          	Not rated                                                   	0.032
+T9981 Fld4          	Not rated                                                   	3.86
+T9981 Fld3          	Somewhat favorable                                          	328.9209
+T9981 Fld4          	Somewhat favorable                                          	314.863
+
 
 
 ### Group of insert statements to populate the final output tables
@@ -640,11 +641,11 @@ ORDER BY landunit, attributename, rating_num DESC;
 ```
 
 aoiid|landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres|
---------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|
-1|T9981 Fld3|Agricultural Organic Soil Subsidence |Mineral soil  |4|Agricultural Organic Soil Subsidence:4  |99.99|328.92|328.95|
-1|T9981 Fld3|Agricultural Organic Soil Subsidence |Not rated     |5|Agricultural Organic Soil Subsidence:5  |0.01|0.03|328.95|
-2|T9981 Fld4|Agricultural Organic Soil Subsidence |Mineral soil  |4|Agricultural Organic Soil Subsidence:4  |98.79|314.86|318.72|
-2|T9981 Fld4|Agricultural Organic Soil Subsidence |Not rated     |5|Agricultural Organic Soil Subsidence:5  |1.21|3.86|318.72|
+------------|------------|------------|------------|------------|------------|------------|------------|------------|
+1|T9981 Fld3          |Suitability for Aerobic Soil Organisms |Not rated         |4|Suitability for Aerobic Soil Organisms:4                    |0.01|0.03|328.95|
+1|T9981 Fld3          |Suitability for Aerobic Soil Organisms |Somewhat favorable|2|Suitability for Aerobic Soil Organisms:2                    |99.99|328.92|328.95|
+2|T9981 Fld4          |Suitability for Aerobic Soil Organisms |Not rated         |4|Suitability for Aerobic Soil Organisms:4                    |1.21|3.86|318.72|
+2|T9981 Fld4          |Suitability for Aerobic Soil Organisms |Somewhat favorable|2|Suitability for Aerobic Soil Organisms:2                    |98.79|314.86|318.72|
 
 * Detailed Landunit Ratings1: rating acres and rating percent by area for each soil-landunit polygon
 * These will be summarized to a single set of interp ratings for each landunit. Currently there are 5 interps.
@@ -667,12 +668,12 @@ SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rati
   WHERE attributename = @attributeName
   ORDER BY landunit, attributename;
 ```
-landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres|rolling_pct|rolling_acres
------------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------
-T9981 Fld3|Agricultural Organic Soil Subsidence    |Mineral soil        |4|Agricultural Organic Soil Subsidence:4  |99.99|328.92|328.95|99.99|328.92
-T9981 Fld3|Agricultural Organic Soil Subsidence    |Not rated |5|Agricultural Organic Soil Subsidence:5  |0.01|0.03|328.95|100|328.95
-T9981 Fld4|Agricultural Organic Soil Subsidence    |Mineral soil        |4|Agricultural Organic Soil Subsidence:4  |98.79|314.86|318.72|98.79|314.86
-T9981 Fld4|Agricultural Organic Soil Subsidence    |Not rated |5|Agricultural Organic Soil Subsidence:5  |1.21|3.86|318.72|100|318.72
+landunit	attributename	rating	rating_num	rating_key	rating_pct	rating_acres	landunit_acres	rolling_pct	rolling_acres
+------------	------------	-----------------------------------------------	------------	------------	------------	------------	------------	------------	------------
+T9981 Fld3          	Suitability for Aerobic Soil Organisms                      	Somewhat favorable                                          	2	Suitability for Aerobic Soil Organisms:2                    	99.99	328.92	328.95	99.99	328.92
+T9981 Fld3          	Suitability for Aerobic Soil Organisms                      	Not rated                                                   	4	Suitability for Aerobic Soil Organisms:4                    	0.01	0.03	328.95	100	328.95
+T9981 Fld4          	Suitability for Aerobic Soil Organisms                      	Somewhat favorable                                          	2	Suitability for Aerobic Soil Organisms:2                    	98.79	314.86	318.72	98.79	314.86
+T9981 Fld4          	Suitability for Aerobic Soil Organisms                      	Not rated                                                   	4	Suitability for Aerobic Soil Organisms:4                    	1.21	3.86	318.72	100	318.72
 
 
 
@@ -692,11 +693,12 @@ WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acre
 * This record will have an id value of 1.
 
 id|landunit|attributename|rating|rating_key|rolling_pct|rolling_acres|landunit_acres|
------------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|
-1|T9981 Fld3|Agricultural Organic Soil Subsidence    |Mineral soil        |Agricultural Organic Soil Subsidence:4  |99.99|328.92|328.95|
-2|T9981 Fld3|Agricultural Organic Soil Subsidence    |Not rated |Agricultural Organic Soil Subsidence:5  |100|328.95|328.95|
-1|T9981 Fld4|Agricultural Organic Soil Subsidence    |Mineral soil        |Agricultural Organic Soil Subsidence:4  |98.79|314.86|318.72|
-2|T9981 Fld4|Agricultural Organic Soil Subsidence    |Not rated |Agricultural Organic Soil Subsidence:5  |100|318.72|318.72|
+-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+1|T9981 Fld3          |Suitability for Aerobic Soil Organisms   |Somewhat favorable    |Suitability for Aerobic Soil Organisms:2 |99.99|328.92|328.95|
+2|T9981 Fld3          |Suitability for Aerobic Soil Organisms   |Not rated             |Suitability for Aerobic Soil Organisms:4 |100|328.95|328.95|
+1|T9981 Fld4          |Suitability for Aerobic Soil Organisms   |Somewhat favorable    |Suitability for Aerobic Soil Organisms:2 |98.79|314.86|318.72|
+2|T9981 Fld4          |Suitability for Aerobic Soil Organisms   |Not rated             |Suitability for Aerobic Soil Organisms:4 |100|318.72|318.72|
+
 
 ### Final CART soil interpretation ratings for each landunit
 
@@ -711,10 +713,11 @@ ORDER BY landunit, rating_key;
 ```
 * The LandunitRatingsCART table will have all data, but the record for the overall landunit rating will have an id = 1.
 
-landunit|rating_key|soils_metadata|
----------------------|------------------------------------------|----------------------------------------------------------|
-T9981 Fld3 |Agricultural Organic Soil Subsidence:4    |"ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29"|
-T9981 Fld4 |Agricultural Organic Soil Subsidence:4    | ND001 2018-09-12 19:21:50|
+landunit|	rating_key|	soils_metadata
+------------------------|	------------------------------------	|------------------------------------
+T9981 Fld3   |       	Suitability for Aerobic Soil Organisms:2 |  ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29
+T9981 Fld4 |         	Suitability for Aerobic Soil Organisms:2 | ND001 2018-09-12 19:21:50
+
 
 ## References
 1. Blanco-Canqui, H., M.M. Mikha, D.R. Presley, and M.M. Claassen. 2011. Addition of cover crops enhances no-till potential for improving soil physical properties. Soil Sci. Soc. Am. J. 75:1471-1482. \ doi:10.2136/\ sssaj2010.0430.

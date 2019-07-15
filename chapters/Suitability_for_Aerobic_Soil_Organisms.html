@@ -2807,31 +2807,31 @@ ORDER BY landunit, rating_acres DESC;</code></pre>
 <table>
 <thead>
 <tr class="header">
-<th>landunit</th>
-<th>rating</th>
-<th>rating_acres</th>
+<th align="left">landunit</th>
+<th>rating rati</th>
+<th align="left">ng_acres</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>T9981 Fld3</td>
-<td>Mineral soil</td>
-<td>328.9209</td>
+<td align="left">T9981 Fld3</td>
+<td></td>
+<td align="left">Not rated 0.032</td>
 </tr>
 <tr class="even">
-<td>T9981 Fld4</td>
-<td>Mineral soil</td>
-<td>314.863</td>
+<td align="left">T9981 Fld4</td>
+<td></td>
+<td align="left">Not rated 3.86</td>
 </tr>
 <tr class="odd">
-<td>T9981 Fld3</td>
-<td>Not rated</td>
-<td>0.032</td>
+<td align="left">T9981 Fld3</td>
+<td></td>
+<td align="left">Somewhat favorable 328.9209</td>
 </tr>
 <tr class="even">
-<td>T9981 Fld4</td>
-<td>Not rated</td>
-<td>3.86</td>
+<td align="left">T9981 Fld4</td>
+<td></td>
+<td align="left">Somewhat favorable 314.863</td>
 </tr>
 </tbody>
 </table>
@@ -2878,45 +2878,45 @@ ORDER BY landunit, attributename, rating_num DESC;</code></pre>
 <tr class="odd">
 <td>1</td>
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Mineral soil</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
 <td>4</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
-<td>99.99</td>
-<td>328.92</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>0.01</td>
+<td>0.03</td>
 <td>328.95</td>
 </tr>
 <tr class="even">
 <td>1</td>
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Not rated</td>
-<td>5</td>
-<td>Agricultural Organic Soil Subsidence:5</td>
-<td>0.01</td>
-<td>0.03</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>2</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>99.99</td>
+<td>328.92</td>
 <td>328.95</td>
 </tr>
 <tr class="odd">
 <td>2</td>
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Mineral soil</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Not rated</td>
 <td>4</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
-<td>98.79</td>
-<td>314.86</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
+<td>1.21</td>
+<td>3.86</td>
 <td>318.72</td>
 </tr>
 <tr class="even">
 <td>2</td>
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Not rated</td>
-<td>5</td>
-<td>Agricultural Organic Soil Subsidence:5</td>
-<td>1.21</td>
-<td>3.86</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>2</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>98.79</td>
+<td>314.86</td>
 <td>318.72</td>
 </tr>
 </tbody>
@@ -2943,81 +2943,69 @@ SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rati
   FROM #LandunitRatingsDetailed1
   WHERE attributename = @attributeName
   ORDER BY landunit, attributename;</code></pre>
-<table style="width:100%;">
-<colgroup>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-<col width="10%"></col>
-</colgroup>
+<table>
 <thead>
 <tr class="header">
-<th>landunit</th>
-<th>attributename</th>
-<th>rating</th>
-<th>rating_num</th>
-<th>rating_key</th>
-<th>rating_pct</th>
-<th>rating_acres</th>
-<th>landunit_acres</th>
-<th>rolling_pct</th>
-<th>rolling_acres</th>
+<th>landunit attr</th>
+<th>ibutename rati</th>
+<th>ng rating_num rating_key rating_pct rating_a</th>
+<th>cres landunit</th>
+<th><em>acres rolling</em></th>
+<th>pct rolling_acre</th>
+<th align="left">s</th>
+<th></th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Mineral soil</td>
-<td>4</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
-<td>99.99</td>
-<td>328.92</td>
-<td>328.95</td>
-<td>99.99</td>
-<td>328.92</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Somewhat</td>
+<td>favorable</td>
+<td></td>
+<td align="left"></td>
+<td>2 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:2 99.99 328.92 328.95 99.99 328.92</td>
 </tr>
 <tr class="even">
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Not rated</td>
-<td>5</td>
-<td>Agricultural Organic Soil Subsidence:5</td>
-<td>0.01</td>
-<td>0.03</td>
-<td>328.95</td>
-<td>100</td>
-<td>328.95</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Not rate</td>
+<td>d</td>
+<td></td>
+<td align="left"></td>
+<td>4 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:4 0.01 0.03 328.95 100 328.95</td>
 </tr>
 <tr class="odd">
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Mineral soil</td>
-<td>4</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
-<td>98.79</td>
-<td>314.86</td>
-<td>318.72</td>
-<td>98.79</td>
-<td>314.86</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Somewhat</td>
+<td>favorable</td>
+<td></td>
+<td align="left"></td>
+<td>2 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:2 98.79 314.86 318.72 98.79 314.86</td>
 </tr>
 <tr class="even">
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Not rated</td>
-<td>5</td>
-<td>Agricultural Organic Soil Subsidence:5</td>
-<td>1.21</td>
-<td>3.86</td>
-<td>318.72</td>
-<td>100</td>
-<td>318.72</td>
+<td>Suitabil</td>
+<td>ity for Aerobic Soil Organisms</td>
+<td>Not rate</td>
+<td>d</td>
+<td></td>
+<td align="left"></td>
+<td>4 Suit</td>
+<td>ability for Aero</td>
+<td>bic Soil Organisms:4 1.21 3.86 318.72 100 318.72</td>
 </tr>
 </tbody>
 </table>
@@ -3064,9 +3052,9 @@ WHERE attributename = @attributeName AND (rolling_pct &gt;= @minPct OR rolling_a
 <tr class="odd">
 <td>1</td>
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Mineral soil</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
 <td>99.99</td>
 <td>328.92</td>
 <td>328.95</td>
@@ -3074,9 +3062,9 @@ WHERE attributename = @attributeName AND (rolling_pct &gt;= @minPct OR rolling_a
 <tr class="even">
 <td>2</td>
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence</td>
+<td>Suitability for Aerobic Soil Organisms</td>
 <td>Not rated</td>
-<td>Agricultural Organic Soil Subsidence:5</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
 <td>100</td>
 <td>328.95</td>
 <td>328.95</td>
@@ -3084,9 +3072,9 @@ WHERE attributename = @attributeName AND (rolling_pct &gt;= @minPct OR rolling_a
 <tr class="odd">
 <td>1</td>
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence</td>
-<td>Mineral soil</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
+<td>Suitability for Aerobic Soil Organisms</td>
+<td>Somewhat favorable</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
 <td>98.79</td>
 <td>314.86</td>
 <td>318.72</td>
@@ -3094,9 +3082,9 @@ WHERE attributename = @attributeName AND (rolling_pct &gt;= @minPct OR rolling_a
 <tr class="even">
 <td>2</td>
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence</td>
+<td>Suitability for Aerobic Soil Organisms</td>
 <td>Not rated</td>
-<td>Agricultural Organic Soil Subsidence:5</td>
+<td>Suitability for Aerobic Soil Organisms:4</td>
 <td>100</td>
 <td>318.72</td>
 <td>318.72</td>
@@ -3118,9 +3106,9 @@ ORDER BY landunit, rating_key;</code></pre>
 </ul>
 <table>
 <colgroup>
-<col width="17%"></col>
-<col width="34%"></col>
-<col width="47%"></col>
+<col width="25%"></col>
+<col width="37%"></col>
+<col width="37%"></col>
 </colgroup>
 <thead>
 <tr class="header">
@@ -3132,12 +3120,12 @@ ORDER BY landunit, rating_key;</code></pre>
 <tbody>
 <tr class="odd">
 <td>T9981 Fld3</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
-<td>“ND001 2018-09-12 19:21:50 SD105 2018-09-12 23:49:29”</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
+<td>ND001 2018-09-12 19:21:50 SD105 2018-09-12 23:49:29</td>
 </tr>
 <tr class="even">
 <td>T9981 Fld4</td>
-<td>Agricultural Organic Soil Subsidence:4</td>
+<td>Suitability for Aerobic Soil Organisms:2</td>
 <td>ND001 2018-09-12 19:21:50</td>
 </tr>
 </tbody>
