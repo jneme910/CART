@@ -705,8 +705,9 @@ ORDER BY landunit, rating_key;
 * The LandunitRatingsCART table will have all data, but the record for the overall landunit rating will have an id = 1.
 
 landunit|	rating_key|	soils_metadata
-T9981 Fld3  |        	Surface Salt Concentration:1  |                              	 ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29
-T9981 Fld4 |         	Surface Salt Concentration:1  |                              	 ND001 2018-09-12 19:21:50
+------------|----------------------------------|--------------------------------------------------|
+T9981 Fld3  |        	Surface Salt Concentration:1  |ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29
+T9981 Fld4 |         	Surface Salt Concentration:1  |    	 ND001 2018-09-12 19:21:50
 
 
 
