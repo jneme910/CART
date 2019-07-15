@@ -27,10 +27,10 @@ knitr::opts_chunk$set(echo = TRUE)
 5.  Develop SQL scripts to help assist in special conservation signups in order to identifying opportunities for conservation. Examples:
     + Golden Wing Warblers can be found in Alder (swamps-edges) where soils data could be used to help query certain locations and identify customers. (Locating the most productive sights for declining habitats)
     + Karner Blue Butterfly Habitat Identification.
-        + The Karner Blue Butterfly (KBB) is a federally listed endanger species
-        + KBB catapillars feed exclusively on the leaves of wild lupine.
-        + NRCS and partner staff wanted to identify likely lupine habitat to prioritize for protection under NRCS easments and releated programs.
-        + NRCS and partner agencies have begun using these results to help identify opportunites for conservation easements funds to identify critical areas.
+        +	The Karner Blue Butterfly (KBB) is a federally listed endanger species
+        + KBB caterpillars feed exclusively on the leaves of wild lupine.
+        +	NRCS and partner staff wanted to identify likely lupine habitat to prioritize for protection under NRCS easements and related programs.
+        + 	NRCS and partner agencies have begun using these results to help identify opportunities for conservation easements funds to identify critical areas.
         + This process could be used to identify customers.
 6. Add thematic maps by map unit and landunit.
 

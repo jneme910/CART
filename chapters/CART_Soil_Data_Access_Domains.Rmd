@@ -17,7 +17,7 @@ opts_chunk$set(message=FALSE, warning=FALSE, background='#F7F7F7', fig.align='ce
 options(width=100, stringsAsFactors=FALSE)
 ```
 
-
+Note: For domains where the "Soil Interpretaion Rating Class"" is 0 or 1. The one would indicate presence (1) or and zero absence (0).
 ```{r echo=FALSE, results='asis'}
 library(knitr)
 library(kableExtra)
