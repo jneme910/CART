@@ -1,7 +1,7 @@
 # Conservation Assessment Ranking Tool (CART)
 Jason Nemecek and Steve Peaslee 
 
-July 12, 2019
+July 15, 2019
 
 The Conservation Assessment Ranking Tool (CART) will assess clients’ resource concerns, planned practices, and site vulnerability as part of the conservation planning process and will rank client applications for funding. CART starts with a site-specific risk threshold for each resource concern that is based on intrinsic site characteristics, like soils and climate. The assessment then evaluates the benefits of site-specific management to determine when a resource concern is adequately treated. Management credit includes the ways crops are grown and conservation practices that are applied. Management credits are summed and compared to the threshold for existing conditions and planning alternatives. For program ranking purposes, these same points are used as the basis for prioritization, but ranking may be further modified by identified priorities, special considerations, or both.
 
@@ -12,7 +12,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt)
 2. Area of Interest (AOI) Geometry examples to insert and replace into sql script: [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
 
-The soils data used in CART can be found in four main sections.
+### The soils data used in CART can be found in four main sections.
 1. Resource Assessment (Resource Concerns); 
    * Soil Quality Degradation 
    * Other
