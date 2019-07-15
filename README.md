@@ -20,7 +20,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 3. EE - Environmental Evaluation; 
 4. Outcome-Results (Under Development)
 
- ||Datasets|Purpose* |Location| Section|
+ ||Datasets|Purpose* |Documentation| Section|
 |-----|----------|--------|--------|----------------------------------------|
 |1| Ponding or Flooding |RA, EP|[Click here](https://jneme910.github.io/CART/chapters/Ponding_or_Flooding)|Excess Water-Ponding and Flooding, Easements|
 |2|Depth to Water Table |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Depth_to_Water_Table) |Excess Water-Seasonal High Water Table, Easements|
