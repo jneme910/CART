@@ -1,3 +1,5 @@
+-- Multiple AOI geometries for use in testing CART queries in different locations
+--
 -- Wisconsin Testing
 SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-89.41635 43.03728,-89.33979 43.03301,-89.34734 43.00013,-89.42253 42.99485,-89.41635 43.03728)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
