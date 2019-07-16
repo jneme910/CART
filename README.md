@@ -134,19 +134,23 @@ Provides leadership within NRCS the ability to  model data and report the natura
 # Acknowledgements
 1. Steve Campbell
 2. Sky Wills
-3. Bob Dobos
-4. Cathy Seybold
-5. Jeff Thomas
-6. Mike Robotham
-7. Laura Morton
-8. Aaron Lauster
-9. Casey Sheley 
+3. Phil Anzel
+4. Susan McGlasson
+5. Bob Dobos
+6. Cathy Seybold
+7. Jeff Thomas
+8. Mike Robotham
+9. Laura Morton
+10. Aaron Lauster
+11. Casey Sheley 
 12. Eric Hesketh 
 13. Greg Zwicke
-15. Matt Flint
-16. Danielle Balduff
-17. Breanna Barlow
+14. Matt Flint
+15. Danielle Balduff
+16. Breanna Barlow
 17. Barry Fisher
+18. Robin Plummer
+19. Aaron Bustamante
 
 *With support from the Resource Concern Team and Workgroups.* 
 
