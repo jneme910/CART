@@ -129,3 +129,24 @@ Provides leadership within NRCS the ability to  model data and report the natura
 
 1. Outcomes Design Concept: [Click here](https://jneme910.github.io/CART/chapters/Outcomes)
 2. Data connections (CART-NPAD): [Click here](https://github.com/jneme910/CART/blob/master/documents/npad_70_051419.pdf)
+
+# Acknowledgements
+1. Steve Campbell
+2. Sky Wills
+3. Bob Dobos
+4. Cathy Seybold
+5. Jeff Thomas
+6. Mike Robotham
+7. Laura Morton
+8. Aaron Lauster
+9. Casey Sheley 
+12. Eric Hesketh 
+13. Greg Zwicke
+15. Matt Flint
+16. Danielle Balduff
+17. Breanna Barlow
+17. Barry Fisher
+
+*With support from the Resource Concern Team and Workgroups.* 
+
+
