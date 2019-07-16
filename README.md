@@ -27,7 +27,7 @@ This query is meant to be run through the [Soil Data Access](https://sdmdataacce
 |3|Hydric Rating by Map Unit |RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Hydric_Rating_by_Map_Unit)|Excess Water-Seeps, Air Quality-Emmisions of Greenhouse Gases, Easements|
 |4 |Nitrogen Leaching |RA | [Click here](https://jneme910.github.io/CART/chapters/Nitrogen_Leaching_Potential)|Future Development (Water Quality-Diffuse Nutrient, Pesticide and Pathogens Transport to Water
  |5|Farmland Classification |EE, EP |[Click here](https://jneme910.github.io/CART/chapters/Farmland_Classification) |Easements, Environmental Evaluation|
-|6|Availible Water Storage |EP |[Click here](https://jneme910.github.io/CART/chapters/Available_Water_Storage) |Easements|
+|6|Available Water Storage |EP |[Click here](https://jneme910.github.io/CART/chapters/Available_Water_Storage) |Easements|
 |7|Soil Organic Carbon Stock|RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock)|Easements, Air Quality-Emmisions of Greenhouse Gases |
  |8|Drainage Class |EP |[Click here](https://jneme910.github.io/CART/chapters/Drainage_Class) |Easements|
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|---|
@@ -118,7 +118,7 @@ This domain table contains an ordered list of all possible rating values.
 4. [Ponding or Flooding Frequency](https://jneme910.github.io/CART/chapters/Ponding_or_Flooding)
 5. [Depth to Water Table](https://jneme910.github.io/CART/chapters/Depth_to_Water_Table)
 6. [Drainage Class](https://jneme910.github.io/CART/chapters/Drainage_Class)
-7. [Availible Water Storage](https://jneme910.github.io/CART/chapters/Available_Water_Storage)
+7. [Available Water Storage](https://jneme910.github.io/CART/chapters/Available_Water_Storage)
 
 # Environmental Evaluation (CPA-52)
 1. [Farmland Classification](https://jneme910.github.io/CART/chapters/Farmland_Classification)
