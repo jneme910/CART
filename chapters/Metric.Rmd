@@ -1,0 +1,177 @@
+---
+title: "Metric"
+author: "Jason Nemecek"
+date:  "`r Sys.Date()`"
+tags: []
+output: 
+  html_document: 
+    toc: true
+    toc_float: true
+    toc_depth: 4
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Soil Data Access Usage by Hour and Day
+
+Below are soil data access hits (usage) by hour and day. Typically the median range per hour is about 2k and it ranges between 500  to 7,300 queries (quartile).  
+
+Tuesday and Thursday are the days it’s used the most and the median for a typical day is about 90k. Ranging from 55k to 181K (quartile.) One thing to note there are some extreme values in the 95th percentile that might need to be considered for planning purposes. The metrics also doesn’t look at the complexity of the queries hitting to soil data access. This could be something that impacts the speed of the server.
+
+### Hour
+hour_05_percentile|hour_25_percentile|hour_50_percentile|hour_75_percentile|hour_95_percentile|min_hour_count|max_hour_count|avg_hour_count
+-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------
+69|527|2,048|7,342|32,426|5|565,322|10,767
+
+
+### Day
+day_05_percentile|day_25_percentile|day_50_percentile|day_75_percentile|day_95_percentile|min_day_count|max_day_count|avg_day_count|day
+------------|------------|------------|------------|------------|------------|------------|------------|------------
+7,561|13,923|21,118|66,996|559,737|5,149|4,817,860|192,513|Sunday
+8,316|14,404|31,519|94,307|481,157|5,976|12,470,806|348,879|Saturday
+19,659|52,537|84,785|159,574|585,673|16,667|7,420,868|295,437|Monday
+33,516|52,546|85,026|188,906|1,273,597|27,143|2,319,515|256,262|Friday
+34,573|61,290|105,323|172,092|557,934|14,992|1,563,087|183,311|Thursday
+35,300|56,185|109,063|210,785|1,083,900|6,916|6,612,823|330,289|Tuesday
+36,338|60,430|91,972|185,929|778,698|9,629|1,366,856|201,693|Wednesday
+
+### Weekday (Monday to Friday with day undefined) 
+day_05_percentile|day_25_percentile|day_50_percentile|day_75_percentile|day_95_percentile|min_day_count|max_day_count|avg_day_count
+---------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------
+32,390|55,504|89,681|181,065|867,614|6,916|7,420,868|253,409
+
+
+## Database Log 
+
+```{SQL}
+-- SDA Metrics by 'SDA Spatial Query','SDA Tabular Query','SDA User Interface'
+
+use baflogrpt; 
+  GO
+SET STATISTICS IO ON 
+GO 
+DROP TABLE IF EXISTS #sdametrics_day
+DROP TABLE IF EXISTS #sdametrics_hour
+DROP TABLE IF EXISTS #sdametrics2
+
+
+
+declare @startLogDateTime datetime
+set @startLogDateTime = '2018-06-01T00:00:00'
+declare @endLogDateTime datetime
+set @endLogDateTime = '2019-06-01T00:00:00'
+
+--Creates table
+declare @t table(dt datetime, d varchar(50), h int, y int, m int ,  SDA_Log_Message varchar(50), SDA_Application_Name varchar(50), logCount int, app int );
+insert into @t
+
+--Grabs the log ids for Soil Data Access usage
+
+select 
+FORMAT (Log.LogDateTime, 'd', 'en-US') AS dt,
+FORMAT(Log.LogDateTime, 'dddd') AS d,
+DATEPART(hour,Log.LogDateTime)  AS h,
+datepart(year, Log.LogDateTime) y,
+datepart(month, Log.LogDateTime) m,
+log.LogMessage AS SDA_Log_Message,
+[Application].ApplicationName AS SDA_Application_Name,
+log.LogID AS logCount,
+1 AS app
+from dbo.log AS Log with(nolock)
+left outer join dbo.application AS Application with(nolock) on Application.ApplicationID = Log.ApplicationID
+where Log.LogDateTime >= @startLogDateTime
+and Log.LogDateTime <= @endLogDateTime
+and Application.ApplicationName in ('SDA Spatial Query','SDA Tabular Query','SDA User Interface')
+and Log.LogType = 'METRIC'
+and Log.LogSubtype =  'SDA AUDIT'
+;
+
+--Aggregates by hour (24 hour format) 
+select  dt, 1 AS id,  d, h , y , m ,  
+count(DISTINCT logCount) as [hour_count]
+INTO #sdametrics_hour
+from @t
+group by y, m, d, dt,  h
+order by y, m, d, dt,  h
+
+
+--Hour Metrics
+SELECT TOP 1 
+percentile_cont (0.05) within group (order by  hour_count)
+  over(partition by id) as hour_05_percentile,
+percentile_cont (0.25) within group (order by  hour_count)
+  over(partition by id) as hour_25_percentile,
+percentile_cont (0.50) within group (order by  hour_count)
+  over(partition by id) as hour_50_percentile,
+  percentile_cont (0.75) within group (order by  hour_count)
+  over(partition by id) as hour_75_percentile,
+   percentile_cont (0.95) within group (order by  hour_count)
+  over(partition by id) as hour_95_percentile,
+  MIN(hour_count) over(partition by id) as min_hour_count,
+  MAX(hour_count) over(partition by id) as max_hour_count,
+  AVG(hour_count) over(partition by id) as avg_hour_count
+FROM #sdametrics_hour
+
+
+
+--Aggregates and sums the log count by Date
+SELECT app, dt, 
+  count(DISTINCT logCount) AS sum_day_count,
+  d 
+INTO #sdametrics_day
+FROM @t
+GROUP BY app, dt, d
+;
+
+--Aggregates and sums the log count by Day of the week
+SELECT DISTINCT
+percentile_cont (0.05) within group (order by  sum_day_count)
+  over(partition by d) as day_05_percentile,
+percentile_cont (0.25) within group (order by  sum_day_count)
+  over(partition by d) as day_25_percentile,
+percentile_cont (0.50) within group (order by  sum_day_count)
+  over(partition by d) as day_50_percentile,
+  percentile_cont (0.75) within group (order by  sum_day_count)
+  over(partition by d) as day_75_percentile,
+  percentile_cont (0.95) within group (order by  sum_day_count)
+  over(partition by d) as day_95_percentile,
+  MIN(sum_day_count) over(partition by d) as min_day_count,
+  MAX(sum_day_count) over(partition by d) as max_day_count,
+  AVG(sum_day_count) over(partition by d) as avg_day_count,
+  d AS [day]
+FROM #sdametrics_day
+;
+
+
+--Aggregates and sums the log count for the weekday excluding Saturday and Sunda
+SELECT DISTINCT
+percentile_cont (0.05) within group (order by  sum_day_count)
+  over(partition by app) as day_05_percentile,
+percentile_cont (0.25) within group (order by  sum_day_count)
+  over(partition by app) as day_25_percentile,
+percentile_cont (0.50) within group (order by  sum_day_count)
+  over(partition by app) as day_50_percentile,
+  percentile_cont (0.75) within group (order by  sum_day_count)
+  over(partition by app) as day_75_percentile,
+  percentile_cont (0.95) within group (order by  sum_day_count)
+  over(partition by app) as day_95_percentile,
+  MIN(sum_day_count) over(partition by app) as min_day_count,
+  MAX(sum_day_count) over(partition by app) as max_day_count,
+  AVG(sum_day_count) over(partition by app) as avg_day_count
+FROM #sdametrics_day WHERE d NOT IN ('Saturday', 'Sunday')
+;
+DROP TABLE IF EXISTS #sdametrics_day
+DROP TABLE IF EXISTS #sdametrics_hour
+DROP TABLE IF EXISTS #sdametrics2
+
+GO
+SET STATISTICS IO OFF 
+GO
+
+```
+
+
+

@@ -36,7 +36,7 @@ Number|Data Checks|SSURGO Table
 
 
 
-### Check null compoent Percent by State
+### Check null component Percent by State
 
 ```{SQL}
 DROP TABLE IF EXISTS #tem1
@@ -82,7 +82,7 @@ Breakdown Null Component Percent:
 * 17,039 Minor Components
 * 6,885 National Map Unit Symbols
 
-## Checks Major Compoents where percent is less than 10
+## Checks Major Components where percent is less than 10
 
 ```{SQL}
 SELECT  areasymbol, areaname,  mapunit.muname, mapunit.mukey, compname, localphase, component.cokey,

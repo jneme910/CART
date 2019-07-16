@@ -37,6 +37,8 @@ Rating class values for calculating component acres.
 |Predominantly Nonhydric|	1|	5|	20|
 |Nonhydric|	0	|0|	0|
 
+Note: for undifferentiated mapunits in the "Predominantly Hydric" class the low value is set to "0"
+
 
 Hydric soils are defined by the National Technical Committee for Hydric Soils (NTCHS) as soils that formed under conditions of saturation, flooding, or ponding long enough during the growing season to develop anaerobic conditions in the upper part (Federal Register, 1994). Under natural conditions, these soils are either saturated or inundated long enough during the growing season to support the growth and reproduction of hydrophytic vegetation.
 
