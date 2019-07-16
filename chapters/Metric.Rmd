@@ -47,9 +47,9 @@ day_05_percentile|day_25_percentile|day_50_percentile|day_75_percentile|day_95_p
 
  ![Soil Application by Year](https://jneme910.github.io/CART/TableImages/Soil_Application_By_Year.PNG)
 
- ![Soil Data Access sum day count from 5/1/2019 to 6/18/2019 ](https://jneme910.github.io/CART/TableImages/Metric_sum_day_count2.PNG) 
+ ![Soil Data Access sum day count from 5/1/2019 to 6/18/2019 ](https://jneme910.github.io/CART/TableImages/Metric_sum_day_count2.png) 
  
-  ![Soil Data Access sum day count from 5/1/2018 to 6/18/2019 ](https://jneme910.github.io/CART/TableImages/Metric_sum_day_count2.PNG) 
+  ![Soil Data Access sum day count from 5/1/2018 to 6/18/2019 ](https://jneme910.github.io/CART/TableImages/Metric_sum_day_count.png) 
  
 ## Database Log SQL Script
 
