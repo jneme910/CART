@@ -569,7 +569,7 @@ INSERT INTO #drain2
 SELECT aoiid, landunit, landunit_acres,  mukey, mapunit_acres, cokey, compname, comppct_r, majcompflag, mu_pct_sum, drainagecl, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
 FROM #drain;
 
-SELECT DISTINCT aoiid, landunit, landunit_acres, drainagecl , ROUND (SUM (co_acres) over(partition by aoiid, drainagecl),2)  AS drainage_class_acres,
+SELECT DISTINCT aoiid, #drain2.landunit, landunit_acres, drainagecl , ROUND (SUM (co_acres) over(partition by aoiid, drainagecl),2)  AS drainage_class_acres,
 
  CASE WHEN drainagecl = 'Excessively drained' THEN CONCAT ('Drainage Class', ':', 1) 
  WHEN drainagecl = 'Somewhat excessively drained' THEN CONCAT ('Drainage Class', ':', 2) 
@@ -581,9 +581,9 @@ SELECT DISTINCT aoiid, landunit, landunit_acres, drainagecl , ROUND (SUM (co_acr
  WHEN drainagecl = 'Subaqueous' THEN CONCAT ('Drainage Class', ':', 8) 
  WHEN drainagecl IS NULL  THEN CONCAT ('Drainage Class', ':', 9) 	END		 
   AS rating_key ,
-  'Drainage class' AS attributename
+  'Drainage class' AS attributename, soils_metadata
 FROM #drain2
-
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#drain2.landunit
 ORDER BY aoiid, drainage_class_acres DESC
 ;
 
@@ -932,7 +932,7 @@ SELECT DISTINCT
 FROM #SOC5
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, SOCSTOCK_0_5, SOCSTOCK_0_30, SOCSTOCK_0_150;
 
-SELECT DISTINCT  landunit, landunit_acres, 
+SELECT DISTINCT  #SOC6.landunit, landunit_acres, 
 CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0) 
 WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
 WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 2) 
@@ -950,10 +950,12 @@ WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 T
 WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN 'Low'
 WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN 'Moderate'
 WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN 'Moderately High'
-WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN 'High' END AS [SOC_0_30_High_Class]
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN 'High' END AS [SOC_0_30_High_Class], soils_metadata
 
 
 FROM #SOC6
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#SOC6.landunit
+
 --- END SOC
 
 --Begin AWS
@@ -995,13 +997,14 @@ FROM #acpfaws
 LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#acpfaws.aoiid
 GROUP BY #acpfaws.aoiid, #acpfaws.landunit, mapunit_acres, landunit_acres, aws0150wta;
 
-SELECT DISTINCT  landunit, landunit_acres, CASE WHEN AWS_Weighted_Average0_150 IS NOT NULL THEN CONCAT ('Availible Water Storage' , ':' , 1) 
+SELECT DISTINCT  #aws1.landunit, landunit_acres, CASE WHEN AWS_Weighted_Average0_150 IS NOT NULL THEN CONCAT ('Availible Water Storage' , ':' , 1) 
 WHEN AWS_Weighted_Average0_150 = 0 THEN CONCAT ('Availible Water Storage' , ':' , 0)
 WHEN AWS_Weighted_Average0_150 IS  NULL THEN CONCAT ('Availible Water Storage' , ':' , 'Not Rated') 
 END AS rating_key,
 'Availible Water Storage' AS attributename,
-AWS_Weighted_Average0_150	AS [AWS_0_150]
-FROM #aws1;
+AWS_Weighted_Average0_150	AS [AWS_0_150],soils_metadata
+FROM #aws1
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#aws1.landunit;
 
 
 --Begin Aggregate Aggregate Stability
@@ -1510,7 +1513,7 @@ SELECT DISTINCT
 FROM #agg7a
 GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AGG_R, MU_SUM_AGG_H;
 
-SELECT DISTINCT  landunit, landunit_acres,
+SELECT DISTINCT  #agg8.landunit, landunit_acres,
 CASE WHEN LU_AGG_Weighted_Average_R <25 THEN 'Low'
 WHEN LU_AGG_Weighted_Average_R >=25 AND  LU_AGG_Weighted_Average_R <50 THEN 'Moderate'
 WHEN LU_AGG_Weighted_Average_R >=50 AND  LU_AGG_Weighted_Average_R <75 THEN 'Moderately High' 
@@ -1526,9 +1529,9 @@ END AS rating_key,
  'Aggregate Stability' AS attributename,
 LU_AGG_Weighted_Average_L AS [Aggregate_Stability_L],
 LU_AGG_Weighted_Average_R AS [Aggregate_Stability_R],
-LU_AGG_Weighted_Average_H AS [Aggregate_Stability_H]
+LU_AGG_Weighted_Average_H AS [Aggregate_Stability_H], soils_metadata
 FROM #agg8
-
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#agg8.landunit
 --flooding frequency  and Ponding frequency 
 ---The assessment will trigger a soil data web service to determine flood frequency rating of occasional, frequent, or very frequent 
 
@@ -1674,7 +1677,7 @@ taxsubgrp CHAR(120),
 hydricrating CHAR(3)
       );
 
---INSERT INTO #o1
+INSERT INTO #o1
 SELECT DISTINCT og.aoiid, og.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag,  mu_pct_sum, FORMAT ((1.0 * copct / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct, taxgrtgroup,
 taxsubgrp,
 hydricrating 
@@ -1908,7 +1911,7 @@ mukey,
 CASE WHEN comp_count = all_not_hydric + hydric_null THEN 'Nonhydric' 
 WHEN comp_count = all_hydric  THEN 'Hydric' 
 WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 'Predominantly hydric' 
-WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN  'Predominantly nonydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN  'Predominantly nonhydric' 
 WHEN maj_not_hydric >= 0.5  AND  maj_hydric >= 0.5 THEN 'Partially hydric'
 ELSE 'Error'
 END AS hydric_rating, 
@@ -2699,31 +2702,33 @@ WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acre
 -- Also note that the aaoid was removed from the DISTINCT list. Make sure that just using landunit string does not cause problems.
 
 --Ponding and Flooding
-SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS ponding_flooding_acres, 
+SELECT #pf2.landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS ponding_flooding_acres, 
 CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Ponding or Flooding' , ':' , 1) 
 WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Ponding or Flooding' , ':' , 0)
 WHEN ROUND (SUM (co_acres),2) IS  NULL THEN CONCAT ('Ponding or Flooding', ':' , 'Not Rated') 
 END AS rating_key,
 
-'Ponding or Flooding' AS attributename 
+'Ponding or Flooding' AS attributename , soils_metadata
 FROM #pf2
-GROUP BY landunit, landunit_acres
-ORDER BY landunit;
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#pf2.landunit
+GROUP BY #pf2.landunit, landunit_acres, soils_metadata
+ORDER BY #pf2.landunit;
 
 --Water Table By Land Unit
-SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS water_table_acres, 
+SELECT #wet2.landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS water_table_acres, 
 CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Water Table' , ':' , 1) 
 WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Water Table' , ':' , 0)
 WHEN ROUND (SUM (co_acres),2) IS  NULL THEN CONCAT ('Water Table', ':' , 'Not Rated') 
 END AS rating_key,
-'Water Table' AS attributename 
+'Water Table' AS attributename , soils_metadata
 FROM #wet2
-GROUP BY landunit, landunit_acres
-ORDER BY landunit;
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#wet2.landunit
+GROUP BY #wet2.landunit, landunit_acres, soils_metadata
+ORDER BY #wet2.landunit;
 
 
 --Farm Class By Land Unit
-SELECT DISTINCT landunit, SUM (mapunit_acres) OVER(PARTITION BY aoiid, farmlndclass) AS rating_acres, farmlndclass, 
+SELECT DISTINCT #FC.landunit, SUM (mapunit_acres) OVER(PARTITION BY aoiid, farmlndclass) AS rating_acres, farmlndclass, 
 CASE WHEN farmlndclass IS NULL THEN  CONCAT ('Farm Class' , ':' , 1) 
 WHEN farmlndclass = 'Prime farmland' THEN  CONCAT ('Farm Class' , ':' , 2) 
 WHEN farmlndclass = 'Prime farmland if' THEN  CONCAT ('Farm Class' , ':' , 3) 
@@ -2734,13 +2739,14 @@ WHEN farmlndclass = 'Local importance if' THEN  CONCAT ('Farm Class' , ':' , 7)
 WHEN farmlndclass = 'Not Prime farmland' THEN  CONCAT ('Farm Class' , ':' , 8) 
 WHEN farmlndclass = 'Not rated' THEN  CONCAT ('Farm Class' , ':' , 9) 
 END AS rating_key,
-'Farm Class' AS attributename 
+'Farm Class' AS attributename , soils_metadata
 FROM #FC
-GROUP BY aoiid, landunit, mapunit_acres, farmlndclass;
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#FC.landunit
+GROUP BY aoiid, #FC.landunit, mapunit_acres, farmlndclass, soils_metadata;
 
 
 -- Return hydric by Land Unit
-SELECT DISTINCT landunit,
+SELECT DISTINCT #Hydric3.landunit,
 CASE WHEN rv_acres  IS NOT NULL THEN CONCAT ('Hydric Soils' , ':' , 1) 
 WHEN rv_acres  = 0 THEN CONCAT ('Hydric Soils' , ':' , 0)
 WHEN rv_acres IS  NULL THEN CONCAT ('Hydric Soils', ':' , 'Not Rated') 
@@ -2752,9 +2758,9 @@ ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_rv_acres,
 ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_high_acres,
 ROUND((ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_low_pct, 
 ROUND((ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_rv_pct,
-ROUND((ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_high_pct
+ROUND((ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_high_pct, soils_metadata
 FROM #Hydric3
-
+INNER JOIN #LandunitMetadata ON #LandunitMetadata.landunit=#Hydric3.landunit
 -- Soil landunit polygon geometry has the intersected landunits and soil (WKT geometry)
 --SELECT landunit, AS2.mukey, MU.musym, MU.muname, poly_acres, soilgeog.STAsText() AS wktgeom, soilgeom
 --FROM #AoiSoils2 AS2
