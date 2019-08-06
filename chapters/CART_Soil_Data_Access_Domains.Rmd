@@ -23,7 +23,7 @@ library(knitr)
 library(kableExtra)
 
 # read from text file
-x <- read.csv('CART_Soil_Data_Access_Domains.csv', check.names = FALSE, stringsAsFactors = FALSE)
+x <- read.csv('CART_Soil_Data_Access_Domains2.csv', check.names = FALSE, stringsAsFactors = FALSE)
 
 # nice HTML output
 kable_styling(kable(x, format = 'html'), bootstrap_options = 'striped', full_width = TRUE, font_size = 12)

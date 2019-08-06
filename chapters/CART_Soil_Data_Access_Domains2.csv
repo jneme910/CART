@@ -1,0 +1,69 @@
+Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
+1,Surface Salt Concentration,1,High surface salinization risk or already saline
+2,Surface Salt Concentration,2,Surface salinization risk
+3,Surface Salt Concentration,3,Low surface salinization risk
+4,Surface Salt Concentration,4,Not rated
+5,Soil Susceptibility to Compaction,1,High
+6,Soil Susceptibility to Compaction,2,Medium
+7,Soil Susceptibility to Compaction,3,Low
+8,Soil Susceptibility to Compaction,4,Not rated
+9,Organic Matter Depletion,1,OM depletion high
+10,Organic Matter Depletion,2,OM depletion moderately high
+11,Organic Matter Depletion,3,OM depletion moderate
+12,Organic Matter Depletion,4,OM depletion moderately low
+13,Organic Matter Depletion,5,OM depletion low
+14,Organic Matter Depletion,6,Not rated
+15,Agricultural Organic Soil Subsidence,1,Severe subsidence
+16,Agricultural Organic Soil Subsidence,2,Moderate subsidence
+17,Agricultural Organic Soil Subsidence,3,Low subsidence
+18,Agricultural Organic Soil Subsidence,4,Mineral soil
+19,Agricultural Organic Soil Subsidence,5,Not rated
+20,Suitability for Aerobic Soil Organisms,1,Not favorable
+21,Suitability for Aerobic Soil Organisms,2,Somewhat favorable
+22,Suitability for Aerobic Soil Organisms,3,Very favorable
+23,Suitability for Aerobic Soil Organisms,4,Not rated
+24,Ponding or Flooding,0,No
+25,Ponding or Flooding,1,Yes
+26,Ponding or Flooding,2,Not rated
+27,Drainage class,1,Excessively drained
+28,Drainage class,2,Somewhat excessively drained
+29,Drainage class,3,Well drained
+30,Drainage class,4,Moderately well drained
+31,Drainage class,5,Somewhat poorly drained
+32,Drainage class,6,Poorly drained
+33,Drainage class,7,Very poorly drained
+34,Drainage class,8,Subaqueous
+35,Drainage class,9,Not rated
+36,Available Water Storage,0,No
+37,Available Water Storage,1,Yes
+38,Available Water Storage,2,Not rated
+39,Soil Organic Carbon Stock,1,None
+40,Soil Organic Carbon Stock,2,Very Low
+41,Soil Organic Carbon Stock,3,Low
+42,Soil Organic Carbon Stock,4,Moderate
+43,Soil Organic Carbon Stock,5,Moderately High
+44,Soil Organic Carbon Stock,6,High
+45,Soil Organic Carbon Stock,7,Not rated
+46,Aggregate Stability,1,Low
+47,Aggregate Stability,2,Moderate
+48,Aggregate Stability,3,Moderately High
+49,Aggregate Stability,4,High
+50,Aggregate Stability,5,Not rated
+51,Water Table,0,No
+52,Water Table,1,Yes
+53,Water Table,2,Not rated
+54,Farm Class,1,Prime farmland
+55,Farm Class,2,Prime farmland if
+56,Farm Class,3,State importance
+57,Farm Class,4,State importance if
+58,Farm Class,5,Local importance
+59,Farm Class,6,Local importance if
+60,Farm Class,7,Not Prime farmland
+61,Farm Class,8,Unique importance
+62,Farm Class,9,Not rated
+63,Hydric Soils,0,No
+64,Hydric Soils,1,Yes
+65,Hydric Soils,2,Not rated
+66,Organic and Hydric Soils,0,No
+67,Organic and Hydric Soils,1,Yes
+68,Organic and Hydric Soils,2,Not rated
