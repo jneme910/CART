@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jason Nemecek" />
 
-<meta name="date" content="2019-07-15" />
+<meta name="date" content="2019-08-09" />
 
 <title>Ponding or Flooding</title>
 
@@ -376,7 +376,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Ponding or Flooding</h1>
 <h4 class="author">Jason Nemecek</h4>
-<h4 class="date">2019-07-15</h4>
+<h4 class="date">2019-08-09</h4>
 
 </div>
 
@@ -387,15 +387,16 @@ div.tocify {
   }
 </style>
 <div id="definitions" class="section level2">
-<h2>Definitions:</h2>
+<h2>Definitions</h2>
 <div id="flooding-frequency-class" class="section level3">
 <h3>Flooding Frequency Class</h3>
 <p>Flooding is the temporary inundation of an area caused by overflowing streams, by runoff from adjacent slopes, or by tides. Water standing for short periods after rainfall or snowmelt is not considered flooding, and water standing in swamps and marshes is considered ponding rather than flooding. Frequency is expressed as none, very rare, rare, occasional, frequent, and very frequent.</p>
 <ul>
 <li><strong>“None”</strong> means that flooding is not probable. The chance of flooding is nearly 0 percent in any year. Flooding occurs less than once in 500 years.<br />
 </li>
-<li>“Very rare” means that flooding is very unlikely but possible under extremely unusual weather conditions. The chance of flooding is less than 1 percent in any year.<br />
-“Rare” means that flooding is unlikely but possible under unusual weather conditions. The chance of flooding is 1 to 5 percent in any year.<br />
+<li><strong>“Very rare”</strong> means that flooding is very unlikely but possible under extremely unusual weather conditions. The chance of flooding is less than 1 percent in any year.<br />
+</li>
+<li><strong>“Rare”</strong> means that flooding is unlikely but possible under unusual weather conditions. The chance of flooding is 1 to 5 percent in any year.<br />
 </li>
 <li><strong>“Occasional”</strong> means that flooding occurs infrequently under normal weather conditions. The chance of flooding is 5 to 50 percent in any year.<br />
 </li>
@@ -403,7 +404,7 @@ div.tocify {
 </li>
 <li><strong>“Very frequent”</strong> means that flooding is likely to occur very often under normal weather conditions. The chance of flooding is more than 50 percent in all months of any year.</li>
 </ul>
-<p>Note: Very Rare and Rare is not used in CART.</p>
+<p>Note: Very rare and rare are not used in CART.</p>
 </div>
 <div id="ponding-frequency-class" class="section level3">
 <h3>Ponding Frequency Class</h3>
@@ -411,7 +412,7 @@ div.tocify {
 <ul>
 <li><strong>“None”</strong> means that ponding is not probable. The chance of ponding is nearly 0 percent in any year.<br />
 </li>
-<li>“Rare” means that ponding is unlikely but possible under unusual weather conditions. The chance of ponding is nearly 0 percent to 5 percent in any year.<br />
+<li><strong>“Rare”</strong> means that ponding is unlikely but possible under unusual weather conditions. The chance of ponding is nearly 0 percent to 5 percent in any year.<br />
 </li>
 <li><strong>“Occasional”</strong> means that ponding occurs, on the average, once or less in 2 years. The chance of ponding is 5 to 50 percent in any year.<br />
 </li>
@@ -423,22 +424,22 @@ div.tocify {
 <div id="excess-water-resource-concern" class="section level2">
 <h2>Excess Water Resource Concern</h2>
 <div id="description" class="section level3">
-<h3>Description:</h3>
+<h3>Description</h3>
 <p>Surface water restricts land use and management goals.</p>
 </div>
 <div id="objective" class="section level3">
-<h3>Objective:</h3>
+<h3>Objective</h3>
 <p>Manage surface water more efficiently.</p>
 </div>
 <div id="analysis-within-cart" class="section level3">
-<h3>Analysis within CART:</h3>
-<p>Each PLU regardless of land use will be assessed. The assessment will trigger a soil data web service to determine flood frequency rating of occasional, frequent, or very frequent and will also trigger a web service to evaluate if the PLU is within a 100-year flood plain according to FEMA maps. Either condition will trigger the resource concern for assessment and set the threshold to 50. The planner may identify the presence or absence of this resource concern based on site specific conditions and set the threshold to 50.</p>
+<h3>Analysis within CART</h3>
+<p>Each PLU is assessed regardless of land use. The assessment triggers a soil-data web-service to determine flood frequency rating of occasional, frequent, or very frequent. It also triggers a web service to evaluate if the PLU is within a 100-year flood plain according to FEMA maps. Either condition triggers an assessment of the resource concern and sets the threshold to 50. The planner may also identify the presence or absence of this resource concern based on site specific conditions and set the threshold to 50.</p>
 </div>
 </div>
 <div id="script-breakdown" class="section level2">
 <h2>Script Breakdown</h2>
 <div id="insert-identifiers-string-and-wkt-geometry-for-each-area-of-interest-aoi-polygon" class="section level4">
-<h4>Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon</h4>
+<h4>Insert identifier(s) string and WKT geometry for each area of interest (AOI) polygon</h4>
 <pre class="sql"><code>SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
@@ -474,8 +475,8 @@ VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
 </tbody>
 </table>
 </div>
-<div id="creates-summary-acres-for-each-landunit" class="section level4">
-<h4>Creates Summary Acres for each landunit</h4>
+<div id="create-summary-acres-for-each-landunit" class="section level4">
+<h4>Create summary acres for each landunit</h4>
 <pre class="sql"><code>CREATE TABLE #AoiAcres
     ( aoiid INT,
     landunit CHAR(20),
@@ -523,8 +524,8 @@ SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) A
 FROM mupolygon M, #AoiTable A
 WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;</code></pre>
 </div>
-<div id="populates-soil-geometry-with-landunit-attribute" class="section level4">
-<h4>Populates Soil geometry with landunit attribute</h4>
+<div id="populate-soil-geometry-with-landunit-attribute" class="section level4">
+<h4>Populate soil geometry with landunit attribute</h4>
 <pre class="sql"><code>-- Soil geometry with landunits
 CREATE TABLE #AoiSoils2 
     ( aoiid INT,
@@ -2477,7 +2478,7 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey</code></pre>
 </table>
 </div>
 <div id="flooding-frequency-and-ponding-frequency" class="section level3">
-<h3>Flooding frequency and Ponding frequency</h3>
+<h3>Flooding Frequency and Ponding Frequency</h3>
 <pre class="sql"><code>CREATE TABLE #pf
 ( aoiid INT, 
  landunit CHAR(20), 
@@ -2701,7 +2702,7 @@ GROUP BY  pf.aoiid, pf.landunit, landunit_acres, mukey, mapunit_acres, cokey, cn
 </div>
 </div>
 <div id="normalizing-component-percents-and-calculating-components-acres-from-intercepted-polygon" class="section level1">
-<h1>Normalizing component percent’s and calculating components acres from intercepted polygon</h1>
+<h1>Normalizing Component Percent’s and Calculating Components Acres From Intercepted Polygon</h1>
 <pre class="sql"><code>CREATE TABLE #pf2
     ( aoiid INT,
     landunit CHAR(20),
@@ -2833,10 +2834,10 @@ ORDER BY landunit;</code></pre>
 </tbody>
 </table>
 <div id="references" class="section level2">
-<h2>References:</h2>
+<h2>References</h2>
 <ol style="list-style-type: decimal">
-<li><p>U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, title 430-VI. <a href="http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242" class="uri">http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242</a> [07/2015].</p></li>
-<li><p>Soil Survey Staff, Natural Resources Conservation Service, United States Department of Agriculture. Soil Survey Geographic (SSURGO) Database. Available online. Accessed [07/2015].</p></li>
+<li>U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, title 430-VI. <a href="http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242" class="uri">http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242</a> (accessed July 2015).</li>
+<li>Soil Survey Staff. 2015. Soil Survey Geographic (SSURGO) Database. USDA Natural Resources Conservation Service. <a href="https://catalog.data.gov/dataset/soil-survey-geographic-ssurgo-database-for-various-soil-survey-areas-in-the-united-states-" class="uri">https://catalog.data.gov/dataset/soil-survey-geographic-ssurgo-database-for-various-soil-survey-areas-in-the-united-states-</a> (accessed July 2015).</li>
 </ol>
 </div>
 </div>

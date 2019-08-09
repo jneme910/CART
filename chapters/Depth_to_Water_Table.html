@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jason Nemecek" />
 
-<meta name="date" content="2019-07-11" />
+<meta name="date" content="2019-08-09" />
 
 <title>Depth to Water Table</title>
 
@@ -289,7 +289,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Depth to Water Table</h1>
 <h4 class="author">Jason Nemecek</h4>
-<h4 class="date">2019-07-11</h4>
+<h4 class="date">2019-08-09</h4>
 
 </div>
 
@@ -299,26 +299,26 @@ div.tocify {
     background-color: #F7FBFF;
   }
 </style>
-<p><strong>“Water table”</strong> refers to a saturated zone in the soil. It occurs during specified months. Estimates of the upper limit are based mainly on observations of the water table at selected sites and on evidence of a saturated zone, namely grayish colors (redoximorphic features) in the soil. A saturated zone that lasts for less than a month is not considered a water table. This attribute is actually recorded as three separate values in the database. A low value and a high value indicate the range of this attribute for the soil component. A “representative” value indicates the expected value of this attribute for the component. For this soil property, only the representative value is used.</p>
+<p><strong>Water table</strong> refers to a saturated zone in the soil and occurs during specified months. Estimates of the upper limit are based mainly on observations of the water table at selected sites and on evidence of a saturated zone, namely grayish colors (redoximorphic features) in the soil. A saturated zone that lasts for less than a month is not considered a water table. Water table is recorded as three separate values in the database. A low value and a high value indicate the range for the soil component. A “representative” value indicates the expected value for the component. Only the representative value is used for the CART calculation.</p>
 <div id="seasonal-high-water-table" class="section level2">
 <h2>Seasonal High Water Table</h2>
 <div id="description" class="section level3">
-<h3>Description:</h3>
+<h3>Description</h3>
 <p>Groundwater or a perched water table causing saturated conditions near the surface degrades water resources or restricts capability of land to support its intended use.</p>
 </div>
 <div id="objective" class="section level3">
-<h3>Objective:</h3>
+<h3>Objective</h3>
 <p>Reduce seasonally high water table.</p>
 </div>
 <div id="analysis-within-cart" class="section level3">
-<h3>Analysis within CART:</h3>
+<h3>Analysis within CART</h3>
 <p>Each PLU regardless of land use will default to a “not assessed” status for seasonal high water table. The planner will identify this resource concern based on site specific conditions. If the planner identifies the resource concern it will trigger a soil data web service to determine if the water table is within 18 inches of the surface. If a high water table is identified a threshold of 50 will be set.</p>
 </div>
 </div>
 <div id="script-breakdown" class="section level2">
 <h2>Script Breakdown</h2>
 <div id="insert-identifiers-string-and-wkt-geometry-for-each-area-of-interest-aoi-polygon" class="section level4">
-<h4>Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon</h4>
+<h4>Insert identifier(s) string and WKT geometry for each area of interest (AOI) polygon</h4>
 <pre class="sql"><code>SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
@@ -354,8 +354,8 @@ VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
 </tbody>
 </table>
 </div>
-<div id="creates-summary-acres-for-each-landunit" class="section level4">
-<h4>Creates Summary Acres for each landunit</h4>
+<div id="create-summary-acres-for-each-landunit" class="section level4">
+<h4>Create summary acres for each landunit</h4>
 <pre class="sql"><code>CREATE TABLE #AoiAcres
     ( aoiid INT,
     landunit CHAR(20),
@@ -403,8 +403,8 @@ SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) A
 FROM mupolygon M, #AoiTable A
 WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;</code></pre>
 </div>
-<div id="populates-soil-geometry-with-landunit-attribute" class="section level4">
-<h4>Populates Soil geometry with landunit attribute</h4>
+<div id="populate-soil-geometry-with-landunit-attribute" class="section level4">
+<h4>Populate soil geometry with landunit attribute</h4>
 <pre class="sql"><code>-- Soil geometry with landunits
 CREATE TABLE #AoiSoils2 
     ( aoiid INT,
@@ -2356,8 +2356,8 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey</code></pre>
 </tbody>
 </table>
 </div>
-<div id="flags-any-component-with-a-water-table-depth-less-than-36-cm-during-the-growing-season" class="section level4">
-<h4>Flags any component with a water table depth less than 36 cm during the growing season</h4>
+<div id="flag-any-component-with-a-water-table-depth-less-than-36-cm-during-the-growing-season" class="section level4">
+<h4>Flag any component with a water table depth less than 36 cm during the growing season</h4>
 <pre class="sql"><code>CREATE TABLE #wet
 ( aoiid INT, 
  landunit CHAR(20), 
@@ -2410,14 +2410,14 @@ ELSE 2 END  = 1</code></pre>
 <ul>
 <li>Major Components</li>
 <li>Soil Moisture Status equals Wet and water table less then 46 cm (AND)</li>
-<li>Taxonnomic Order is ‘gelisols’ AND Taxonomic Temperature Regime is either hypergelic, pergelic, subgelic’ and occures in July or August (OR)</li>
-<li>Taxonomic Temperature Regime is either cryic, pergelic, isofrigid and occurs in either july or august (OR)<br />
+<li>Taxonomic Order is ‘gelisols’ AND Taxonomic Temperature Regime is either hypergelic, pergelic, subgelic’ and occurs in July or August (OR)</li>
+<li>Taxonomic Temperature Regime is either cryic, pergelic, isofrigid and occurs in either July or August (OR)<br />
 </li>
 <li>Taxonomic Temperature Regime is frigid and occurs in either May to August (OR)</li>
 <li>Taxonomic Temperature Regime Mesic and water table is present from April to October (OR)</li>
-<li>Taxonomic Temperature Regime is eithr thermic or hyperthermic and water table present from May to October (OR)</li>
-<li>Taxonomic Temperature Regime is either isothermic,isohyperthermic, isomesic and water table is present from Feburary to November (OR)</li>
-<li>Else if conditions are met water table occurs in June or July.</li>
+<li>Taxonomic Temperature Regime is either thermic or hyperthermic and water table present from May to October (OR)</li>
+<li>Taxonomic Temperature Regime is either isothermic,isohyperthermic, isomesic and water table is present from February to November (OR)</li>
+<li>Else-if conditions are met water table occurs in June or July.</li>
 </ul>
 <table style="width:100%;">
 <colgroup>
@@ -2535,7 +2535,7 @@ FROM #AoiAcres
 LEFT OUTER JOIN #wet AS wet ON wet.aoiid=#AoiAcres.aoiid
 GROUP BY  #AoiAcres.aoiid,  #AoiAcres.landunit, landunit_acres, mukey, mapunit_acres, cokey, cname, copct, majcompflag, MIN_soimoistdept_r, MIN_soimoistdept_l, major_mu_pct_sum, mu_pct_sum</code></pre>
 <ul>
-<li>Adjuss the component percent for the major components to sum up to 1 for the Map Unit.</li>
+<li>Adjust the component percent for the major components to sum up to 1 for the map unit.</li>
 </ul>
 <table style="width:100%;">
 <colgroup>
@@ -2624,8 +2624,8 @@ GROUP BY  #AoiAcres.aoiid,  #AoiAcres.landunit, landunit_acres, mukey, mapunit_a
 </tbody>
 </table>
 </div>
-<div id="calculates-component-acres" class="section level4">
-<h4>Calculates Component Acres</h4>
+<div id="calculate-component-acres" class="section level4">
+<h4>Calculate component acres</h4>
 <pre class="sql"><code>CREATE TABLE #wet2
     ( aoiid INT,
     landunit CHAR(20),
@@ -2721,7 +2721,7 @@ FROM #wet1;</code></pre>
 </table>
 </div>
 <div id="water-table-by-land-unit" class="section level3">
-<h3>Water Table By Land Unit</h3>
+<h3>Water Table by Land Unit</h3>
 <pre class="sql"><code>SELECT landunit, ROUND (landunit_acres,2) landunit_acres, ROUND (SUM (co_acres),2) AS water_table_acres, 
 CASE WHEN ROUND (SUM (co_acres),2) IS NOT NULL THEN CONCAT ('Water Table' , ':' , 1) 
 WHEN ROUND (SUM (co_acres),2) = 0 THEN CONCAT ('Water Table' , ':' , 0)

@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jason Nemecek" />
 
-<meta name="date" content="2019-07-11" />
+<meta name="date" content="2019-08-09" />
 
 <title>Drainage Class</title>
 
@@ -289,7 +289,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Drainage Class</h1>
 <h4 class="author">Jason Nemecek</h4>
-<h4 class="date">2019-07-11</h4>
+<h4 class="date">2019-08-09</h4>
 
 </div>
 
@@ -299,11 +299,11 @@ div.tocify {
     background-color: #F7FBFF;
   }
 </style>
-<p><strong>“Drainage class (natural)”</strong> refers to the frequency and duration of wet periods under conditions similar to those under which the soil formed. Alterations of the water regime by human activities, either through drainage or irrigation, are not a consideration unless they have significantly changed the morphology of the soil. Seven classes of natural soil drainage are recognized-excessively drained, somewhat excessively drained, well drained, moderately well drained, somewhat poorly drained, poorly drained, and very poorly drained. These classes are defined in the “Soil Survey Manual.”</p>
+<p><strong>“Drainage class (natural)”</strong> refers to the frequency and duration of wet periods under conditions similar to those under which the soil formed. Alterations of the water regime by human activities, either through drainage or irrigation, are not a consideration unless they have significantly changed the morphology of the soil. Seven classes of natural soil drainage are recognized: excessively drained, somewhat excessively drained, well drained, moderately well drained, somewhat poorly drained, poorly drained, and very poorly drained. These classes are defined in the “Soil Survey Manual.”</p>
 <div id="script-breakdown" class="section level2">
 <h2>Script Breakdown</h2>
 <div id="insert-identifiers-string-and-wkt-geometry-for-each-area-of-interest-aoi-polygon" class="section level4">
-<h4>Insert identifier(s) string and WKT geometry for each Area of Interest (AOI) polygon</h4>
+<h4>Insert identifier(s) string and WKT geometry for each area of interest (AOI) polygon</h4>
 <pre class="sql"><code>SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
 SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
 INSERT INTO #AoiTable ( landunit, aoigeom )  
@@ -339,8 +339,8 @@ VALUES ('T9981 Fld4', @aoiGeomFixed);</code></pre>
 </tbody>
 </table>
 </div>
-<div id="creates-summary-acres-for-each-landunit" class="section level4">
-<h4>Creates Summary Acres for each landunit</h4>
+<div id="create-summary-scres-for-each-landunit" class="section level4">
+<h4>Create summary scres for each landunit</h4>
 <pre class="sql"><code>CREATE TABLE #AoiAcres
     ( aoiid INT,
     landunit CHAR(20),
@@ -388,8 +388,8 @@ SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) A
 FROM mupolygon M, #AoiTable A
 WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;</code></pre>
 </div>
-<div id="populates-soil-geometry-with-landunit-attribute" class="section level4">
-<h4>Populates Soil geometry with landunit attribute</h4>
+<div id="populate-soil-geometry-with-landunit-attribute" class="section level4">
+<h4>Populate soil geometry with landunit attribute</h4>
 <pre class="sql"><code>-- Soil geometry with landunits
 CREATE TABLE #AoiSoils2 
     ( aoiid INT,
@@ -2342,7 +2342,7 @@ INNER JOIN component AS CO ON CO.mukey = M2.mukey</code></pre>
 </table>
 </div>
 <div id="adjusting-component-percent" class="section level3">
-<h3>Adjusting Component percent</h3>
+<h3>Adjusting Component Percent</h3>
 <pre class="sql"><code>CREATE TABLE #drain
 (  aoiid INT ,
 landunit CHAR(20), 
@@ -3076,7 +3076,7 @@ LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid WHERE majcompflag = 'Yes'
 </tbody>
 </table>
 <div id="calculating-component-acres" class="section level4">
-<h4>Calculating Component Acres</h4>
+<h4>Calculating component acres</h4>
 <pre class="sql"><code>CREATE TABLE #drain2
 (  aoiid INT ,
 landunit CHAR(20), 
@@ -3810,7 +3810,7 @@ FROM #drain;</code></pre>
 </table>
 </div>
 <div id="summary-by-landunit" class="section level4">
-<h4>Summary by Landunit</h4>
+<h4>Summary by landunit</h4>
 <pre class="sql"><code>SELECT DISTINCT aoiid, landunit, landunit_acres, drainagecl , ROUND (SUM (co_acres) over(partition by aoiid, drainagecl),2)  AS drainage_class_acres,
 
  CASE WHEN drainagecl = 'Excessively drained' THEN CONCAT ('Drainage Class', ':', 1) 
