@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<!-- rev00.html 
+  file://d:\notes\2019\08\from_Jason_Nemecek\rev00.html
+  Versions:
+  00: Original content from Jason Nemecek file "rev.txt" email RE: SDA tests in DEV Wed 8/21/2019 9:35 AM
+Assumptions:
+1. This test script is located at a location comparable to:
+  https://sdmdataaccess-dev.dev.sc.egov.usda.gov/Test/DailyChecksForServices.html
+  http://localhost/SDMDataAccess/test/DailyChecksForServices.html
+2. The above is treated as
+  (site)/Test/DailyChecksForServices.html
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+	<script>
+	(function() {
+
+function createShiftArr(step) {
+
+	var space = '    ';
+	
+	if ( isNaN(parseInt(step)) ) {  // argument is string
+		space = step;
+	} else { // argument is integer
+		switch(step) {
+			case 1: space = ' '; break;
+			case 2: space = '  '; break;
+			case 3: space = '   '; break;
+			case 4: space = '    '; break;
+			case 5: space = '     '; break;
+			case 6: space = '      '; break;
+			case 7: space = '       '; break;
+			case 8: space = '        '; break;
+			case 9: space = '         '; break;
+			case 10: space = '          '; break;
+			case 11: space = '           '; break;
+			case 12: space = '            '; break;
+		}
+	}
+
+	var shift = ['\n']; // array of shifts
+	for(ix=0;ix<100;ix++){
+		shift.push(shift[ix]+space); 
+	}
+	return shift;
+}
+
+function vkbeautify(){
+	this.step = '    '; // 4 spaces
+	this.shift = createShiftArr(this.step);
+};
+
+vkbeautify.prototype.xml = function(text,step) {
+
+	var ar = text.replace(/>\s{0,}</g,"><")
+				 .replace(/</g,"~::~<")
+				 .replace(/\s*xmlns\:/g,"~::~xmlns:")
+				 .replace(/\s*xmlns\=/g,"~::~xmlns=")
+				 .split('~::~'),
+		len = ar.length,
+		inComment = false,
+		deep = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;
+
+		for(ix=0;ix<len;ix++) {
+			// start comment or <![CDATA[...]]> or <!DOCTYPE //
+			if(ar[ix].search(/<!/) > -1) { 
+				str += shift[deep]+ar[ix];
+				inComment = true; 
+				// end comment  or <![CDATA[...]]> //
+				if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1 || ar[ix].search(/!DOCTYPE/) > -1 ) { 
+					inComment = false; 
+				}
+			} else 
+			// end comment  or <![CDATA[...]]> //
+			if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1) { 
+				str += ar[ix];
+				inComment = false; 
+			} else 
+			// <elm></elm> //
+			if( /^<\w/.exec(ar[ix-1]) && /^<\/\w/.exec(ar[ix]) &&
+				/^<[\w:\-\.\,]+/.exec(ar[ix-1]) == /^<\/[\w:\-\.\,]+/.exec(ar[ix])[0].replace('/','')) { 
+				str += ar[ix];
+				if(!inComment) deep--;
+			} else
+			 // <elm> //
+			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) == -1 && ar[ix].search(/\/>/) == -1 ) {
+				str = !inComment ? str += shift[deep++]+ar[ix] : str += ar[ix];
+			} else 
+			 // <elm>...</elm> //
+			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) > -1) {
+				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
+			} else 
+			// </elm> //
+			if(ar[ix].search(/<\//) > -1) { 
+				str = !inComment ? str += shift[--deep]+ar[ix] : str += ar[ix];
+			} else 
+			// <elm/> //
+			if(ar[ix].search(/\/>/) > -1 ) { 
+				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
+			} else 
+			// <? xml ... ?> //
+			if(ar[ix].search(/<\?/) > -1) { 
+				str += shift[deep]+ar[ix];
+			} else 
+			// xmlns //
+			if( ar[ix].search(/xmlns\:/) > -1  || ar[ix].search(/xmlns\=/) > -1) { 
+				str += shift[deep]+ar[ix];
+			} 
+			
+			else {
+				str += ar[ix];
+			}
+		}
+		
+	return  (str[0] == '\n') ? str.slice(1) : str;
+}
+
+vkbeautify.prototype.json = function(text,step) {
+
+	var step = step ? step : this.step;
+	
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	if ( typeof text === "string" ) return JSON.stringify(JSON.parse(text), null, step);
+	if ( typeof text === "object" ) return JSON.stringify(text, null, step);
+		
+	return text; // text is not string nor object
+}
+
+vkbeautify.prototype.css = function(text, step) {
+
+	var ar = text.replace(/\s{1,}/g,' ')
+				.replace(/\{/g,"{~::~")
+				.replace(/\}/g,"~::~}~::~")
+				.replace(/\;/g,";~::~")
+				.replace(/\/\*/g,"~::~/*")
+				.replace(/\*\//g,"*/~::~")
+				.replace(/~::~\s{0,}~::~/g,"~::~")
+				.split('~::~'),
+		len = ar.length,
+		deep = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;
+		
+		for(ix=0;ix<len;ix++) {
+
+			if( /\{/.exec(ar[ix]))  { 
+				str += shift[deep++]+ar[ix];
+			} else 
+			if( /\}/.exec(ar[ix]))  { 
+				str += shift[--deep]+ar[ix];
+			} else
+			if( /\*\\/.exec(ar[ix]))  { 
+				str += shift[deep]+ar[ix];
+			}
+			else {
+				str += shift[deep]+ar[ix];
+			}
+		}
+		return str.replace(/^\n{1,}/,'');
+}
+
+//----------------------------------------------------------------------------
+
+function isSubquery(str, parenthesisLevel) {
+	return  parenthesisLevel - (str.replace(/\(/g,'').length - str.replace(/\)/g,'').length )
+}
+
+function split_sql(str, tab) {
+
+	return str.replace(/\s{1,}/g," ")
+
+				.replace(/ AND /ig,"~::~"+tab+tab+"AND ")
+				.replace(/ BETWEEN /ig,"~::~"+tab+"BETWEEN ")
+				.replace(/ CASE /ig,"~::~"+tab+"CASE ")
+				.replace(/ ELSE /ig,"~::~"+tab+"ELSE ")
+				.replace(/ END /ig,"~::~"+tab+"END ")
+				.replace(/ FROM /ig,"~::~FROM ")
+				.replace(/ GROUP\s{1,}BY/ig,"~::~GROUP BY ")
+				.replace(/ HAVING /ig,"~::~HAVING ")
+				//.replace(/ SET /ig," SET~::~")
+				.replace(/ IN /ig," IN ")
+				
+				.replace(/ JOIN /ig,"~::~JOIN ")
+				.replace(/ CROSS~::~{1,}JOIN /ig,"~::~CROSS JOIN ")
+				.replace(/ INNER~::~{1,}JOIN /ig,"~::~INNER JOIN ")
+				.replace(/ LEFT~::~{1,}JOIN /ig,"~::~LEFT JOIN ")
+				.replace(/ RIGHT~::~{1,}JOIN /ig,"~::~RIGHT JOIN ")
+				
+				.replace(/ ON /ig,"~::~"+tab+"ON ")
+				.replace(/ OR /ig,"~::~"+tab+tab+"OR ")
+				.replace(/ ORDER\s{1,}BY/ig,"~::~ORDER BY ")
+				.replace(/ OVER /ig,"~::~"+tab+"OVER ")
+
+				.replace(/\(\s{0,}SELECT /ig,"~::~(SELECT ")
+				.replace(/\)\s{0,}SELECT /ig,")~::~SELECT ")
+				
+				.replace(/ THEN /ig," THEN~::~"+tab+"")
+				.replace(/ UNION /ig,"~::~UNION~::~")
+				.replace(/ USING /ig,"~::~USING ")
+				.replace(/ WHEN /ig,"~::~"+tab+"WHEN ")
+				.replace(/ WHERE /ig,"~::~WHERE ")
+				.replace(/ WITH /ig,"~::~WITH ")
+				
+				//.replace(/\,\s{0,}\(/ig,",~::~( ")
+				//.replace(/\,/ig,",~::~"+tab+tab+"")
+
+				.replace(/ ALL /ig," ALL ")
+				.replace(/ AS /ig," AS ")
+				.replace(/ ASC /ig," ASC ")	
+				.replace(/ DESC /ig," DESC ")	
+				.replace(/ DISTINCT /ig," DISTINCT ")
+				.replace(/ EXISTS /ig," EXISTS ")
+				.replace(/ NOT /ig," NOT ")
+				.replace(/ NULL /ig," NULL ")
+				.replace(/ LIKE /ig," LIKE ")
+				.replace(/\s{0,}SELECT /ig,"SELECT ")
+				.replace(/\s{0,}UPDATE /ig,"UPDATE ")
+				.replace(/ SET /ig," SET ")
+							
+				.replace(/~::~{1,}/g,"~::~")
+				.split('~::~');
+}
+
+vkbeautify.prototype.sql = function(text,step) {
+
+	var ar_by_quote = text.replace(/\s{1,}/g," ")
+							.replace(/\'/ig,"~::~\'")
+							.split('~::~'),
+		len = ar_by_quote.length,
+		ar = [],
+		deep = 0,
+		tab = this.step,//+this.step,
+		inComment = true,
+		inQuote = false,
+		parenthesisLevel = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;;
+
+		for(ix=0;ix<len;ix++) {
+			if(ix%2) {
+				ar = ar.concat(ar_by_quote[ix]);
+			} else {
+				ar = ar.concat(split_sql(ar_by_quote[ix], tab) );
+			}
+		}
+		
+		len = ar.length;
+		for(ix=0;ix<len;ix++) {
+			
+			parenthesisLevel = isSubquery(ar[ix], parenthesisLevel);
+			
+			if( /\s{0,}\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
+				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
+			} 
+			
+			if( /\s{0,}\s{0,}SET\s{0,}/.exec(ar[ix]))  { 
+				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
+			} 
+			
+			if( /\s{0,}\(\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
+				deep++;
+				str += shift[deep]+ar[ix];
+			} else 
+			if( /\'/.exec(ar[ix]) )  { 
+				if(parenthesisLevel<1 && deep) {
+					deep--;
+				}
+				str += ar[ix];
+			}
+			else  { 
+				str += shift[deep]+ar[ix];
+				if(parenthesisLevel<1 && deep) {
+					deep--;
+				}
+			} 
+			var junk = 0;
+		}
+
+		str = str.replace(/^\n{1,}/,'').replace(/\n{1,}/g,"\n");
+		return str;
+}
+
+
+vkbeautify.prototype.xmlmin = function(text, preserveComments) {
+
+	var str = preserveComments ? text
+							   : text.replace(/\<![ \r\n\t]*(--([^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)\>/g,"")
+									 .replace(/[ \r\n\t]{1,}xmlns/g, ' xmlns');
+	return  str.replace(/>\s{0,}</g,"><"); 
+}
+
+vkbeautify.prototype.jsonmin = function(text) {
+
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	return JSON.stringify(JSON.parse(text), null, 0); 
+				
+}
+
+vkbeautify.prototype.cssmin = function(text, preserveComments) {
+	
+	var str = preserveComments ? text
+							   : text.replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//g,"") ;
+
+	return str.replace(/\s{1,}/g,' ')
+			  .replace(/\{\s{1,}/g,"{")
+			  .replace(/\}\s{1,}/g,"}")
+			  .replace(/\;\s{1,}/g,";")
+			  .replace(/\/\*\s{1,}/g,"/*")
+			  .replace(/\*\/\s{1,}/g,"*/");
+}
+
+vkbeautify.prototype.sqlmin = function(text) {
+	return text.replace(/\s{1,}/g," ").replace(/\s{1,}\(/,"(").replace(/\s{1,}\)/,")");
+}
+
+window.vkbeautify = new vkbeautify();
+
+})();
+
+	</script>
+    <title>DailyChecksForServices</title>
+	<script>
+		// Manifest constants
+		let aoiId = -1;
+		let sld_id = -1;
+		let lastMethod = "";
+
+
+		
+
+
+	/*	const urls = (window.origin.toLowerCase().indexOf("localhost") == -1) ? 
+			{restPost: window.origin + 'https://sdmdataaccess.sc.egov.usda.gov/tabular/post.rest',
+			 wms: window.origin + 'https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms'} : 
+			{restPost: "http://SDMDataAccess.sc.egov.usda.gov/Tabular/SDMTabularService/post.rest",
+			 wms: "https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms"};
+
+*/
+
+	const urls = 
+			{restPost: 'https://sdmdataaccess-dev.dev.sc.egov.usda.gov/tabular/post.rest',
+			 wms:  'https://SDMDataAccess-dev.dev.sc.egov.usda.gov/Spatial/SDM.wms'}  
+		;
+			 
+
+		const aoicoords = 
+			"{" +
+			" 'type': 'FeatureCollection'," +
+			" 'features': [" +
+			"  {" +
+			"   'type': 'Feature'," +
+			"   'geometry': {" +
+			"    'type': 'Polygon'," +
+			"    'coordinates': [[[-98.595,39.826],[-98.595,39.842],[-98.578,39.842],[-98.578,39.826],[-98.595,39.826]]]" +
+			"   }," +
+			"   'properties': {'partName': 'Sister' }" +
+			"  }," +
+			"  {" +
+			"   'type': 'Feature'," +
+			"   'geometry': {" +
+			"      'type': 'Polygon'," +
+			"      'coordinates': [[[-98.578,39.826],[-98.578,39.842],[-98.562,39.842],[-98.562,39.826],[-98.578,39.826]]]" +
+			"    }," +
+			"   'properties': {'partName': 'Brother' }" +
+			"  }" +
+			"  ]" +
+			"}";
+				
+		const boundaryColor = '#3498DB';
+		const sld =
+			`<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld" 
+			  xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" 
+			  xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+			  xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
+			 <NamedLayer> <Name>mapunitpoly</Name> <UserStyle> <FeatureTypeStyle>
+			 <Rule> <MinScaleDenominator>0.010000</MinScaleDenominator> <MaxScaleDenominator>250000.000000</MaxScaleDenominator>
+			 <PolygonSymbolizer> <Stroke>
+			 <CssParameter name="stroke">${boundaryColor}</CssParameter>
+			 <CssParameter name="stroke-width">0.75</CssParameter>
+			 </Stroke> </PolygonSymbolizer>
+			 <TextSymbolizer> <Label>musym</Label>
+			 <Font> <CssParameter name="font-family">arial</CssParameter>
+			 <CssParameter name="font-weight">bold</CssParameter>
+			 <CssParameter name="font-size">7.00</CssParameter> </Font>
+			 <LabelPlacement> <PointPlacement>
+			 <AnchorPoint> <AnchorPointX>0.5</AnchorPointX> <AnchorPointY>0.5</AnchorPointY> </AnchorPoint> </PointPlacement> </LabelPlacement>
+			 <Fill> <CssParameter name="fill">#ff8000</CssParameter> </Fill> 
+			 <Halo><Fill> <CssParameter name="fill">#000000</CssParameter> </Fill> </Halo>
+			 </TextSymbolizer> </Rule>
+			 </FeatureTypeStyle> </UserStyle> </NamedLayer> </StyledLayerDescriptor>`;		
+						
+		// WMS URL prefix: missing LAYERS, AOIID, SLD_ID and INTERPRESULTID parameters, append as required.
+		const wmsUrlPrefix = 
+				urls.wms +
+				'?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&srs=EPSG:3857' + 
+				'&bbox=-10975793,4840398,-10971723,4843303' + 
+				'&width=937&height=684&format=image/png&transparent=true';	
+		
+		// Utility functions
+		let request = obj => {
+			// Package an XMLHttpRequest request in a promise.
+			return new Promise((resolve, reject) => {
+				// from http://ccoenraets.github.io/es6-tutorial-data/promisify/
+				let xhr = new XMLHttpRequest();
+				xhr.open(obj.method || "POST", obj.url);
+				if (obj.headers) {
+					Object.keys(obj.headers).forEach(key => {
+						xhr.setRequestHeader(key, obj.headers[key]);
+					});
+				}	
+				xhr.onload = () => {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						resolve(xhr.response);
+					} else {
+						reject(xhr);
+					}
+				};
+				xhr.onerror = () => reject(xhr);		
+				xhr.send(obj.postData);
+			});
+		};
+
+		let setStatusMessage = messageText => {
+			// Replace status message with specified messageText
+			document.getElementById("status").innerHTML = `<h2>${messageText}</h2>`;
+		}
+
+		let appendLogMessage = messageText => {
+			// Append specified messageText to log
+			document.getElementById("log").innerHTML = 
+				document.getElementById("log").innerHTML + "<br/>" + messageText;		
+		}
+			
+		function loadImage(src) {
+			// from https://stackoverflow.com/questions/52059596/loading-an-image-on-web-browser-using-promise
+			return new Promise((resolve, reject) => {
+				const img = new Image();
+				img.addEventListener("load", () => resolve(img));
+				img.addEventListener("error", err => reject(err));
+				img.src = src;
+		  });
+		};	
+
+		// Individual task methods
+		// Each task absorbs any prior prior Promise-returned data then issues a new Promise request.
+		
+		let interpresultid = -1;
+		
+		// Group: Define AOI and SLD
+		
+		let createAoi = obj => {
+			// Request creation of an AOI, should yield an AOI
+			lastMethod = "createAoi";
+			var postData = {
+				service:"aoi",request:"create",aoicoords:aoicoords,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices createAoi")'
+			};
+			appendLogMessage("Creating AOI with aoicoords=" + aoicoords);
+			appendLogMessage("postdata=" + JSON.stringify(postData));
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let defineSLD = obj => {
+			// Consume aoiId, request registration of an SLD, should yield an sld_id
+			lastMethod = "defineSLD";
+			aoiId = JSON.parse(obj).id;
+			appendLogMessage("aoiId=" + aoiId);
+			var postData = {
+				service:"aoi",request:"registersld",sld:sld,aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices defineSLD")'
+			};
+			appendLogMessage("registering SLD, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 19 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchAoiMap = obj => {
+			// Consume sld_id, request map with AOI and SLD
+			lastMethod = "fetchAoiMap";
+			sld_id = JSON.parse(obj).sld_id;
+			appendLogMessage("sld_id=" + sld_id);
+			setStatusMessage("starting... (should complete in under 18 seconds)");
+			var url = wmsUrlPrefix + 
+				'&LAYERS=mapunitpoly,aoilabeled' + 
+				`&aoiid=${aoiId}&sld_id=${sld_id}` +
+				'&*auditdata*=(application="SDA" description="DailyChecksForServices fetchAoiMap")';
+			appendLogMessage("AOI map request URL:<br/>" + url);
+			return loadImage(url);
+		};
+
+		// Group: Interpretation method requests
+		
+		let getInterpCategories = obj => {
+			// Display AOI map, request Interpretation Use Categories
+			lastMethod = "getInterpCategories";
+			document.getElementById("mapWithAoi").innerHTML = "";
+			document.getElementById("mapWithAoi").appendChild(obj);			
+			appendLogMessage("AOI map retrieved");
+			appendLogMessage("<br/>Interpretations<br/>");
+			var postData = {
+				service:"interpretation",request:"getusecategories",
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpCategories")'
+			};	
+			appendLogMessage("fetching use categories, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 17 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpCatalog = obj  => {
+			// Display Interpretation use categories, request Interpretation Catalog
+			lastMethod = "getInterpCatalog";
+			appendLogMessage("Interpretation Use Categories: " + obj);
+			var postData = {
+				service:"interpretation",request:"getcatalog", aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpCatalog")'
+			};
+			appendLogMessage("fetching interpretation catalog, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 16 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpDescription = obj => {
+			// Display Interpretation catalog, request description for Soil Taxonomy Classification (471)
+			lastMethod = "getInterpDescription";
+			appendLogMessage("Interpretation catalog:<br/>" + obj);
+			var postData = {
+				service:"interpretation",request:"getdescription", attributekey:471,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpDescription")'
+			};
+			appendLogMessage("fetching description for Soil Taxonomy Classification (471), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 15 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpRuledata = obj => {
+			// Display Interp description, request rule data for Soil Taxonomy Classification (471)
+			lastMethod = "getInterpRuledata";
+			appendLogMessage("Interpretation description of Soil Taxonomy Classification (471):<br/>" + obj);
+			var postData = {
+				service:"interpretation",request:"getruledata", attributekey:471, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpRuledata")'
+			};
+			appendLogMessage("fetching rule data for Soil Taxonomy Classification (471), postdata=" + JSON.stringify(postData));	
+			setStatusMessage("starting... (should complete in under 14 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpRating = obj => {
+			// Display Interp rule data and request rating of Soil Taxonomy Classification (471)
+			lastMethod = "getInterpRating";
+			appendLogMessage("Interpretation short form data for Soil Taxonomy Classification (471):<br/>" + obj);
+			var postData = {
+				service:"interpretation",request:"getrating", attributekey:471, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpRating")'
+			};
+			appendLogMessage("fetching rating results for Soil Taxonomy Classification (471), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 13 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchInterpMap = obj => {
+			// Consume interpresultid, request map with thematic result
+			lastMethod = "fetchInterpMap";
+			interpresultid = JSON.parse(obj).interpresultid;
+			appendLogMessage("interpresultid=" + interpresultid);		
+			var url = wmsUrlPrefix + 
+				'&LAYERS=mapunitpolythematic,aoilabeled' + 
+				`&INTERPRESULTID=${interpresultid}` +
+				'&*auditdata*=(application="SDA" description="DailyChecksForServices fetchInterpMap")';
+			appendLogMessage("thematic map request URL:<br/>" + url);
+			setStatusMessage("starting... (should complete in under 12 seconds)");
+			return loadImage(url);
+		};	
+		
+		let fetchInterpLegend = obj => {
+			// Display Interpretation map,  request thematic legend data
+			lastMethod = "fetchInterpLegend";
+			document.getElementById("mapWithRating").innerHTML = "";
+			document.getElementById("mapWithRating").appendChild(obj);			
+			appendLogMessage("Interpretation map retrieved");
+			
+			// Retrieve legend data
+			var query = `~declareint(@AoiSoilThematicMapId)~\nselect @AoiSoilThematicMapId = ${interpresultid};select * from SDA_Get_AoiSoilThematicMapLegend_By_AoiSoilThematicMapId (@AoiSoilThematicMapId);`;
+			appendLogMessage("<br>Retrieving TM legend data</br>");
+			var postData = {service:"query",query: query, format:'json',
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices fetchInterpLegend")'
+			};
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			})
+		}
+		
+		
+		// Group: Report method requests
+		
+		let getReportCategories = obj => {
+			// retrieve thematic map legend, request Report Use Categories
+			appendLogMessage(`<br>${obj}</br>`)
+
+			appendLogMessage("<br/>Reports<br/>");
+			var postData = {
+				service:"report",request:"getusecategories",
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportCategories")'
+			};
+			appendLogMessage("fetching use categories, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 11 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+	
+		let getReportCatalog = obj  => {
+			// Display Report use categories, request Report Catalog
+			lastMethod = "getReportCatalog";
+			appendLogMessage("Report Use Categories: " + obj);
+			var postData = {
+				service:"report",request:"getcatalog", aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportCatalog")'
+			};
+			appendLogMessage("fetching report catalog, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 10 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};		
+		
+		let getReportDescription = obj => {
+			// Display Report catalog, request description for Taxonomic Classification of the Soils (33)
+			lastMethod = "getReportDescription";
+			appendLogMessage("Report catalog:<br/>" + obj);
+			var postData = {
+				service:"report",request:"getdescription", reportid:33,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportDescription")'
+			};
+			appendLogMessage("fetching description for Taxonomic Classification of the Soils (33), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 9 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let getReportdata = obj => {
+			// Display Report description, request report data for Taxonomic Classification of the Soils (33)
+			lastMethod = "getReportdata";
+			appendLogMessage("Report description of Taxonomic Classification of the Soils (33):<br/>" + obj);
+			var postData = {
+				service:"report",request:"getreportdata", reportid:33, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportdata")'
+			};
+			appendLogMessage("fetching report data for Taxonomic Classification of the Soils (33), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 8 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let getReport = obj => {
+			// Display Report data and request report of Taxonomic Classification of the Soils (33)
+			lastMethod = "getReport";
+			appendLogMessage("Report short form data for Taxonomic Classification of the Soils (33):<br/>" + obj);
+			var postData = {
+				service:"report",request:"getreport", reportid:33, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReport")'
+			};
+			appendLogMessage("fetching report of Taxonomic Classification of the Soils (33), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 7 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchReport = obj => {
+			// Display report content
+			lastMethod = "fetchReport";
+			var vkb0 = vkbeautify.xml(obj);
+			var vkb1 = vkb0.replace(/[<]/g, '&lt;');
+			var rpt = vkb1.replace(/[>]/g, '&gt;');
+			setStatusMessage("starting... (should complete in under 6 seconds)");
+			document.getElementById('report').innerHTML='<pre>' + rpt + '</pre>';
+			return true;			
+		};
+	
+		// Once the body of the DOM is loaded we start here...
+		function alpha() {
+			// var statusDiv = document.getElementById("status");
+			if (!Promise) {
+				// Promise is not defined
+				return;
+			}	
+			setStatusMessage("starting... (should complete in under 20 seconds)");
+
+			// The chain of Promises
+			createAoi().
+			then(defineSLD).
+			then(fetchAoiMap).
+			then(getInterpCategories).
+			then(getInterpCatalog).
+			then(getInterpDescription).
+			then(getInterpRuledata).
+			then(getInterpRating).
+			then(fetchInterpMap).
+			then(fetchInterpLegend).
+			then(getReportCategories).
+			then(getReportCatalog).
+			then(getReportDescription).
+			then(getReportdata).
+			then(getReport).
+			then(fetchReport).
+			then(data => {
+				appendLogMessage("final response: " + data);
+				setStatusMessage('<h2>Test successful</h2>');
+			}).
+			catch(error => {
+				setStatusMessage(`<h2>Test failed, lastMethod=${lastMethod} error.statusText=${error.statusText}, error.status=${error.status}</h2>`);
+				return;
+			});			
+		}
+	</script>
+
+</head>
+<body onload="alpha();">
+	<div id="status">JavaScript must be enabled; use a browser that supports "Promise" - IE11 will not work.</div>
+	<h3>AOI map with SLD:</h3>
+	<div id="mapWithAoi">(map with AOI, colored with SLD, goes here)</div>
+	<h3>Interpretation map:</h3>
+	<div id="mapWithRating">(map with rating goes here)</div>
+	<h3>Report</h3>
+	<div id="report"></div>
+	<h3>Log</h3>
+	<div id="log"></div>
+</body>
+
+</html>
