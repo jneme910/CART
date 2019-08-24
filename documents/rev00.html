@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <!-- rev00.html 
   file://d:\notes\2019\08\from_Jason_Nemecek\rev00.html
@@ -344,11 +345,13 @@ window.vkbeautify = new vkbeautify();
 			{restPost: "http://SDMDataAccess.sc.egov.usda.gov/Tabular/SDMTabularService/post.rest",
 			 wms: "https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms"};
 
+'https://sdmdataaccess-dev.dev.sc.egov.usda.gov/tabular/post.rest',
+			 wms:  'https://SDMDataAccess-dev.dev.sc.egov.usda.gov/Spatial/SDM.wms'
 */
 
 	const urls = 
-			{restPost: 'https://sdmdataaccess-dev.dev.sc.egov.usda.gov/tabular/post.rest',
-			 wms:  'https://SDMDataAccess-dev.dev.sc.egov.usda.gov/Spatial/SDM.wms'}  
+			{restPost: 'https://sdmdataaccess.sc.egov.usda.gov/tabular/post.rest',
+			 wms:  'https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms'}  
 		;
 			 
 
@@ -543,7 +546,8 @@ window.vkbeautify = new vkbeautify();
 				postData:JSON.stringify(postData)
 			});
 		};
-		
+	
+/*	
 		let getInterpDescription = obj => {
 			// Display Interpretation catalog, request description for Soil Taxonomy Classification (471)
 			lastMethod = "getInterpDescription";
@@ -560,7 +564,7 @@ window.vkbeautify = new vkbeautify();
 				postData:JSON.stringify(postData)
 			});
 		};
-		
+	*/	
 		let getInterpRuledata = obj => {
 			// Display Interp description, request rule data for Soil Taxonomy Classification (471)
 			lastMethod = "getInterpRuledata";
@@ -578,6 +582,7 @@ window.vkbeautify = new vkbeautify();
 			});
 		};
 		
+		
 		let getInterpRating = obj => {
 			// Display Interp rule data and request rating of Soil Taxonomy Classification (471)
 			lastMethod = "getInterpRating";
@@ -594,6 +599,7 @@ window.vkbeautify = new vkbeautify();
 				postData:JSON.stringify(postData)
 			});
 		};
+		
 		
 		let fetchInterpMap = obj => {
 			// Consume interpresultid, request map with thematic result
@@ -744,7 +750,7 @@ window.vkbeautify = new vkbeautify();
 			then(fetchAoiMap).
 			then(getInterpCategories).
 			then(getInterpCatalog).
-			then(getInterpDescription).
+			//then(getInterpDescription).
 			then(getInterpRuledata).
 			then(getInterpRating).
 			then(fetchInterpMap).
