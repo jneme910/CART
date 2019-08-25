@@ -281,7 +281,7 @@
 				'~declareint(@AoiSoilThematicMapId)~\n' +
 				`select @AoiSoilThematicMapId = ${interpresultid}; ` +
 				'select LegendText, RgbString from SDA_Get_AoiSoilThematicMapLegend_By_AoiSoilThematicMapId (@AoiSoilThematicMapId); ' +
-				'select MU.musym, R.MapUnitRatingString [rating] ' +
+				'select MU.musym, MU.MUNAME, R.MapUnitRatingString [rating] ' +
 				'from SDA_Get_AoiSoilThematicMapRating_By_AoiSoilThematicMapId (@AoiSoilThematicMapId) R, mapunit MU ' +
 				'where R.MapUnitKey = MU.mukey';
 			appendLogMessage("<br>Retrieving TM legend and rating data</br>");
@@ -314,7 +314,7 @@
 			// Display the rating interpRating
 			// We'll just display the rating string
 			var ratingHtml = '<table style="width:500px">';
-			ratingHtml += '<tr><th>musym</th><th>rating</th></tr>';
+			ratingHtml += '<tr><th>musym</th><tr><th>Map Unit </th><th>rating</th></tr>';
 			for (let iRow = 1; iRow < table.Table1.length; iRow++) {
 				ratingHtml +=  `<tr><td>${table.Table1[iRow][0]}</td><td>${table.Table1[iRow][1]}</td></tr>`;
 			}
