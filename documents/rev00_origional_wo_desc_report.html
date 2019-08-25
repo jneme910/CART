@@ -1,0 +1,374 @@
+
+<!DOCTYPE html>
+<!-- rev01.html 
+  file://d:\notes\2019\08\from_Jason_Nemecek\rev01.html
+  Versions:
+  02: display interp legend
+  01: Modified to work in Prdouction version of SDA - no descriptions, no reports,
+      removed all vkbeautify code.
+  00: Original content from Jason Nemecek file "rev.txt" email RE: SDA tests in DEV Wed 8/21/2019 9:35 AM
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Demo SDA Interp</title>
+	<script>
+		// Manifest constants
+		let aoiId = -1;
+		let sld_id = -1;
+		let lastMethod = "";
+		const urls = {
+			restPost: 'https://sdmdataaccess.sc.egov.usda.gov/tabular/post.rest',
+			wms:  'https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms'
+		}; 
+
+		const aoicoords = 
+			"{" +
+			" 'type': 'FeatureCollection'," +
+			" 'features': [" +
+			"  {" +
+			"   'type': 'Feature'," +
+			"   'geometry': {" +
+			"    'type': 'Polygon'," +
+			"    'coordinates': [[[-102.12335160658608, 45.959173206572416], [-102.13402890980223, 45.959218442561564], [-102.13386921506947, 45.944643788188387], [ -102.12327175652177, 45.944703605814198], [-102.12335160658608 , 45.959173206572416]]]" +
+			"   }," +
+			"   'properties': {'partName': 'T9998 Fld3' }" +
+			"  }," +
+			"  {" +
+			"   'type': 'Feature'," +
+			"   'geometry': {" +
+			"      'type': 'Polygon'," +
+			"      'coordinates': [[[-102.1130336443976, 45.959162795100383], [-102.12335160658608, 45.959173206572416], [-102.12327175652177, 45.944703605814198], [-102.1128892282776, 45.944710506326032], [-102.1130336443976, 45.959162795100383]]]" +
+			"    }," +
+			"   'properties': {'partName': 'T9999 Fld4' }" +
+			"  }" +
+			"  ]" +
+			"}";
+				
+		const boundaryColor = '#3498DB';
+		const sld =
+			`<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld" 
+			  xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" 
+			  xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+			  xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
+			 <NamedLayer> <Name>mapunitpoly</Name> <UserStyle> <FeatureTypeStyle>
+			 <Rule> <MinScaleDenominator>0.010000</MinScaleDenominator> <MaxScaleDenominator>250000.000000</MaxScaleDenominator>
+			 <PolygonSymbolizer> <Stroke>
+			 <CssParameter name="stroke">${boundaryColor}</CssParameter>
+			 <CssParameter name="stroke-width">0.75</CssParameter>
+			 </Stroke> </PolygonSymbolizer>
+			 <TextSymbolizer> <Label>musym</Label>
+			 <Font> <CssParameter name="font-family">arial</CssParameter>
+			 <CssParameter name="font-weight">bold</CssParameter>
+			 <CssParameter name="font-size">7.00</CssParameter> </Font>
+			 <LabelPlacement> <PointPlacement>
+			 <AnchorPoint> <AnchorPointX>0.5</AnchorPointX> <AnchorPointY>0.5</AnchorPointY> </AnchorPoint> </PointPlacement> </LabelPlacement>
+			 <Fill> <CssParameter name="fill">#ff8000</CssParameter> </Fill> 
+			 <Halo><Fill> <CssParameter name="fill">#000000</CssParameter> </Fill> </Halo>
+			 </TextSymbolizer> </Rule>
+			 </FeatureTypeStyle> </UserStyle> </NamedLayer> </StyledLayerDescriptor>`;		
+						
+		// WMS URL prefix: missing LAYERS, AOIID, SLD_ID and INTERPRESULTID parameters, append as required.
+		const wmsUrlPrefix = 
+				urls.wms +
+				'?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&srs=EPSG:3857' + 
+				'&bbox=-11372917.341809073,5770522.681418292,-11363744.898414852,5774774.491116658' + 
+				'&width=1920&height=890&format=image/png&transparent=true';	
+		
+		// Utility functions
+		let request = obj => {
+			// Package an XMLHttpRequest request in a promise.
+			return new Promise((resolve, reject) => {
+				// from http://ccoenraets.github.io/es6-tutorial-data/promisify/
+				let xhr = new XMLHttpRequest();
+				xhr.open(obj.method || "POST", obj.url);
+				if (obj.headers) {
+					Object.keys(obj.headers).forEach(key => {
+						xhr.setRequestHeader(key, obj.headers[key]);
+					});
+				}	
+				xhr.onload = () => {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						resolve(xhr.response);
+					} else {
+						reject(xhr);
+					}
+				};
+				xhr.onerror = () => reject(xhr);		
+				xhr.send(obj.postData);
+			});
+		};
+
+		let setStatusMessage = messageText => {
+			// Replace status message with specified messageText
+			document.getElementById("status").innerHTML = `<h2>${messageText}</h2>`;
+		}
+
+		let appendLogMessage = messageText => {
+			// Append specified messageText to log
+			document.getElementById("log").innerHTML = 
+				document.getElementById("log").innerHTML + "<br/>" + messageText;		
+		}
+			
+		function loadImage(src) {
+			// from https://stackoverflow.com/questions/52059596/loading-an-image-on-web-browser-using-promise
+			return new Promise((resolve, reject) => {
+				const img = new Image();
+				img.addEventListener("load", () => resolve(img));
+				img.addEventListener("error", err => reject(err));
+				img.src = src;
+		  });
+		};	
+
+		// Individual task methods
+		// Each task absorbs any prior prior Promise-returned data then issues a new Promise request.
+		
+		let interpresultid = -1;
+		
+		// Group: Define AOI and SLD
+		
+		let createAoi = obj => {
+			// Request creation of an AOI, should yield an AOI
+			lastMethod = "createAoi";
+			var postData = {
+				service:"aoi",request:"create",aoicoords:aoicoords,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices createAoi")'
+			};
+			appendLogMessage("Creating AOI with aoicoords=" + aoicoords);
+			appendLogMessage("postdata=" + JSON.stringify(postData));
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let defineSLD = obj => {
+			// Consume aoiId, request registration of an SLD, should yield an sld_id
+			lastMethod = "defineSLD";
+			aoiId = JSON.parse(obj).id;
+			appendLogMessage("aoiId=" + aoiId);
+			var postData = {
+				service:"aoi",request:"registersld",sld:sld,aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices defineSLD")'
+			};
+			appendLogMessage("registering SLD, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 19 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchAoiMap = obj => {
+			// Consume sld_id, request map with AOI and SLD
+			lastMethod = "fetchAoiMap";
+			sld_id = JSON.parse(obj).sld_id;
+			appendLogMessage("sld_id=" + sld_id);
+			setStatusMessage("starting... (should complete in under 18 seconds)");
+			var url = wmsUrlPrefix + 
+				'&LAYERS=mapunitpoly,aoilabeled' + 
+				`&aoiid=${aoiId}&sld_id=${sld_id}` +
+				'&*auditdata*=(application="SDA" description="DailyChecksForServices fetchAoiMap")';
+			appendLogMessage("AOI map request URL:<br/>" + url);
+			return loadImage(url);
+		};
+
+		// Group: Interpretation method requests
+		
+		let getInterpCategories = obj => {
+			// Display AOI map, request Interpretation Use Categories
+			lastMethod = "getInterpCategories";
+			document.getElementById("mapWithAoi").innerHTML = "";
+			document.getElementById("mapWithAoi").appendChild(obj);			
+			appendLogMessage("AOI map retrieved");
+			appendLogMessage("<br/>Interpretations<br/>");
+			var postData = {
+				service:"interpretation",request:"getusecategories",
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpCategories")'
+			};	
+			appendLogMessage("fetching use categories, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 17 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpCatalog = obj  => {
+			// Display Interpretation use categories, request Interpretation Catalog
+			lastMethod = "getInterpCatalog";
+			appendLogMessage("Interpretation Use Categories: " + obj);
+			var postData = {
+				service:"interpretation",request:"getcatalog", aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpCatalog")'
+			};
+			appendLogMessage("fetching interpretation catalog, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 16 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let getInterpRuledata = obj => {
+			// Display Interp catalog, request rule data for Organic Matter Depletion (2752)
+			// Display Interpretation catalog, request description for Organic Matter Depletion (2752)
+			lastMethod = "getInterpRuledata";
+			appendLogMessage("Interpretation catalog:<br/>" + obj);
+
+			var postData = {
+				service:"interpretation",request:"getruledata", attributekey:2752, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpRuledata")'
+			};
+			appendLogMessage("fetching rule data for Organic Matter Depletion (2752), postdata=" + JSON.stringify(postData));	
+			setStatusMessage("starting... (should complete in under 14 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpRating = obj => {
+			// Display Interp rule data and request rating of Organic Matter Depletion (2752)
+			lastMethod = "getInterpRating";
+			var shortformdata = obj;
+			appendLogMessage("Interpretation short form data for Organic Matter Depletion (2752):<br/>" + shortformdata);
+			var postData = {
+				service:"interpretation",request:"getrating", shortformdata: shortformdata,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpRating")'
+			};
+			appendLogMessage("fetching rating results for Organic Matter Depletion (2752), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 13 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchInterpMap = obj => {
+			// Consume interpresultid, request map with thematic result
+			lastMethod = "fetchInterpMap";
+			interpresultid = JSON.parse(obj).interpresultid;
+			appendLogMessage("interpresultid=" + interpresultid);		
+			var url = wmsUrlPrefix + 
+				'&LAYERS=mapunitpolythematic,aoilabeled' + 
+				`&INTERPRESULTID=${interpresultid}` +
+				'&*auditdata*=(application="SDA" description="DailyChecksForServices fetchInterpMap")';
+			appendLogMessage("thematic map request URL:<br/>" + url);
+			setStatusMessage("starting... (should complete in under 12 seconds)");
+			return loadImage(url);
+		};	
+		
+		let fetchInterpLegendAndRatings = obj => {
+			// Display Interpretation map,  request thematic legend data
+			lastMethod = "fetchInterpLegendAndRatings";
+			document.getElementById("mapWithRating").innerHTML = "";
+			document.getElementById("mapWithRating").appendChild(obj);			
+			appendLogMessage("Interpretation map retrieved");
+			
+			// Retrieve select columns from the legend and rating data.
+			// We'll join the mukeys from the rating to the SDM's mapunit table 
+			// to get the musym name.
+			var query = 
+				// Macros need to be on separate lines, hence the "\n"
+				'~declareint(@AoiSoilThematicMapId)~\n' +
+				`select @AoiSoilThematicMapId = ${interpresultid}; ` +
+				'select LegendText, RgbString from SDA_Get_AoiSoilThematicMapLegend_By_AoiSoilThematicMapId (@AoiSoilThematicMapId); ' +
+				'select MU.musym, R.MapUnitRatingString [rating] ' +
+				'from SDA_Get_AoiSoilThematicMapRating_By_AoiSoilThematicMapId (@AoiSoilThematicMapId) R, mapunit MU ' +
+				'where R.MapUnitKey = MU.mukey';
+			appendLogMessage("<br>Retrieving TM legend and rating data</br>");
+			// The 0th row of the tables will have column names
+			var postData = {service:"query",query: query, format:'json+columnname',
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices fetchInterpLegendAndRatings")'
+			};
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			})
+		}
+	
+		let displayLegendAndRatingData = obj => {
+			// retrieve thematic map legend and rating
+			// Sample:
+			
+			appendLogMessage(`<br>${obj}</br>`)
+			var table = JSON.parse(obj);
+			
+			// Paint the legend
+			var legendHtml = '<table style="width:500px;height:30px">';
+			for (let iRow = 1; iRow < table.Table.length; iRow++) {
+				legendHtml +=  `<tr><td style="background-color:${table.Table[iRow][1]}">${table.Table[iRow][0]}</td></tr>`;
+			}
+			legendHtml += '</table>';
+			document.getElementById("interpLegend").innerHTML = legendHtml;
+
+			// Display the rating interpRating
+			// We'll just display the rating string
+			var ratingHtml = '<table style="width:500px">';
+			ratingHtml += '<tr><th>musym</th><th>rating</th></tr>';
+			for (let iRow = 1; iRow < table.Table1.length; iRow++) {
+				ratingHtml +=  `<tr><td>${table.Table1[iRow][0]}</td><td>${table.Table1[iRow][1]}</td></tr>`;
+			}
+			ratingHtml += '</table>';		
+			document.getElementById("interpRating").innerHTML = ratingHtml;
+		
+			return true;
+		};
+	
+		// Once the body of the DOM is loaded we start here...
+		function alpha() {
+			// var statusDiv = document.getElementById("status");
+			if (!Promise) {
+				// Promise is not defined
+				return;
+			}	
+			setStatusMessage("starting... (should complete in under 20 seconds)");
+
+			// The chain of Promises
+			createAoi().
+			then(defineSLD).
+			then(fetchAoiMap).
+			then(getInterpCategories).
+			then(getInterpCatalog).
+			then(getInterpRuledata).
+			then(getInterpRating).
+			then(fetchInterpMap).
+			then(fetchInterpLegendAndRatings).
+			then(displayLegendAndRatingData).
+			then(data => {
+				appendLogMessage("final response: " + data);
+				setStatusMessage('<h2>Test successful</h2>');
+			}).
+			catch(error => {
+				setStatusMessage(`<h2>Test failed, lastMethod=${lastMethod} error.statusText=${error.statusText}, error.status=${error.status}</h2>`);
+				return;
+			});			
+		}
+	</script>
+
+</head>
+<body onload="alpha();">
+	<div id="status">JavaScript must be enabled; use a browser that supports "Promise" - IE11 will not work.</div>
+	<h3>AOI map with SLD:</h3>
+	<div id="mapWithAoi">(map with AOI, colored with SLD, goes here)</div>
+	<h3>Interpretation:</h3>
+	<div id="mapWithRating">(map with rating goes here)</div>
+	<br>Legend:</br>
+	<div id="interpLegend">(interp legend goes here)</div>
+	<br>Rating:</br>
+	<div id="interpRating">(interp rating goes here)</div>
+	
+	<h3>Log</h3>
+	<div id="log"></div>
+</body>
+
+</html>
