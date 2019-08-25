@@ -314,7 +314,7 @@
 			// Display the rating interpRating
 			// We'll just display the rating string
 			var ratingHtml = '<table style="width:800px">';
-			ratingHtml += '<tr><th>musym</th><tr><th>Map Unit </th><th>rating</th></tr>';
+			ratingHtml += '<tr><th>musym</th><th>Map Unit</th><th>rating</th></tr>';
 			for (let iRow = 1; iRow < table.Table1.length; iRow++) {
 				ratingHtml +=  `<tr><td>${table.Table1[iRow][0]}</td><td>${table.Table1[iRow][1]}</td><td>${table.Table1[iRow][2]}</td></tr>`;
 			}
@@ -362,9 +362,9 @@
 	<div id="mapWithAoi">(map with AOI, colored with SLD, goes here)</div>
 	<h3>Susceptibility to Organic Matter Depletion Interpretation:</h3>
 	<div id="mapWithRating">(map with rating goes here)</div>
-	<br>Legend:</br>
+	<br><h3>Legend:</h3></br>
 	<div id="interpLegend">(interp legend goes here)</div>
-	<br>Rating:</br>
+	<br><h3>Rating:</h3></br>
 	<div id="interpRating">(interp rating goes here)</div>
 	
 	<h3>Log</h3>
