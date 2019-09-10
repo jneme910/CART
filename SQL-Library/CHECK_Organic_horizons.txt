@@ -1,0 +1,7 @@
+select l.mlraoffice, LEFT((l.areasymbol), 2) as state, l.areasymbol, m.mukey, c.cokey, c.compname, h.hzname, awc_r, sandtotal_r, silttotal_r, claytotal_r, om_l, texture
+FROM legend l 
+    inner join mapunit m ON l.lkey = m.lkey and l.areasymbol <> 'US' 
+    inner join component c ON m.mukey = c.mukey and compkind like 'series' and majcompflag= 'yes'
+   inner join chorizon h ON c.cokey = h.cokey and om_l < 35 and hzname not like '%R%' and claytotal_r is null
+   inner join chtexturegrp cht on h.chkey=cht.chkey and texture <> 'UWB' and texture <> 'BR' and texture <> 'WB' and texture <> 'CEM-MAT'
+Order by l.mlraoffice, c.compname, h.chkey, l.areasymbol
