@@ -151,7 +151,7 @@ The programming proposed for outcomes is intended to provide NRCS leadership wit
 15.	Matt Flint: Natural Resource Specialist, NRCS
 16.	Danielle Balduff: Natural Resource Specialist, NRCS
 17.	Breanna Barlow: Management Analyst, NRCS
-18.	Barry Fisher: Soil Conservationist, NRCS
+18.	Barry Fisher: Central Region Soil Health Team Leader, NRCS
 19.	Robin Plummer: Developer, NRCS
 20.	Aaron Bustamante: 
 21.	Pam Thomas: Associate Director of Soil Survey Programs, NRCS
