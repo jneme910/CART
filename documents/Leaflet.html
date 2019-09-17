@@ -1,0 +1,52 @@
+<html>
+<head>
+  <title>Pedon Map Location</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+ <!-- Make sure you put this AFTER Leaflet's CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+   crossorigin=""/>
+ <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+   integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+   crossorigin=""></script>
+
+ 
+
+  <style>
+    #map{ height: 100% }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <script>
+    var map = L.map('map')
+        .setView([13.7542, 100.493], 12);
+
+    L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+	
+	L.marker([13.7542, 100.493]).addTo(map)
+    .bindPopup("<iframe target='_parent' border='5;color:black' width='200px' height='600px' scrolling='yes' embedded='true' frameborder='no' src='//nasis.sc.egov.usda.gov/NasisReportsWebSite/limsreport.aspx?report_name=WEB-profiles-by-PEIID&pedon_peiid=552929&embedded=yes'; allowTransparency='true'></iframe>")
+   
+	
+	.openPopup();
+</script>
+
+	
+    <script>
+      const iframe = document.getElementById('iframe');
+      iframe.addEventListener('load', function() {
+        try {
+          const message = iframe.contentDocument.getElementById('message').innerText;
+          document.getElementById('message').innerText = `"${message}"`;
+        } catch (e){
+          document.getElementById('message').innerText =  `ERROR : ${e.message}`;
+        }
+      });
+    </script>
+</body>
+</html>
+
