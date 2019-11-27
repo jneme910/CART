@@ -1,7 +1,9 @@
 <html>
 <head>
   <title>Pedon Map Location</title>
-
+<meta http-equiv="X-Frame-Options" content="allow" /> 
+ <meta http-equiv="X-Frame-Options" content="ALLOW-FROM http://voyager/voyager" /> 
+ <WebPartPages:AllowFraming runat="server" />
  <!-- Make sure you put this AFTER Leaflet's CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -25,9 +27,12 @@
   }
 </style>
 
-<div id="protector">
-  <a href="/" target="_blank">Go to the site</a>
-</div>
+<script>
+protected void Application_PreSendRequestHeaders()
+{
+    Response.Headers.Remove("X-Frame-Options");
+}
+</script>
 
 <script>
   // there will be an error if top window is from the different origin
@@ -50,24 +55,14 @@
     }).addTo(map);
 	
 	L.marker([13.7542, 100.493]).addTo(map)
-    .bindPopup("<iframe class='wp-embedded-content' sandbox'allow-scripts allow-same-origin' security='restricted' border='5;color:black' width='200px' height='600px' scrolling='yes' id='iframe' frameborder='no' src='nasis.sc.egov.usda.gov/NasisReportsWebSite/limsreport.aspx?report_name=WEB-profiles-by-PEIID&pedon_peiid=552929&embedded=yes'; allowTransparency='true'></iframe>")
+    .bindPopup("<iframe class='wp-embedded-content' sandbox'allow-scripts allow-same-origin' security='restricted' border='5;color:black' width='200px' height='600px' scrolling='yes' id='iframe' frameborder='no' src='https:nasis.sc.egov.usda.gov/NasisReportsWebSite/limsreport.aspx?report_name=WEB-profiles-by-PEIID&pedon_peiid=552929&embedded=yes'; allowTransparency='true'></iframe>")
    
 	
 	.openPopup();
 </script>
 
 	
-  <script>
-function oembed_iframe_overrides($html, $url, $attr) {
 
-   if ( strpos( $html, "<iframe" ) !== false ) { 
-      return str_replace('<iframe class="wp-embedded-content" sandbox="allow-scripts allow-same-origin"', '<iframe class="wp-embedded-content" sandbox', $html); }
-   else {
-      return $html;
-   }
-} 
-add_filter( 'embed_oembed_html', 'oembed_iframe_overrides', 10, 3);
-</script>
 </body>
 </html>
 

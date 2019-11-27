@@ -42,3 +42,11 @@ Leadership can assist in the process by brainstorming and providing a list of de
     + Some would need to have pre-generated reference table values based on a script (to be developed by SMEs) 
     + Some could pull direct soil interpretations.
 2. We may only be able to do a few outcomes this way with soil data, but we could get the highest priority completed and evaluate the outcome.
+
+
+## Working definitions:
+1.	Data Mart - a database targeted at a particular subject area  (like PRS only modernized and extensively integrated - CART Mart, Outcomes Mart, DSP Mart, etc) 
+2. Data Quality Assurance - Automated and manual processes to validate the completeness and accuracy of the data resources 
+3. 	Authoritative Data - officially recognized data that has been through a rigorous quality assurance process to determine that the products/metrics truly represent the business intent
+4.	Conservation Data - information gathered to support the conservation programs (planning and implementation processes). Documents the actions and observations gathered during mission delivery.  
+5.	Verification and validation are two procedures that are used together to ensure that FPAC data and metrics meet the minimum quality for performance reporting, evidence-based decision-making, program evaluation, and transparency.  The term "verification and validation" typically refers to the documentation that support the general accuracy and reliability of performance information, reduce the risk of inaccurate data and metrics, and provide a sufficient level of confidence to the Congress and the public that the information presented is credible as appropriate to its intended use. 
