@@ -2573,6 +2573,21 @@ GROUP BY landunit, attributename
 ORDER BY landunit
 ;
 
+
+INSERT INTO #LandunitRatingsCART2 (landunit,  attributename, rating_value, rating_class)
+SELECT landunit, 'Organic and Hydric Soils' AS  attributename,
+CASE WHEN SUM(rv_acres) IS NULL THEN 2
+WHEN SUM(rv_acres) > 0 THEN 1
+WHEN SUM(rv_acres) = 0 THEN 0
+END AS rating_key,
+CASE WHEN SUM(rv_acres) IS NULL THEN 'Not rated'
+WHEN SUM(rv_acres) > 0 THEN 'Yes'
+WHEN SUM(rv_acres) = 0 THEN 'No'
+END AS rating_class
+FROM  #Hydric3
+GROUP BY landunit, attributename
+ORDER BY landunit
+;
 --Easments Hydric 50 Percent 
 
 INSERT INTO #LandunitRatingsCART2 (landunit, attributename, rating_value, rating_class)
