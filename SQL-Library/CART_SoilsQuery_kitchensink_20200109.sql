@@ -32,6 +32,8 @@ DROP TABLE IF EXISTS #Hydric_B
 DROP TABLE IF EXISTS  #Hydric1
 DROP TABLE IF EXISTS  #Hydric3
 DROP TABLE IF EXISTS  #easHydric3
+DROP TABLE IF EXISTS  #drain3
+DROP TABLE IF EXISTS  #drain4
 DROP TABLE IF EXISTS  #FC
 DROP TABLE IF EXISTS  #FC2
 DROP TABLE IF EXISTS  #wet
@@ -577,6 +579,7 @@ LEFT OUTER JOIN #FC2 ON #AoiAcres.aoiid=#FC2.aoiid
 ;
 
 
+
 -- Populate #M4 table with component level data with cokey, comppct_r and mapunit sum-of-comppct_r
 INSERT INTO #M4
 SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag,
@@ -661,8 +664,43 @@ co_acres DECIMAL (10, 2))
 -- Populate drainage class for mapunit and components
 INSERT INTO #drain2
 SELECT aoiid, landunit, landunit_acres,  mukey, mapunit_acres, cokey, compname, comppct_r,
-majcompflag, mu_pct_sum, drainagecl, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres
+majcompflag, mu_pct_sum, drainagecl, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 2) AS co_acres                   
 FROM #drain
+;
+
+
+CREATE TABLE #drain3
+( aoiid INT ,
+landunit CHAR(20),
+landunit_acres REAL,
+sum_drain_ac REAL)
+;
+INSERT INTO #drain3 (aoiid, landunit, landunit_acres, sum_drain_ac )
+SELECT DISTINCT  aoiid ,
+landunit ,
+landunit_acres ,
+SUM (CASE WHEN drainagecl = 'Poorly drained' THEN co_acres 
+WHEN drainagecl = 'Very poorly drained' THEN co_acres ELSE 0 END) over(partition by aoiid) as sum_drain_ac
+FROM #drain2;
+
+CREATE TABLE #drain4
+( aoiid INT ,
+landunit CHAR(20),
+landunit_acres REAL,
+drain_pct REAL)
+;
+INSERT INTO #drain4 (aoiid, landunit, landunit_acres, drain_pct )
+SELECT aoiid, landunit, landunit_acres,  CASE WHEN sum_drain_ac = 0 THEN 0 ELSE sum_drain_ac/landunit_acres END AS drain_pct
+FROM #drain3;
+
+
+-- Easement Drainage End
+INSERT INTO #LandunitRatingsCART2 (landunit, attributename, rating_value, rating_class)
+SELECT DISTINCT landunit, 'Easements Drainage' AS attributename, 
+CASE WHEN drain_pct >= .50 THEN 1 ELSE 0 END AS rating_value, 
+CASE WHEN drain_pct >= .50 THEN 'Yes' ELSE 'No' END AS rating_class 
+FROM #drain4 ;
+
 ;
 
 -- Begin SOC
@@ -1817,6 +1855,8 @@ CASE WHEN low_acres = 0 THEN 0 WHEN low_acres IS NULL THEN NULL ELSE ROUND (low_
 CASE WHEN rv_acres = 0 THEN 0 WHEN rv_acres IS NULL THEN NULL ELSE ROUND (rv_acres/aoi_acres,2) END AS rvpct, 
 CASE WHEN high_acres = 0 THEN 0 WHEN high_acres IS NULL THEN NULL ELSE  ROUND (high_acres/aoi_acres,2) END AS highpct 
 FROM #Hydric3
+
+
 -- ************************************************************************************************
 -- END OF QUERIES FOR SOIL PROPERTIES...
 
@@ -2538,17 +2578,18 @@ ORDER BY landunit
 INSERT INTO #LandunitRatingsCART2 (landunit, attributename, rating_value, rating_class)
 SELECT landunit, 'Easements Hydric Soils' attributename, 
 CASE WHEN SUM(rvpct) IS NULL THEN 2
-WHEN SUM(rvpct) >= 50 THEN 1
-WHEN SUM(rvpct) < 50 THEN 0
+WHEN SUM(rvpct) >= .50 THEN 1
+WHEN SUM(rvpct) < .50 THEN 0
 END AS rating_key,
 CASE WHEN SUM(rvpct) IS NULL THEN 'Not rated'
-WHEN SUM(rvpct) >= 50 THEN 'Yes'
-WHEN SUM(rvpct) < 50 THEN 'No'
+WHEN SUM(rvpct) >= .50 THEN 'Yes'
+WHEN SUM(rvpct) < .50 THEN 'No'
 END AS rating_class
 FROM #easHydric3
 GROUP BY landunit, attributename
 ORDER BY landunit
 ;
+
 
 
 -- SOC CART
@@ -2687,6 +2728,7 @@ DROP TABLE IF EXISTS #alldata2
 DROP TABLE IF EXISTS #aws1
 DROP TABLE IF EXISTS #drain
 DROP TABLE IF EXISTS #drain2
+DROP TABLE IF EXISTS #drain3
 DROP TABLE IF EXISTS #organic
 DROP TABLE IF EXISTS #o1
 

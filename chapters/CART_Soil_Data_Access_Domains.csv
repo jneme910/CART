@@ -53,18 +53,30 @@ drained"
 48|Water Table: 0|Water Table|0
 49|Water Table: 1|Water Table|1
 50|Water Table: 2|Water Table|Not rated
-51|Farm Class: 1|Farm Class|Null
-52|Farm Class: 2|Farm Class|Prime farmland
-53|Farm Class: 3|Farm Class|Prime farmland if
-54|Farm Class: 4|Farm Class|State importance
-55|Farm Class: 5|Farm Class|State importance if
-56|Farm Class: 6|Farm Class|Local importance
-57|Farm Class: 7|Farm Class|Local importance if
-58|Farm Class: 8|Farm Class|Not Prime farmland
-59|Farm Class: 9|Farm Class|Not rated
+51|MU Farm Class: 1|MU Farm Class|Null
+52|MU Farm Class: 2|MU Farm Class|Prime farmland
+53|MU Farm Class: 3|MU Farm Class|Prime farmland if
+54|MU Farm Class: 4|MU Farm Class|State importance
+55|MU Farm Class: 5|MU Farm Class|State importance if
+56|MU Farm Class: 6|MU Farm Class|Local importance
+57|MU Farm Class: 7|MU Farm Class|Local importance if
+58|MU Farm Class: 8|MU Farm Class|Not Prime farmland
+59|MU Farm Class: 9|MU Farm Class|Not rated
 60|Hydric Soils:0|Hydric Soils|0
 61|Hydric Soils:1|Hydric Soils|1
 62|Hydric Soils:2|Hydric Soils|Not rated
 63|Organic Soils: 0|Organic and Hydric Soils|0
 64|Organic Soils: 1|Organic and Hydric Soils|1
 65|Organic Soils: 2|Organic and Hydric Soils|Not rated
+66|Easements Hydric Soils:0|Easements Hydric Soils|0
+67|Easements Hydric Soils:1|Easements Hydric Soils|1
+68|Easements Hydric Soils:2|Easements Hydric Soils|Not rated
+69|Easements Farm Class:0|Easements Farm Class|0
+70|Easements Farm Class:1|Easements Farm Class|1
+71|Easements Farm Class:2|Easements Farm Class|Not rated
+72|Easements Drainage:0|Easements Drainage                                          |0
+73|Easements Drainage:1|Easements Drainage                                          |1
+74|Easements Drainage:2|Easements Drainage                                          |Not rated
+75|Farm Class:0|Farm Class|0
+76|Farm Class:1|Farm Class|1
+77|Farm Class:2|Farm Class|Not rated
