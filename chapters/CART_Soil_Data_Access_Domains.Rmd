@@ -1,7 +1,8 @@
 ---
 title: "CART Soil Data Access Domains "
 author: "Jason Nemecek and Steve Peaslee"
-date: "`r Sys.Date()`"
+#date: "`r Sys.Date()`"
+date: "01/10/2010"
 output:
   html_document:
   mathjax: null

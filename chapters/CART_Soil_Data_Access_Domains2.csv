@@ -52,18 +52,33 @@ Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
 51,Water Table,0,No
 52,Water Table,1,Yes
 53,Water Table,2,Not rated
-54,Farm Class,1,Prime farmland
-55,Farm Class,2,Prime farmland if
-56,Farm Class,3,State importance
-57,Farm Class,4,State importance if
-58,Farm Class,5,Local importance
-59,Farm Class,6,Local importance if
-60,Farm Class,7,Not Prime farmland
-61,Farm Class,8,Unique importance
-62,Farm Class,9,Not rated
+54,MU Farm Class,1,Prime farmland
+55,MU Farm Class,2,Prime farmland if
+56,MU Farm Class,3,State importance
+57,MU Farm Class,4,State importance if
+58,MU Farm Class,5,Local importance
+59,MU Farm Class,6,Local importance if
+60,MU Farm Class,7,Not Prime farmland
+61,MU Farm Class,8,Unique importance
+62,MU Farm Class,9,Not rated
 63,Hydric Soils,0,No
 64,Hydric Soils,1,Yes
 65,Hydric Soils,2,Not rated
 66,Organic and Hydric Soils,0,No
 67,Organic and Hydric Soils,1,Yes
 68,Organic and Hydric Soils,2,Not rated
+69,Farm Class                                                  ,0,No
+70,Farm Class                                                  ,1,Yes
+71,Farm Class                                                  ,2,Not rated
+72,Easements Hydric Soils                                      ,0,No
+73,Easements Hydric Soils                                      ,1,Yes
+74,Easements Hydric Soils                                      ,2,Not rated
+75,Easements Farm Class                                        ,0,No
+76,Easements Farm Class                                        ,1,Yes
+77,Easements Farm Class                                        ,2,Not rated
+78,Easements Hydric Soils                                      ,0,No
+79,Easements Hydric Soils                                      ,1,Yes
+80,Easements Hydric Soils                                      ,2,Not rated
+81,Easements Drainage                                          ,0,No
+82,Easements Drainage                                          ,1,Yes
+83,Easements Drainage                                          ,2,Not rated
