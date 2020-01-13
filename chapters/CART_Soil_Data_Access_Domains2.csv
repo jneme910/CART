@@ -76,9 +76,6 @@ Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
 75,Easements Farm Class                                        ,0,No
 76,Easements Farm Class                                        ,1,Yes
 77,Easements Farm Class                                        ,2,Not rated
-78,Easements Hydric Soils                                      ,0,No
-79,Easements Hydric Soils                                      ,1,Yes
-80,Easements Hydric Soils                                      ,2,Not rated
 81,Easements Drainage                                          ,0,No
 82,Easements Drainage                                          ,1,Yes
 83,Easements Drainage                                          ,2,Not rated

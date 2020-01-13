@@ -3,124 +3,47 @@
 /** SDA Query application="CART" rule="Generalized Resource Assessment" version="0.1" **/
 -- BEGIN CREATING AOI QUERY
 --
-DROP TABLE IF EXISTS #AoiTable
-DROP TABLE IF EXISTS #AoiAcres
-DROP TABLE IF EXISTS #AoiSoils
-DROP TABLE IF EXISTS #AoiSoils2
-DROP TABLE IF EXISTS #M2
-DROP TABLE IF EXISTS #M5
-DROP TABLE IF EXISTS #M4
-DROP TABLE IF EXISTS #M6
-DROP TABLE IF EXISTS #M8
-DROP TABLE IF EXISTS #M10
-DROP TABLE IF EXISTS #InterpTable
-DROP TABLE IF EXISTS #LandunitRatingsDetailed
-DROP TABLE IF EXISTS #LandunitRatingsCART
-DROP TABLE IF EXISTS #SDV
-DROP TABLE IF EXISTS #RatingClasses
-DROP TABLE IF EXISTS #RatingDomain
-DROP TABLE IF EXISTS #DateStamps
-DROP TABLE IF EXISTS #LandunitMetadata
-DROP TABLE IF EXISTS #LandunitRatingsDetailed1
-DROP TABLE IF EXISTS #LandunitRatingsDetailed2
-DROP TABLE IF EXISTS  #LandunitRatingsCART2
-DROP TABLE IF EXISTS #interp_dcd
-DROP TABLE IF EXISTS  #Hydric2
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS #Hydric_A
-DROP TABLE IF EXISTS #Hydric_B
-DROP TABLE IF EXISTS  #Hydric1
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS  #easHydric3
-DROP TABLE IF EXISTS  #drain3
-DROP TABLE IF EXISTS  #drain4
-DROP TABLE IF EXISTS  #FC
-DROP TABLE IF EXISTS  #FC2
-DROP TABLE IF EXISTS  #wet
-DROP TABLE IF EXISTS  #wet1
-DROP TABLE IF EXISTS  #wet2
-DROP TABLE IF EXISTS  #pf
-DROP TABLE IF EXISTS  #pf1
-DROP TABLE IF EXISTS  #pf2
-DROP TABLE IF EXISTS  #agg1
-DROP TABLE IF EXISTS  #agg2
-DROP TABLE IF EXISTS  #agg3
-DROP TABLE IF EXISTS  #agg4
-DROP TABLE IF EXISTS #agg5
-DROP TABLE IF EXISTS #agg6
-DROP TABLE IF EXISTS #agg7
-DROP TABLE IF EXISTS #agg7a
-DROP TABLE IF EXISTS #agg8
-DROP TABLE IF EXISTS #acpf
-DROP TABLE IF EXISTS #muacpf
-DROP TABLE IF EXISTS #SOC5
-DROP TABLE IF EXISTS #hortopdepth 
-DROP TABLE IF EXISTS #acpf2
-DROP TABLE IF EXISTS #acpfhzn
-DROP TABLE IF EXISTS #SOC
-DROP TABLE IF EXISTS #SOC2
-DROP TABLE IF EXISTS #SOC3
-DROP TABLE IF EXISTS #SOC4
-DROP TABLE IF EXISTS #SOC5
-DROP TABLE IF EXISTS #SOC6
-DROP TABLE IF EXISTS #acpfaws
-DROP TABLE IF EXISTS #hortopdepthaws
-DROP TABLE IF EXISTS #acpf2aws
-DROP TABLE IF EXISTS #acpfhznaws
-DROP TABLE IF EXISTS #aws
-DROP TABLE IF EXISTS #aws150
-DROP TABLE IF EXISTS #acpf3aws
-DROP TABLE IF EXISTS #acpf4aws
-DROP TABLE IF EXISTS #depthtestaws
-DROP TABLE IF EXISTS #acpfwtavgaws
-DROP TABLE IF EXISTS #alldata
-DROP TABLE IF EXISTS #alldata2
-DROP TABLE IF EXISTS #aws1
-DROP TABLE IF EXISTS #drain
-DROP TABLE IF EXISTS #drain2
-DROP TABLE IF EXISTS #organic
-DROP TABLE IF EXISTS #o1
 
-GO
 
- DECLARE @attributeName CHAR(60);
- DECLARE @ruleDesign CHAR(60);
- DECLARE @ruleKey CHAR(30);
- DECLARE @rating1 CHAR(60);
- DECLARE @rating2  CHAR(60);
- DECLARE @rating3 CHAR(60);
- DECLARE @rating4 CHAR(60);
- DECLARE @rating5 CHAR(60);
- DECLARE @rating6 CHAR(60);
- DECLARE @dateStamp VARCHAR(60);
- DECLARE @minAcres INT ;
- DECLARE @minPct INT ;
- DECLARE @aoiGeom Geometry;
- DECLARE @aoiGeomFixed Geometry;
- DECLARE @ratingKey CHAR(70);
- DECLARE @notRatedPhrase CHAR(15);
- DECLARE @Level INT ;
- DECLARE @pAoiId INT ;
- declare @intersectedPolygonGeometries table (id int, geom geometry);
- declare @intersectedPolygonGeographies table (id int, geog geography);
+
+--|DECLARE @attributeName CHAR(60);
+--|DECLARE @ruleDesign CHAR(60);
+--|DECLARE @ruleKey CHAR(30);
+--|DECLARE @rating1 CHAR(60);
+--|DECLARE @rating2  CHAR(60);
+--|DECLARE @rating3 CHAR(60);
+--|DECLARE @rating4 CHAR(60);
+--|DECLARE @rating5 CHAR(60);
+--|DECLARE @rating6 CHAR(60);
+--|DECLARE @dateStamp VARCHAR(60);
+--|DECLARE @minAcres INT ;
+--|DECLARE @minPct INT ;
+--|DECLARE @aoiGeom Geometry;
+--|DECLARE @aoiGeomFixed Geometry;
+--|DECLARE @ratingKey CHAR(70);
+--|DECLARE @notRatedPhrase CHAR(15);
+--|DECLARE @Level INT ;
+--|DECLARE @pAoiId INT ;
+--|declare @intersectedPolygonGeometries table (id int, geom geometry);
+--|declare @intersectedPolygonGeographies table (id int, geog geography);
 -- Declare all variables here
---|~DeclareChar(@attributeName,60)~
---|~DeclareChar(@ruleDesign,60)~
---|~DeclareChar(@ruleKey,30)~
---|~DeclareChar(@rating1,60)~
---|~DeclareChar(@rating2,60)~
---|~DeclareChar(@rating3,60)~
---|~DeclareChar(@rating4,60)~
---|~DeclareChar(@rating5,60)~
---|~DeclareChar(@rating6,60)~
---|~DeclareVarchar(@dateStamp,20)~
---|~DeclareInt(@minAcres)~
---|~DeclareInt(@minPct)~
---|~DeclareGeometry(@aoiGeom)~
---|~DeclareGeometry(@aoiGeomFixed)~
---|~DeclareChar(@ratingKey,70)~
---|~DeclareChar(@notRatedPhrase,15)~
---|~DeclareInt(@Level)~
+~DeclareChar(@attributeName,60)~
+~DeclareChar(@ruleDesign,60)~
+~DeclareChar(@ruleKey,30)~
+~DeclareChar(@rating1,60)~
+~DeclareChar(@rating2,60)~
+~DeclareChar(@rating3,60)~
+~DeclareChar(@rating4,60)~
+~DeclareChar(@rating5,60)~
+~DeclareChar(@rating6,60)~
+~DeclareVarchar(@dateStamp,20)~
+~DeclareInt(@minAcres)~
+~DeclareInt(@minPct)~
+~DeclareGeometry(@aoiGeom)~
+~DeclareGeometry(@aoiGeomFixed)~
+~DeclareChar(@ratingKey,70)~
+~DeclareChar(@notRatedPhrase,15)~
+~DeclareInt(@Level)~
  
 -- Create AOI table with polygon geometry. Coordinate system must be WGS1984 (EPSG 4326)
 CREATE TABLE #AoiTable
@@ -2670,80 +2593,4 @@ ORDER BY LRC.landunit, LRC.attributename
 
 
 
-DROP TABLE IF EXISTS #AoiTable
-DROP TABLE IF EXISTS #AoiAcres
-DROP TABLE IF EXISTS #AoiSoils
-DROP TABLE IF EXISTS #AoiSoils2
-DROP TABLE IF EXISTS #M2
-DROP TABLE IF EXISTS #M5
-DROP TABLE IF EXISTS #M4
-DROP TABLE IF EXISTS #M6
-DROP TABLE IF EXISTS #M8
-DROP TABLE IF EXISTS #M10
-DROP TABLE IF EXISTS #InterpTable
-DROP TABLE IF EXISTS #LandunitRatingsDetailed
-DROP TABLE IF EXISTS #LandunitRatingsCART
-DROP TABLE IF EXISTS #SDV
-DROP TABLE IF EXISTS #RatingClasses
-DROP TABLE IF EXISTS #RatingDomain
-DROP TABLE IF EXISTS #DateStamps
-DROP TABLE IF EXISTS #LandunitMetadata
-DROP TABLE IF EXISTS #LandunitRatingsDetailed1
-DROP TABLE IF EXISTS #LandunitRatingsDetailed2
-DROP TABLE IF EXISTS  #LandunitRatingsCART2
-DROP TABLE IF EXISTS #interp_dcd
-DROP TABLE IF EXISTS  #Hydric2
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS #Hydric_A
-DROP TABLE IF EXISTS #Hydric_B
-DROP TABLE IF EXISTS  #Hydric1
-DROP TABLE IF EXISTS  #Hydric3
-DROP TABLE IF EXISTS  #FC
-DROP TABLE IF EXISTS  #FC2
-
-DROP TABLE IF EXISTS  #wet
-DROP TABLE IF EXISTS  #wet1
-DROP TABLE IF EXISTS  #wet2
-DROP TABLE IF EXISTS  #pf
-DROP TABLE IF EXISTS  #pf1
-DROP TABLE IF EXISTS  #pf2
-DROP TABLE IF EXISTS  #agg1
-DROP TABLE IF EXISTS  #agg2
-DROP TABLE IF EXISTS  #agg3
-DROP TABLE IF EXISTS  #agg4
-DROP TABLE IF EXISTS #agg5
-DROP TABLE IF EXISTS #agg6
-DROP TABLE IF EXISTS #agg7
-DROP TABLE IF EXISTS #agg7a
-DROP TABLE IF EXISTS #agg8
-DROP TABLE IF EXISTS #acpf
-DROP TABLE IF EXISTS #muacpf
-DROP TABLE IF EXISTS #SOC5
-DROP TABLE IF EXISTS #hortopdepth 
-DROP TABLE IF EXISTS #acpf2
-DROP TABLE IF EXISTS #acpfhzn
-DROP TABLE IF EXISTS #SOC
-DROP TABLE IF EXISTS #SOC2
-DROP TABLE IF EXISTS #SOC3
-DROP TABLE IF EXISTS #SOC4
-DROP TABLE IF EXISTS #SOC5
-DROP TABLE IF EXISTS #SOC6
-DROP TABLE IF EXISTS #acpfaws
-DROP TABLE IF EXISTS #hortopdepthaws
-DROP TABLE IF EXISTS #acpf2aws
-DROP TABLE IF EXISTS #acpfhznaws
-DROP TABLE IF EXISTS #aws
-DROP TABLE IF EXISTS #aws150
-DROP TABLE IF EXISTS #acpf3aws
-DROP TABLE IF EXISTS #acpf4aws
-DROP TABLE IF EXISTS #depthtestaws
-DROP TABLE IF EXISTS #acpfwtavgaws
-DROP TABLE IF EXISTS #alldata
-DROP TABLE IF EXISTS #alldata2
-DROP TABLE IF EXISTS #aws1
-DROP TABLE IF EXISTS #drain
-DROP TABLE IF EXISTS #drain2
-DROP TABLE IF EXISTS #drain3
-DROP TABLE IF EXISTS #organic
-DROP TABLE IF EXISTS #o1
 
