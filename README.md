@@ -32,7 +32,7 @@ This documentation describes the SQL queries that access soils data for CART.  T
 |7|Soil Organic Carbon Stock|RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock)|Easements; Air Quality: Emissions of Greenhouse Gases |
  |8|Drainage Class |EP |[Click here](https://jneme910.github.io/CART/chapters/Drainage_Class) |Easements|
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|---|
-|10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation: Subsidence|
+|10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters//EditedRMD/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation: Subsidence|
 |11|Soil Susceptibility to Compaction |RA |[Click here](https://jneme910.github.io/CART/chapters/Soil_Susceptibility_to_Compaction)|Soil Quality Degradation:Compaction| 
 |12|Soil Susceptibility Organic Matter Depletion |RA |[Click here](https://jneme910.github.io/CART/chapters/Organic_Matter_Depletion)|Soil Quality Degradation:Organic Matter Depletion|
 |13|Surface Salt Concentration |RA |[Click here](https://jneme910.github.io/CART/chapters/Surface_Salt_Concentration)|Soil Quality Degradation:Concentration of Salts and Other Chemicals
