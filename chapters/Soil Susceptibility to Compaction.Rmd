@@ -40,7 +40,7 @@ Other components that have different ratings can be present in each map unit. Th
 
 Site or soil attribute|Low|Moderate|High|Impact
 ---------------------------|--------------|------------------|------------------|----------------------------------------
-Soil Texture|loamy sand, loamy fine sand, loamy coarse sand, sand, fine sand, coarse sand|silty clay, clay, sandy clay, sandy clay loam, sandy loams with less than 15 percent clay|loam, silt, silt loam, silty clay loam, very fine sandy loam, sandy loams with 15 percent or more clay|
+Soil Texture|loamy sand, loamy fine sand, loamy coarse sand, sand, fine sand, coarse sand|silty clay, clay, sandy clay, sandy clay loam, sandy loams with less than 15 percent clay|clay loam, loam, silt, silt loam, silty clay loam, very fine sandy loam, sandy loams with 15 percent or more clay|
 Strong soil structure||||Ratings are reduced by one class, such as from "high" to "moderate" for strong soil structure grade.
 Rock fragment content 35 to 60 percent||||Ratings are reduced by one class.
 Rock fragment content greater than 60 percent||||Ratings are reduced by two classes.
