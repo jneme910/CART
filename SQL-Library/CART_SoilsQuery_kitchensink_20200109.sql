@@ -532,7 +532,7 @@ INSERT INTO #FC
     SELECT fcc.aoiid, fcc.landunit, mu.mukey, mapunit_acres,
     CASE WHEN farmlndcl IS NULL  THEN 'Not rated'
         WHEN farmlndcl =  'All areas are prime farmland' THEN 'Prime'
-        WHEN farmlndcl LIKE 'Prime if%' THEN 'Prime if'
+        WHEN farmlndcl LIKE 'Prime farmland if%' THEN 'Prime if'
         WHEN farmlndcl =  'Farmland of statewide importance' THEN 'State'
         WHEN farmlndcl LIKE 'Farmland of statewide importance, if%' THEN 'State if'
         WHEN farmlndcl = 'Farmland of local importance' THEN 'Local'
@@ -542,7 +542,7 @@ INSERT INTO #FC
     END AS farmlndclass,
 	    CASE WHEN farmlndcl IS NULL  THEN 'Not rated'
         WHEN farmlndcl =  'All areas are prime farmland' THEN 1
-        WHEN farmlndcl LIKE 'Prime if%' THEN 1
+        WHEN farmlndcl LIKE 'Prime farmland if%' THEN 1
         WHEN farmlndcl =  'Farmland of statewide importance' THEN 1
         WHEN farmlndcl LIKE 'Farmland of statewide importance, if%' THEN 1
         WHEN farmlndcl = 'Farmland of local importance' THEN 1
