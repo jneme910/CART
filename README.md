@@ -1,14 +1,14 @@
 # Conservation Assessment Ranking Tool (CART)
 Jason Nemecek and Steve Peaslee 
 
-July 15, 2019
+July 15, 2019 
 
 The Conservation Assessment Ranking Tool (CART) is designed for use in the conservation planning process to assess resource concerns, planned practices, and site vulnerability. It ranks applications for USDA conservation funding. CART starts with a site-specific risk threshold for each resource concern. The thresholds are based on intrinsic site characteristics, such as soils and climate. The tool evaluates the benefits of site-specific management for treating resource concerns. A “management credit” score is assigned to each site based on such factors as the methods used for crop production and the conservation practices that are applied. The scores are summed, and the total is compared to the threshold for existing conditions and to planning alternatives. The scores can also be used to prioritize program ranking, which may be further modified by identified priorities, special considerations, or both.
 
 This documentation describes the SQL queries that access soils data for CART.  The queries described in this documentation run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal.  The portal accesses current databases maintained by the U.S. National Cooperative Soil Survey.
 
 ### Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool: Soil.
-1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20190612.sql)
+1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20200109.sql)
 2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt)
 3.  Area of Interest (AOI) Geometry examples to copy into the SQL script:  [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
 
