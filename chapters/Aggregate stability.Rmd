@@ -53,6 +53,15 @@ Aggregate stability is determined by a wet sieving technique preceded by vacuum 
 
 Aggregate stability(%)=$$((wt. of stable aggregates and sand) - (wt. of sand))/((wt. of sample) - (wt. of sand))$$
 
+### Rating
+
+Rating Class|	Rating Value		
+----------|	----------		
+Low |	<25		
+Moderate	|>= 25 and <50		
+Moderately Hig	|>=50 		
+High|	>=75		
+Not Rated|	Null	
 
 ### Criteria Table
 
@@ -236,8 +245,9 @@ FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon   AS cha  ON
 * Calculates ESP from SAR.
 * Adjusts OM and clay to stay within property ranges of the prediction equation.
 
-aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|mu_pct_sum|major_mu_pct_sum
-1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
+|aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|mu_pct_sum|major_mu_pct_sum|
+|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|---------|
+|1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100|
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
 1|T9981Fld3|354648|0.287|16464612|Reeder|60|Yes|NULL|H1|0|13|10|18.5|27|3|4|5|0|1|1|20|25|30|0|0|0|-1.28|0.21|0.21|Loam|85|100
@@ -389,6 +399,7 @@ FROM #agg1;
 * Adjusts OM and clay to stay within property ranges of the prediction equation.
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -504,6 +515,7 @@ FROM #agg2;
 ```
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+-------------|-------------|-------------|-------------|-------------|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------	|-------------
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -631,6 +643,7 @@ hzdepb_r, AgStab_l , AgStab_h, AgStab_r, claytotall, claytotalr, claytotalh, san
 
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -772,6 +785,7 @@ AGG_InRangeBot_0_15 ;
 ```
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -899,6 +913,7 @@ InRangeSumThickness, AgStab_l, AgStab_r, AgStab_h ;
 
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -1002,6 +1017,7 @@ comp_weighted_average_h
 ```
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -1086,6 +1102,7 @@ GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AG
 ```
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
@@ -1170,6 +1187,7 @@ GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, MU_SUM_AGG_L, MU_SUM_AG
 ```
 
 aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|claytotall|claytotalr|claytotalh|oml|omr|omh|sar_l|sar_r|sar_h|cec7_l|cec7_r|cec7_h|ec_l|ec_r|ec_h|esp_l|esp_r|esp_h|tcl|major_mu_pct_sum|mu_pct_sum
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------
 1|T9981Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|18|22|26|2|3|4|0|3|5|10|15|20|0|0|0|-1.28|3.07|5.76|Loam|90|100
 1|T9981Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|20|23.5|27|2|3|4|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|90|100
 1|T9981Fld3|354648|0.287|16464607|Amor|25|Yes|NULL|H1|0|20|15|20|25|3|4.5|6|0|0|0|15|17.5|20|0|0|0|-1.28|-1.28|-1.28|Loam|85|100
