@@ -59,7 +59,7 @@ Rating Class|	Rating Value
 ----------|	----------		
 Low |	<25		
 Moderate	|>= 25 and <50		
-Moderately Hig	|>=50 		
+Moderately High	|>=50 		
 High|	>=75		
 Not Rated|	Null	
 
