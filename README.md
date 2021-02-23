@@ -9,7 +9,7 @@ This documentation describes the SQL queries that access soils data for CART.  T
 
 ### Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool: Soil.
 1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20210223.sql)
-2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20210223.sql)
+2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20210223.txt)
 3.  Area of Interest (AOI) Geometry examples to copy into the SQL script:  [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
 
 ### The soils data used in CART can be found in four main sections.
