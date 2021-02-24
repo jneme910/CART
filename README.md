@@ -11,6 +11,7 @@ This documentation describes the SQL queries that access soils data for CART.  T
 1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20210223.sql)
 2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20210223.txt)
 3.  Area of Interest (AOI) Geometry examples to copy into the SQL script:  [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
+4.  Prototype: [Click here](https://jneme910.github.io/CART/documents/rev00_Organic_Matter_Depletion.html)
 
 ### The soils data used in CART can be found in four main sections.
 1. Resource Assessment (Resource Concerns); 
