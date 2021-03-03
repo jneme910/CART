@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<!-- saved from url=(0110)file:///C:/Users/Jason.L.Nemecek/AppData/Local/Microsoft/Windows/INetCache/Content.Outlook/36VQQ34R/rev00.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<script>
+	(function() {
+
+function createShiftArr(step) {
+
+	var space = '    ';
+	
+	if ( isNaN(parseInt(step)) ) {  // argument is string
+		space = step;
+	} else { // argument is integer
+		switch(step) {
+			case 1: space = ' '; break;
+			case 2: space = '  '; break;
+			case 3: space = '   '; break;
+			case 4: space = '    '; break;
+			case 5: space = '     '; break;
+			case 6: space = '      '; break;
+			case 7: space = '       '; break;
+			case 8: space = '        '; break;
+			case 9: space = '         '; break;
+			case 10: space = '          '; break;
+			case 11: space = '           '; break;
+			case 12: space = '            '; break;
+		}
+	}
+
+	var shift = ['\n']; // array of shifts
+	for(ix=0;ix<100;ix++){
+		shift.push(shift[ix]+space); 
+	}
+	return shift;
+}
+
+function vkbeautify(){
+	this.step = '    '; // 4 spaces
+	this.shift = createShiftArr(this.step);
+};
+
+vkbeautify.prototype.xml = function(text,step) {
+
+	var ar = text.replace(/>\s{0,}</g,"><")
+				 .replace(/</g,"~::~<")
+				 .replace(/\s*xmlns\:/g,"~::~xmlns:")
+				 .replace(/\s*xmlns\=/g,"~::~xmlns=")
+				 .split('~::~'),
+		len = ar.length,
+		inComment = false,
+		deep = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;
+
+		for(ix=0;ix<len;ix++) {
+			// start comment or <![CDATA[...]]> or <!DOCTYPE //
+			if(ar[ix].search(/<!/) > -1) { 
+				str += shift[deep]+ar[ix];
+				inComment = true; 
+				// end comment  or <![CDATA[...]]> //
+				if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1 || ar[ix].search(/!DOCTYPE/) > -1 ) { 
+					inComment = false; 
+				}
+			} else 
+			// end comment  or <![CDATA[...]]> //
+			if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1) { 
+				str += ar[ix];
+				inComment = false; 
+			} else 
+			// <elm></elm> //
+			if( /^<\w/.exec(ar[ix-1]) && /^<\/\w/.exec(ar[ix]) &&
+				/^<[\w:\-\.\,]+/.exec(ar[ix-1]) == /^<\/[\w:\-\.\,]+/.exec(ar[ix])[0].replace('/','')) { 
+				str += ar[ix];
+				if(!inComment) deep--;
+			} else
+			 // <elm> //
+			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) == -1 && ar[ix].search(/\/>/) == -1 ) {
+				str = !inComment ? str += shift[deep++]+ar[ix] : str += ar[ix];
+			} else 
+			 // <elm>...</elm> //
+			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) > -1) {
+				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
+			} else 
+			// </elm> //
+			if(ar[ix].search(/<\//) > -1) { 
+				str = !inComment ? str += shift[--deep]+ar[ix] : str += ar[ix];
+			} else 
+			// <elm/> //
+			if(ar[ix].search(/\/>/) > -1 ) { 
+				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
+			} else 
+			// <? xml ... ?> //
+			if(ar[ix].search(/<\?/) > -1) { 
+				str += shift[deep]+ar[ix];
+			} else 
+			// xmlns //
+			if( ar[ix].search(/xmlns\:/) > -1  || ar[ix].search(/xmlns\=/) > -1) { 
+				str += shift[deep]+ar[ix];
+			} 
+			
+			else {
+				str += ar[ix];
+			}
+		}
+		
+	return  (str[0] == '\n') ? str.slice(1) : str;
+}
+
+vkbeautify.prototype.json = function(text,step) {
+
+	var step = step ? step : this.step;
+	
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	if ( typeof text === "string" ) return JSON.stringify(JSON.parse(text), null, step);
+	if ( typeof text === "object" ) return JSON.stringify(text, null, step);
+		
+	return text; // text is not string nor object
+}
+
+vkbeautify.prototype.css = function(text, step) {
+
+	var ar = text.replace(/\s{1,}/g,' ')
+				.replace(/\{/g,"{~::~")
+				.replace(/\}/g,"~::~}~::~")
+				.replace(/\;/g,";~::~")
+				.replace(/\/\*/g,"~::~/*")
+				.replace(/\*\//g,"*/~::~")
+				.replace(/~::~\s{0,}~::~/g,"~::~")
+				.split('~::~'),
+		len = ar.length,
+		deep = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;
+		
+		for(ix=0;ix<len;ix++) {
+
+			if( /\{/.exec(ar[ix]))  { 
+				str += shift[deep++]+ar[ix];
+			} else 
+			if( /\}/.exec(ar[ix]))  { 
+				str += shift[--deep]+ar[ix];
+			} else
+			if( /\*\\/.exec(ar[ix]))  { 
+				str += shift[deep]+ar[ix];
+			}
+			else {
+				str += shift[deep]+ar[ix];
+			}
+		}
+		return str.replace(/^\n{1,}/,'');
+}
+
+//----------------------------------------------------------------------------
+
+function isSubquery(str, parenthesisLevel) {
+	return  parenthesisLevel - (str.replace(/\(/g,'').length - str.replace(/\)/g,'').length )
+}
+
+function split_sql(str, tab) {
+
+	return str.replace(/\s{1,}/g," ")
+
+				.replace(/ AND /ig,"~::~"+tab+tab+"AND ")
+				.replace(/ BETWEEN /ig,"~::~"+tab+"BETWEEN ")
+				.replace(/ CASE /ig,"~::~"+tab+"CASE ")
+				.replace(/ ELSE /ig,"~::~"+tab+"ELSE ")
+				.replace(/ END /ig,"~::~"+tab+"END ")
+				.replace(/ FROM /ig,"~::~FROM ")
+				.replace(/ GROUP\s{1,}BY/ig,"~::~GROUP BY ")
+				.replace(/ HAVING /ig,"~::~HAVING ")
+				//.replace(/ SET /ig," SET~::~")
+				.replace(/ IN /ig," IN ")
+				
+				.replace(/ JOIN /ig,"~::~JOIN ")
+				.replace(/ CROSS~::~{1,}JOIN /ig,"~::~CROSS JOIN ")
+				.replace(/ INNER~::~{1,}JOIN /ig,"~::~INNER JOIN ")
+				.replace(/ LEFT~::~{1,}JOIN /ig,"~::~LEFT JOIN ")
+				.replace(/ RIGHT~::~{1,}JOIN /ig,"~::~RIGHT JOIN ")
+				
+				.replace(/ ON /ig,"~::~"+tab+"ON ")
+				.replace(/ OR /ig,"~::~"+tab+tab+"OR ")
+				.replace(/ ORDER\s{1,}BY/ig,"~::~ORDER BY ")
+				.replace(/ OVER /ig,"~::~"+tab+"OVER ")
+
+				.replace(/\(\s{0,}SELECT /ig,"~::~(SELECT ")
+				.replace(/\)\s{0,}SELECT /ig,")~::~SELECT ")
+				
+				.replace(/ THEN /ig," THEN~::~"+tab+"")
+				.replace(/ UNION /ig,"~::~UNION~::~")
+				.replace(/ USING /ig,"~::~USING ")
+				.replace(/ WHEN /ig,"~::~"+tab+"WHEN ")
+				.replace(/ WHERE /ig,"~::~WHERE ")
+				.replace(/ WITH /ig,"~::~WITH ")
+				
+				//.replace(/\,\s{0,}\(/ig,",~::~( ")
+				//.replace(/\,/ig,",~::~"+tab+tab+"")
+
+				.replace(/ ALL /ig," ALL ")
+				.replace(/ AS /ig," AS ")
+				.replace(/ ASC /ig," ASC ")	
+				.replace(/ DESC /ig," DESC ")	
+				.replace(/ DISTINCT /ig," DISTINCT ")
+				.replace(/ EXISTS /ig," EXISTS ")
+				.replace(/ NOT /ig," NOT ")
+				.replace(/ NULL /ig," NULL ")
+				.replace(/ LIKE /ig," LIKE ")
+				.replace(/\s{0,}SELECT /ig,"SELECT ")
+				.replace(/\s{0,}UPDATE /ig,"UPDATE ")
+				.replace(/ SET /ig," SET ")
+							
+				.replace(/~::~{1,}/g,"~::~")
+				.split('~::~');
+}
+
+vkbeautify.prototype.sql = function(text,step) {
+
+	var ar_by_quote = text.replace(/\s{1,}/g," ")
+							.replace(/\'/ig,"~::~\'")
+							.split('~::~'),
+		len = ar_by_quote.length,
+		ar = [],
+		deep = 0,
+		tab = this.step,//+this.step,
+		inComment = true,
+		inQuote = false,
+		parenthesisLevel = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;;
+
+		for(ix=0;ix<len;ix++) {
+			if(ix%2) {
+				ar = ar.concat(ar_by_quote[ix]);
+			} else {
+				ar = ar.concat(split_sql(ar_by_quote[ix], tab) );
+			}
+		}
+		
+		len = ar.length;
+		for(ix=0;ix<len;ix++) {
+			
+			parenthesisLevel = isSubquery(ar[ix], parenthesisLevel);
+			
+			if( /\s{0,}\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
+				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
+			} 
+			
+			if( /\s{0,}\s{0,}SET\s{0,}/.exec(ar[ix]))  { 
+				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
+			} 
+			
+			if( /\s{0,}\(\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
+				deep++;
+				str += shift[deep]+ar[ix];
+			} else 
+			if( /\'/.exec(ar[ix]) )  { 
+				if(parenthesisLevel<1 && deep) {
+					deep--;
+				}
+				str += ar[ix];
+			}
+			else  { 
+				str += shift[deep]+ar[ix];
+				if(parenthesisLevel<1 && deep) {
+					deep--;
+				}
+			} 
+			var junk = 0;
+		}
+
+		str = str.replace(/^\n{1,}/,'').replace(/\n{1,}/g,"\n");
+		return str;
+}
+
+
+vkbeautify.prototype.xmlmin = function(text, preserveComments) {
+
+	var str = preserveComments ? text
+							   : text.replace(/\<![ \r\n\t]*(--([^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)\>/g,"")
+									 .replace(/[ \r\n\t]{1,}xmlns/g, ' xmlns');
+	return  str.replace(/>\s{0,}</g,"><"); 
+}
+
+vkbeautify.prototype.jsonmin = function(text) {
+
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	return JSON.stringify(JSON.parse(text), null, 0); 
+				
+}
+
+vkbeautify.prototype.cssmin = function(text, preserveComments) {
+	
+	var str = preserveComments ? text
+							   : text.replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//g,"") ;
+
+	return str.replace(/\s{1,}/g,' ')
+			  .replace(/\{\s{1,}/g,"{")
+			  .replace(/\}\s{1,}/g,"}")
+			  .replace(/\;\s{1,}/g,";")
+			  .replace(/\/\*\s{1,}/g,"/*")
+			  .replace(/\*\/\s{1,}/g,"*/");
+}
+
+vkbeautify.prototype.sqlmin = function(text) {
+	return text.replace(/\s{1,}/g," ").replace(/\s{1,}\(/,"(").replace(/\s{1,}\)/,")");
+}
+
+window.vkbeautify = new vkbeautify();
+
+})();
+
+	</script>
+    <title>DailyChecksForServices</title>
+	<script>
+		// Manifest constants
+		let aoiId = -1;
+		let sld_id = -1;
+		let lastMethod = "";
+
+
+		
+
+
+	/*	const urls = (window.origin.toLowerCase().indexOf("localhost") == -1) ? 
+			{restPost: window.origin + 'https://sdmdataaccess.sc.egov.usda.gov/tabular/post.rest',
+			 wms: window.origin + 'https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms'} : 
+			{restPost: "http://SDMDataAccess.sc.egov.usda.gov/Tabular/SDMTabularService/post.rest",
+			 wms: "https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wms"};
+
+*/
+
+	const urls = 
+			{restPost: 'https://sdmdataaccess-dev.dev.sc.egov.usda.gov/tabular/post.rest',
+			 wms:  'https://SDMDataAccess-dev.dev.sc.egov.usda.gov/Spatial/SDM.wms'}  
+		;
+			 
+
+		const aoicoords = 
+			"{" +
+			" 'type': 'FeatureCollection'," +
+			" 'features': [" +
+			"  {" +
+			"   'type': 'Feature'," +
+			"   'geometry': {" +
+			"    'type': 'Polygon'," +
+			"    'coordinates': [[[-98.595,39.826],[-98.595,39.842],[-98.578,39.842],[-98.578,39.826],[-98.595,39.826]]]" +
+			"   }," +
+			"   'properties': {'partName': 'Sister' }" +
+			"  }," +
+			"  {" +
+			"   'type': 'Feature'," +
+			"   'geometry': {" +
+			"      'type': 'Polygon'," +
+			"      'coordinates': [[[-98.578,39.826],[-98.578,39.842],[-98.562,39.842],[-98.562,39.826],[-98.578,39.826]]]" +
+			"    }," +
+			"   'properties': {'partName': 'Brother' }" +
+			"  }" +
+			"  ]" +
+			"}";
+				
+		const boundaryColor = '#3498DB';
+		const sld =
+			`<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld" 
+			  xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" 
+			  xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+			  xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
+			 <NamedLayer> <Name>mapunitpoly</Name> <UserStyle> <FeatureTypeStyle>
+			 <Rule> <MinScaleDenominator>0.010000</MinScaleDenominator> <MaxScaleDenominator>250000.000000</MaxScaleDenominator>
+			 <PolygonSymbolizer> <Stroke>
+			 <CssParameter name="stroke">${boundaryColor}</CssParameter>
+			 <CssParameter name="stroke-width">0.75</CssParameter>
+			 </Stroke> </PolygonSymbolizer>
+			 <TextSymbolizer> <Label>musym</Label>
+			 <Font> <CssParameter name="font-family">arial</CssParameter>
+			 <CssParameter name="font-weight">bold</CssParameter>
+			 <CssParameter name="font-size">7.00</CssParameter> </Font>
+			 <LabelPlacement> <PointPlacement>
+			 <AnchorPoint> <AnchorPointX>0.5</AnchorPointX> <AnchorPointY>0.5</AnchorPointY> </AnchorPoint> </PointPlacement> </LabelPlacement>
+			 <Fill> <CssParameter name="fill">#ff8000</CssParameter> </Fill> 
+			 <Halo><Fill> <CssParameter name="fill">#000000</CssParameter> </Fill> </Halo>
+			 </TextSymbolizer> </Rule>
+			 </FeatureTypeStyle> </UserStyle> </NamedLayer> </StyledLayerDescriptor>`;		
+						
+		// WMS URL prefix: missing LAYERS, AOIID, SLD_ID and INTERPRESULTID parameters, append as required.
+		const wmsUrlPrefix = 
+				urls.wms +
+				'?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&srs=EPSG:3857' + 
+				'&bbox=-10975793,4840398,-10971723,4843303' + 
+				'&width=937&height=684&format=image/png&transparent=true';	
+		
+		// Utility functions
+		let request = obj => {
+			// Package an XMLHttpRequest request in a promise.
+			return new Promise((resolve, reject) => {
+				// from http://ccoenraets.github.io/es6-tutorial-data/promisify/
+				let xhr = new XMLHttpRequest();
+				xhr.open(obj.method || "POST", obj.url);
+				if (obj.headers) {
+					Object.keys(obj.headers).forEach(key => {
+						xhr.setRequestHeader(key, obj.headers[key]);
+					});
+				}	
+				xhr.onload = () => {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						resolve(xhr.response);
+					} else {
+						reject(xhr);
+					}
+				};
+				xhr.onerror = () => reject(xhr);		
+				xhr.send(obj.postData);
+			});
+		};
+
+		let setStatusMessage = messageText => {
+			// Replace status message with specified messageText
+			document.getElementById("status").innerHTML = `<h2>${messageText}</h2>`;
+		}
+
+		let appendLogMessage = messageText => {
+			// Append specified messageText to log
+			document.getElementById("log").innerHTML = 
+				document.getElementById("log").innerHTML + "<br/>" + messageText;		
+		}
+			
+		function loadImage(src) {
+			// from https://stackoverflow.com/questions/52059596/loading-an-image-on-web-browser-using-promise
+			return new Promise((resolve, reject) => {
+				const img = new Image();
+				img.addEventListener("load", () => resolve(img));
+				img.addEventListener("error", err => reject(err));
+				img.src = src;
+		  });
+		};	
+
+		// Individual task methods
+		// Each task absorbs any prior prior Promise-returned data then issues a new Promise request.
+		
+		let interpresultid = -1;
+		
+		// Group: Define AOI and SLD
+		
+		let createAoi = obj => {
+			// Request creation of an AOI, should yield an AOI
+			lastMethod = "createAoi";
+			var postData = {
+				service:"aoi",request:"create",aoicoords:aoicoords,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices createAoi")'
+			};
+			appendLogMessage("Creating AOI with aoicoords=" + aoicoords);
+			appendLogMessage("postdata=" + JSON.stringify(postData));
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let defineSLD = obj => {
+			// Consume aoiId, request registration of an SLD, should yield an sld_id
+			lastMethod = "defineSLD";
+			aoiId = JSON.parse(obj).id;
+			appendLogMessage("aoiId=" + aoiId);
+			var postData = {
+				service:"aoi",request:"registersld",sld:sld,aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices defineSLD")'
+			};
+			appendLogMessage("registering SLD, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 19 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchAoiMap = obj => {
+			// Consume sld_id, request map with AOI and SLD
+			lastMethod = "fetchAoiMap";
+			sld_id = JSON.parse(obj).sld_id;
+			appendLogMessage("sld_id=" + sld_id);
+			setStatusMessage("starting... (should complete in under 18 seconds)");
+			var url = wmsUrlPrefix + 
+				'&LAYERS=mapunitpoly,aoilabeled' + 
+				`&aoiid=${aoiId}&sld_id=${sld_id}` +
+				'&*auditdata*=(application="SDA" description="DailyChecksForServices fetchAoiMap")';
+			appendLogMessage("AOI map request URL:<br/>" + url);
+			return loadImage(url);
+		};
+
+		// Group: Interpretation method requests
+		
+		let getInterpCategories = obj => {
+			// Display AOI map, request Interpretation Use Categories
+			lastMethod = "getInterpCategories";
+			document.getElementById("mapWithAoi").innerHTML = "";
+			document.getElementById("mapWithAoi").appendChild(obj);			
+			appendLogMessage("AOI map retrieved");
+			appendLogMessage("<br/>Interpretations<br/>");
+			var postData = {
+				service:"interpretation",request:"getusecategories",
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpCategories")'
+			};	
+			appendLogMessage("fetching use categories, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 17 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpCatalog = obj  => {
+			// Display Interpretation use categories, request Interpretation Catalog
+			lastMethod = "getInterpCatalog";
+			appendLogMessage("Interpretation Use Categories: " + obj);
+			var postData = {
+				service:"interpretation",request:"getcatalog", aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpCatalog")'
+			};
+			appendLogMessage("fetching interpretation catalog, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 16 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpDescription = obj => {
+			// Display Interpretation catalog, request description for Soil Taxonomy Classification (471)
+			lastMethod = "getInterpDescription";
+			appendLogMessage("Interpretation catalog:<br/>" + obj);
+			var postData = {
+				service:"interpretation",request:"getdescription", attributekey:471,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpDescription")'
+			};
+			appendLogMessage("fetching description for Soil Taxonomy Classification (471), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 15 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpRuledata = obj => {
+			// Display Interp description, request rule data for Soil Taxonomy Classification (471)
+			lastMethod = "getInterpRuledata";
+			appendLogMessage("Interpretation description of Soil Taxonomy Classification (471):<br/>" + obj);
+			var postData = {
+				service:"interpretation",request:"getruledata", attributekey:471, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpRuledata")'
+			};
+			appendLogMessage("fetching rule data for Soil Taxonomy Classification (471), postdata=" + JSON.stringify(postData));	
+			setStatusMessage("starting... (should complete in under 14 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let getInterpRating = obj => {
+			// Display Interp rule data and request rating of Soil Taxonomy Classification (471)
+			lastMethod = "getInterpRating";
+			appendLogMessage("Interpretation short form data for Soil Taxonomy Classification (471):<br/>" + obj);
+			var postData = {
+				service:"interpretation",request:"getrating", attributekey:471, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getInterpRating")'
+			};
+			appendLogMessage("fetching rating results for Soil Taxonomy Classification (471), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 13 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchInterpMap = obj => {
+			// Consume interpresultid, request map with thematic result
+			lastMethod = "fetchInterpMap";
+			interpresultid = JSON.parse(obj).interpresultid;
+			appendLogMessage("interpresultid=" + interpresultid);		
+			var url = wmsUrlPrefix + 
+				'&LAYERS=mapunitpolythematic,aoilabeled' + 
+				`&INTERPRESULTID=${interpresultid}` +
+				'&*auditdata*=(application="SDA" description="DailyChecksForServices fetchInterpMap")';
+			appendLogMessage("thematic map request URL:<br/>" + url);
+			setStatusMessage("starting... (should complete in under 12 seconds)");
+			return loadImage(url);
+		};	
+		
+		let fetchInterpLegend = obj => {
+			// Display Interpretation map,  request thematic legend data
+			lastMethod = "fetchInterpLegend";
+			document.getElementById("mapWithRating").innerHTML = "";
+			document.getElementById("mapWithRating").appendChild(obj);			
+			appendLogMessage("Interpretation map retrieved");
+			
+			// Retrieve legend data
+			var query = `~declareint(@AoiSoilThematicMapId)~\nselect @AoiSoilThematicMapId = ${interpresultid};select * from SDA_Get_AoiSoilThematicMapLegend_By_AoiSoilThematicMapId (@AoiSoilThematicMapId);`;
+			appendLogMessage("<br>Retrieving TM legend data</br>");
+			var postData = {service:"query",query: query, format:'json',
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices fetchInterpLegend")'
+			};
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			})
+		}
+		
+		
+		// Group: Report method requests
+		
+		let getReportCategories = obj => {
+			// retrieve thematic map legend, request Report Use Categories
+			appendLogMessage(`<br>${obj}</br>`)
+
+			appendLogMessage("<br/>Reports<br/>");
+			var postData = {
+				service:"report",request:"getusecategories",
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportCategories")'
+			};
+			appendLogMessage("fetching use categories, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 11 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+	
+		let getReportCatalog = obj  => {
+			// Display Report use categories, request Report Catalog
+			lastMethod = "getReportCatalog";
+			appendLogMessage("Report Use Categories: " + obj);
+			var postData = {
+				service:"report",request:"getcatalog", aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportCatalog")'
+			};
+			appendLogMessage("fetching report catalog, postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 10 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};		
+		
+		let getReportDescription = obj => {
+			// Display Report catalog, request description for Taxonomic Classification of the Soils (33)
+			lastMethod = "getReportDescription";
+			appendLogMessage("Report catalog:<br/>" + obj);
+			var postData = {
+				service:"report",request:"getdescription", reportid:33,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportDescription")'
+			};
+			appendLogMessage("fetching description for Taxonomic Classification of the Soils (33), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 9 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let getReportdata = obj => {
+			// Display Report description, request report data for Taxonomic Classification of the Soils (33)
+			lastMethod = "getReportdata";
+			appendLogMessage("Report description of Taxonomic Classification of the Soils (33):<br/>" + obj);
+			var postData = {
+				service:"report",request:"getreportdata", reportid:33, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReportdata")'
+			};
+			appendLogMessage("fetching report data for Taxonomic Classification of the Soils (33), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 8 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+
+		let getReport = obj => {
+			// Display Report data and request report of Taxonomic Classification of the Soils (33)
+			lastMethod = "getReport";
+			appendLogMessage("Report short form data for Taxonomic Classification of the Soils (33):<br/>" + obj);
+			var postData = {
+				service:"report",request:"getreport", reportid:33, aoiId:aoiId,
+				'*auditdata*': '(application="SDA" description="DailyChecksForServices getReport")'
+			};
+			appendLogMessage("fetching report of Taxonomic Classification of the Soils (33), postdata=" + JSON.stringify(postData));
+			setStatusMessage("starting... (should complete in under 7 seconds)");
+			return request({
+				url:urls.restPost, method:"POST", 
+				headers: {"Content-Type":"application/json"},
+				postData:JSON.stringify(postData)
+			});
+		};
+		
+		let fetchReport = obj => {
+			// Display report content
+			lastMethod = "fetchReport";
+			var vkb0 = vkbeautify.xml(obj);
+			var vkb1 = vkb0.replace(/[<]/g, '&lt;');
+			var rpt = vkb1.replace(/[>]/g, '&gt;');
+			setStatusMessage("starting... (should complete in under 6 seconds)");
+			document.getElementById('report').innerHTML='<pre>' + rpt + '</pre>';
+			return true;			
+		};
+	
+		// Once the body of the DOM is loaded we start here...
+		function alpha() {
+			// var statusDiv = document.getElementById("status");
+			if (!Promise) {
+				// Promise is not defined
+				return;
+			}	
+			setStatusMessage("starting... (should complete in under 20 seconds)");
+
+			// The chain of Promises
+			createAoi().
+			then(defineSLD).
+			then(fetchAoiMap).
+			then(getInterpCategories).
+			then(getInterpCatalog).
+			then(getInterpDescription).
+			then(getInterpRuledata).
+			then(getInterpRating).
+			then(fetchInterpMap).
+			then(fetchInterpLegend).
+			then(getReportCategories).
+			then(getReportCatalog).
+			then(getReportDescription).
+			then(getReportdata).
+			then(getReport).
+			then(fetchReport).
+			then(data => {
+				appendLogMessage("final response: " + data);
+				setStatusMessage('<h2>Test successful</h2>');
+			}).
+			catch(error => {
+				setStatusMessage(`<h2>Test failed, lastMethod=${lastMethod} error.statusText=${error.statusText}, error.status=${error.status}</h2>`);
+				return;
+			});			
+		}
+	</script>
+
+</head>
+<body onload="alpha();">
+	<div id="status"><h2></h2><h2>Test successful</h2></div>
+	<h3>AOI map with SLD:</h3>
+	<div id="mapWithAoi"><img src="./rev00_with_description_files/SDM.wms"></div>
+	<h3>Interpretation map:</h3>
+	<div id="mapWithRating"><img src="./rev00_with_description_files/SDM(1).wms"></div>
+	<h3>Report</h3>
+	<div id="report"><pre>&lt;section label="SoilReport"&gt;
+    &lt;title&gt;Taxonomic Classification of the Soils&lt;/title&gt;
+    &lt;para role="headnote"&gt;[An asterisk by the soil name indicates a taxadjunct to the series]&lt;/para&gt;
+    &lt;table&gt;
+        &lt;title&gt;Smith County, Kansas&lt;/title&gt;
+        &lt;col width="1*"/&gt;
+        &lt;col width="2*"/&gt;
+        &lt;thead&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Soil name&lt;/td&gt;
+                &lt;td&gt;Family or higher taxonomic classification&lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Armo&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-loamy, mixed, mesic Entic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Armo&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-loamy, mixed, superactive, mesic Entic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Harney&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine, smectitic, mesic Typic Argiustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Holdrege&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-silty, mixed, superactive, mesic Typic Argiustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Nibson&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Loamy, carbonatic, mesic, shallow Entic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Nuckolls&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-silty, mixed, superactive, mesic Typic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Roxbury&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-silty, mixed, superactive, mesic Cumulic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Uly&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-silty, mixed, superactive, mesic Typic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr class="mapunit"&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Wakeen&lt;/para&gt;
+                &lt;/td&gt;
+                &lt;td&gt;
+                    &lt;para&gt;Fine-silty, carbonatic, mesic Entic Haplustolls&lt;/para&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/tbody&gt;
+    &lt;/table&gt;
+&lt;/section&gt;
+</pre></div>
+	<h3>Log</h3>
+	<div id="log"><br>Creating AOI with aoicoords={ 'type': 'FeatureCollection', 'features': [  {   'type': 'Feature',   'geometry': {    'type': 'Polygon',    'coordinates': [[[-98.595,39.826],[-98.595,39.842],[-98.578,39.842],[-98.578,39.826],[-98.595,39.826]]]   },   'properties': {'partName': 'Sister' }  },  {   'type': 'Feature',   'geometry': {      'type': 'Polygon',      'coordinates': [[[-98.578,39.826],[-98.578,39.842],[-98.562,39.842],[-98.562,39.826],[-98.578,39.826]]]    },   'properties': {'partName': 'Brother' }  }  ]}<br>postdata={"service":"aoi","request":"create","aoicoords":"{ 'type': 'FeatureCollection', 'features': [  {   'type': 'Feature',   'geometry': {    'type': 'Polygon',    'coordinates': [[[-98.595,39.826],[-98.595,39.842],[-98.578,39.842],[-98.578,39.826],[-98.595,39.826]]]   },   'properties': {'partName': 'Sister' }  },  {   'type': 'Feature',   'geometry': {      'type': 'Polygon',      'coordinates': [[[-98.578,39.826],[-98.578,39.842],[-98.562,39.842],[-98.562,39.826],[-98.578,39.826]]]    },   'properties': {'partName': 'Brother' }  }  ]}","*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices createAoi\")"}<br>aoiId=19950<br>registering SLD, postdata={"service":"aoi","request":"registersld","sld":"<styledlayerdescriptor version="\&quot;1.0.0\&quot;" xmlns="\&quot;http://www.opengis.net/sld\&quot;" \n\t\t\t="" xmlns:gml="\&quot;http://www.opengis.net/gml\&quot;" xmlns:ogc="\&quot;http://www.opengis.net/ogc\&quot;" xmlns:xlink="\&quot;http://www.w3.org/1999/xlink\&quot;" xmlns:xsi="\&quot;http://www.w3.org/2001/XMLSchema-instance\&quot;" xsi:schemalocation="\&quot;http://www.opengis.net/sld" http:="" schemas.opengis.net="" sld="" 1.0.0="" styledlayerdescriptor.xsd\"="">\n\t\t\t <namedlayer> <name>mapunitpoly</name> <userstyle> <featuretypestyle>\n\t\t\t <rule> <minscaledenominator>0.010000</minscaledenominator> <maxscaledenominator>250000.000000</maxscaledenominator>\n\t\t\t <polygonsymbolizer> <stroke>\n\t\t\t <cssparameter name="\&quot;stroke\&quot;">#3498DB</cssparameter>\n\t\t\t <cssparameter name="\&quot;stroke-width\&quot;">0.75</cssparameter>\n\t\t\t </stroke> </polygonsymbolizer>\n\t\t\t <textsymbolizer> <label>musym</label>\n\t\t\t <font> <cssparameter name="\&quot;font-family\&quot;">arial</cssparameter>\n\t\t\t <cssparameter name="\&quot;font-weight\&quot;">bold</cssparameter>\n\t\t\t <cssparameter name="\&quot;font-size\&quot;">7.00</cssparameter> </font>\n\t\t\t <labelplacement> <pointplacement>\n\t\t\t <anchorpoint> <anchorpointx>0.5</anchorpointx> <anchorpointy>0.5</anchorpointy> </anchorpoint> </pointplacement> </labelplacement>\n\t\t\t <fill> <cssparameter name="\&quot;fill\&quot;">#ff8000</cssparameter> </fill> \n\t\t\t <halo><fill> <cssparameter name="\&quot;fill\&quot;">#000000</cssparameter> </fill> </halo>\n\t\t\t </textsymbolizer> </rule>\n\t\t\t </featuretypestyle> </userstyle> </namedlayer> </styledlayerdescriptor>","aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices defineSLD\")"}<br>sld_id=118087<br>AOI map request URL:<br>https://SDMDataAccess-dev.dev.sc.egov.usda.gov/Spatial/SDM.wms?SERVICE=WMS&amp;VERSION=1.1.1&amp;REQUEST=GetMap&amp;srs=EPSG:3857&amp;bbox=-10975793,4840398,-10971723,4843303&amp;width=937&amp;height=684&amp;format=image/png&amp;transparent=true&amp;LAYERS=mapunitpoly,aoilabeled&amp;aoiid=19950&amp;sld_id=118087&amp;*auditdata*=(application="SDA" description="DailyChecksForServices fetchAoiMap")<br>AOI map retrieved<br><br>Interpretations<br><br>fetching use categories, postdata={"service":"interpretation","request":"getusecategories","*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getInterpCategories\")"}<br>Interpretation Use Categories: [{"usecategoryid":0, "usecategoryname":"All Uses"}
+,{"usecategoryid":4, "usecategoryname":"Cropland"}
+,{"usecategoryid":6, "usecategoryname":"Forestland"}
+,{"usecategoryid":7, "usecategoryname":"Horticulture"}
+,{"usecategoryid":9, "usecategoryname":"Hayland/Pastureland"}
+,{"usecategoryid":10, "usecategoryname":"Rangeland"}
+,{"usecategoryid":11, "usecategoryname":"Recreation"}
+,{"usecategoryid":16, "usecategoryname":"Urban Uses"}
+]
+<br>fetching interpretation catalog, postdata={"service":"interpretation","request":"getcatalog","aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getInterpCatalog\")"}<br>Interpretation catalog:<br>{"tables":[{"tablename":"properties", "folders":
+[
+	{"foldername":"Soil Chemical Properties"
+		,"attributes":[
+			{"attributename":"Calcium Carbonate (CaCO3)","attributekey":"98"}
+			,{"attributename":"Cation-Exchange Capacity (CEC-7)","attributekey":"28"}
+			,{"attributename":"Effective Cation-Exchange Capacity (ECEC)","attributekey":"2"}
+			,{"attributename":"Electrical Conductivity (EC)","attributekey":"59"}
+			,{"attributename":"Gypsum","attributekey":"47"}
+			,{"attributename":"pH (1 to 1 Water)","attributekey":"11"}
+			,{"attributename":"Sodium Adsorption Ratio (SAR)","attributekey":"68"}
+	]},
+	{"foldername":"Soil Erosion Factors"
+		,"attributes":[
+			{"attributename":"K Factor, Rock Free","attributekey":"19"}
+			,{"attributename":"K Factor, Whole Soil","attributekey":"51"}
+			,{"attributename":"T Factor","attributekey":"75"}
+			,{"attributename":"Wind Erodibility Group","attributekey":"71"}
+			,{"attributename":"Wind Erodibility Index","attributekey":"4"}
+	]},
+	{"foldername":"Soil Health Properties"
+		,"attributes":[
+			{"attributename":"Soil Health - Available Water Capacity","attributekey":"2755"}
+			,{"attributename":"Soil Health - Bulk Density, One-Third Bar","attributekey":"2759"}
+			,{"attributename":"Soil Health - Organic Matter","attributekey":"2647"}
+			,{"attributename":"Soil Health - Sodium Adsorption Ratio (SAR)","attributekey":"2756"}
+			,{"attributename":"Soil Health - Soil Reaction (pH)","attributekey":"2757"}
+			,{"attributename":"Soil Health - Surface Texture","attributekey":"2758"}
+	]},
+	{"foldername":"Soil Physical Properties"
+		,"attributes":[
+			{"attributename":"Available Water Capacity","attributekey":"41"}
+			,{"attributename":"Available Water Storage","attributekey":"101"}
+			,{"attributename":"Available Water Supply, 0 to 100 cm","attributekey":"66"}
+			,{"attributename":"Available Water Supply, 0 to 150 cm","attributekey":"7"}
+			,{"attributename":"Available Water Supply, 0 to 25 cm","attributekey":"97"}
+			,{"attributename":"Available Water Supply, 0 to 50 cm","attributekey":"9"}
+			,{"attributename":"Bulk Density, One-Third Bar","attributekey":"65"}
+			,{"attributename":"Linear Extensibility","attributekey":"15"}
+			,{"attributename":"Liquid Limit","attributekey":"378"}
+			,{"attributename":"Organic Matter","attributekey":"37"}
+			,{"attributename":"Percent Clay","attributekey":"6"}
+			,{"attributename":"Percent Sand","attributekey":"311"}
+			,{"attributename":"Percent Silt","attributekey":"312"}
+			,{"attributename":"Plasticity Index","attributekey":"379"}
+			,{"attributename":"Saturated Hydraulic Conductivity (Ksat)","attributekey":"42"}
+			,{"attributename":"Saturated Hydraulic Conductivity (Ksat), Standard Classes","attributekey":"61"}
+			,{"attributename":"Surface Texture","attributekey":"308"}
+			,{"attributename":"Water Content, 15 Bar","attributekey":"366"}
+			,{"attributename":"Water Content, One-Third Bar","attributekey":"365"}
+	]},
+	{"foldername":"Soil Qualities and Features"
+		,"attributes":[
+			{"attributename":"AASHTO Group Classification (Surface)","attributekey":"380"}
+			,{"attributename":"AASHTO Group Index","attributekey":"2746"}
+			,{"attributename":"Depth to a Selected Soil Restrictive Layer","attributekey":"50"}
+			,{"attributename":"Depth to Any Soil Restrictive Layer","attributekey":"309"}
+			,{"attributename":"Drainage Class","attributekey":"44"}
+			,{"attributename":"Frost Action","attributekey":"52"}
+			,{"attributename":"Frost-Free Days","attributekey":"86"}
+			,{"attributename":"Hydrologic Soil Group","attributekey":"73"}
+			,{"attributename":"Map Unit Name","attributekey":"94"}
+			,{"attributename":"Parent Material Name","attributekey":"384"}
+			,{"attributename":"Representative Slope","attributekey":"96"}
+			,{"attributename":"Soil Slippage Potential","attributekey":"2744"}
+			,{"attributename":"Unified Soil Classification (Surface)","attributekey":"381"}
+	]},
+	{"foldername":"Water Features"
+		,"attributes":[
+			{"attributename":"Depth to Water Table","attributekey":"82"}
+			,{"attributename":"Flooding Frequency Class","attributekey":"12"}
+			,{"attributename":"Ponding Frequency Class","attributekey":"13"}
+]}
+]},
+{"tablename":"interpretations", "folders":
+[
+	{"foldername":"Building Site Development"
+		,"attributes":[
+			{"attributename":"Corrosion of Concrete","attributekey":"95"}
+			,{"attributename":"Corrosion of Steel","attributekey":"46"}
+			,{"attributename":"Dwellings With Basements","attributekey":"80"}
+			,{"attributename":"Dwellings Without Basements","attributekey":"69"}
+			,{"attributename":"Lawns, Landscaping, and Golf Fairways","attributekey":"40"}
+			,{"attributename":"Local Roads and Streets","attributekey":"93"}
+			,{"attributename":"Shallow Excavations","attributekey":"55"}
+			,{"attributename":"Small Commercial Buildings","attributekey":"5"}
+			,{"attributename":"Unpaved Local Roads and Streets","attributekey":"621"}
+	]},
+	{"foldername":"Construction Materials"
+		,"attributes":[
+			{"attributename":"Gravel Source","attributekey":"22"}
+			,{"attributename":"Roadfill Source","attributekey":"21"}
+			,{"attributename":"Sand Source","attributekey":"79"}
+			,{"attributename":"Source of Reclamation Material","attributekey":"20"}
+			,{"attributename":"Topsoil Source","attributekey":"43"}
+	]},
+	{"foldername":"Disaster Recovery Planning"
+		,"attributes":[
+			{"attributename":"Catastrophic Event, Large Animal Mortality, Burial","attributekey":"2761"}
+			,{"attributename":"Catastrophic Event, Large Animal Mortality, Incinerate","attributekey":"2760"}
+			,{"attributename":"Catastrophic Mortality, Large Animal Disposal, Pit","attributekey":"232"}
+			,{"attributename":"Catastrophic Mortality, Large Animal Disposal, Trench","attributekey":"233"}
+			,{"attributename":"Clay Liner Material Source","attributekey":"278"}
+			,{"attributename":"Composting Facility - Subsurface","attributekey":"276"}
+			,{"attributename":"Composting Facility - Surface","attributekey":"277"}
+			,{"attributename":"Composting Medium and Final Cover","attributekey":"279"}
+			,{"attributename":"Emergency Disposal by Shallow Burial","attributekey":"2797"}
+			,{"attributename":"Rubble and Debris Disposal, Large-Scale Event","attributekey":"275"}
+	]},
+	{"foldername":"Land Classifications"
+		,"attributes":[
+			{"attributename":"Conservation Tree and Shrub Group","attributekey":"191"}
+			,{"attributename":"Ecological Classification ID","attributekey":"60"}
+			,{"attributename":"Ecological Classification Name","attributekey":"31"}
+			,{"attributename":"Farmland Classification","attributekey":"288"}
+			,{"attributename":"Hydric Rating by Map Unit","attributekey":"16"}
+			,{"attributename":"Irrigated Capability Class","attributekey":"88"}
+			,{"attributename":"Irrigated Capability Subclass","attributekey":"32"}
+			,{"attributename":"National Commodity Crop Productivity Index","attributekey":"2685"}
+			,{"attributename":"NH Forest Soil Group","attributekey":"523"}
+			,{"attributename":"Nonirrigated Capability Class","attributekey":"74"}
+			,{"attributename":"Nonirrigated Capability Subclass","attributekey":"83"}
+			,{"attributename":"NRCS Ecological Site ID","attributekey":"2810"}
+			,{"attributename":"NRCS Ecological Site Name","attributekey":"2811"}
+			,{"attributename":"Order of Soil Survey","attributekey":"2729"}
+			,{"attributename":"Soil Moisture Class","attributekey":"2790"}
+			,{"attributename":"Soil Moisture Subclass","attributekey":"2791"}
+			,{"attributename":"Soil Taxonomy Classification","attributekey":"471"}
+			,{"attributename":"Soil Temperature Regime","attributekey":"2789"}
+	]},
+	{"foldername":"Land Management"
+		,"attributes":[
+			{"attributename":"Construction Limitations for Haul Roads and Log Landings","attributekey":"26"}
+			,{"attributename":"Erosion Hazard (Off-Road, Off-Trail)","attributekey":"85"}
+			,{"attributename":"Erosion Hazard (Road, Trail)","attributekey":"92"}
+			,{"attributename":"Fencing, Post Depth 24 Inches or Less","attributekey":"630"}
+			,{"attributename":"Fencing, Post Depth 36 Inches or Less","attributekey":"631"}
+			,{"attributename":"Ground Penetrating Radar Penetration","attributekey":"632"}
+			,{"attributename":"Harvest Equipment Operability","attributekey":"39"}
+			,{"attributename":"Mechanical Site Preparation (Deep)","attributekey":"45"}
+			,{"attributename":"Mechanical Site Preparation (Surface)","attributekey":"36"}
+			,{"attributename":"Potential for Damage by Fire","attributekey":"10"}
+			,{"attributename":"Potential for Seedling Mortality","attributekey":"56"}
+			,{"attributename":"Soil Rutting Hazard","attributekey":"8"}
+			,{"attributename":"Suitability for Hand Planting","attributekey":"35"}
+			,{"attributename":"Suitability for Log Landings","attributekey":"63"}
+			,{"attributename":"Suitability for Mechanical Planting","attributekey":"87"}
+			,{"attributename":"Suitability for Roads (Natural Surface)","attributekey":"34"}
+			,{"attributename":"USFS - Road Construction and Maintenance (Natural Surface)","attributekey":"2748"}
+			,{"attributename":"Windthrow Hazard","attributekey":"2770"}
+	]},
+	{"foldername":"Military Operations"
+		,"attributes":[
+			{"attributename":"Bivouac Areas","attributekey":"106"}
+			,{"attributename":"Excavations for Crew-Served Weapon Fighting Positions","attributekey":"107"}
+			,{"attributename":"Excavations for Individual Fighting Positions","attributekey":"108"}
+			,{"attributename":"Excavations for Vehicle Fighting Positions","attributekey":"109"}
+			,{"attributename":"Helicopter Landing Zones","attributekey":"110"}
+			,{"attributename":"Vehicle Trafficability, Type 1, 1 Pass, Wet Season","attributekey":"111"}
+			,{"attributename":"Vehicle Trafficability, Type 1, 50 Passes, Wet Season","attributekey":"112"}
+			,{"attributename":"Vehicle Trafficability, Type 1, Dry Season","attributekey":"113"}
+			,{"attributename":"Vehicle Trafficability, Type 2, 1 Pass, Wet Season","attributekey":"114"}
+			,{"attributename":"Vehicle Trafficability, Type 2, 50 Passes, Wet Season","attributekey":"115"}
+			,{"attributename":"Vehicle Trafficability, Type 2, Dry Season","attributekey":"116"}
+			,{"attributename":"Vehicle Trafficability, Type 3, 1 Pass, Wet Season","attributekey":"117"}
+			,{"attributename":"Vehicle Trafficability, Type 3, 50 Passes, Wet Season","attributekey":"118"}
+			,{"attributename":"Vehicle Trafficability, Type 3, Dry Season","attributekey":"119"}
+			,{"attributename":"Vehicle Trafficability, Type 4, 1 Pass, Wet Season","attributekey":"120"}
+			,{"attributename":"Vehicle Trafficability, Type 4, 50 Passes, Wet Season","attributekey":"121"}
+			,{"attributename":"Vehicle Trafficability, Type 4, Dry Season","attributekey":"122"}
+			,{"attributename":"Vehicle Trafficability, Type 5, 1 Pass, Wet Season","attributekey":"123"}
+			,{"attributename":"Vehicle Trafficability, Type 5, 50 Passes, Wet Season","attributekey":"124"}
+			,{"attributename":"Vehicle Trafficability, Type 5, Dry Season","attributekey":"125"}
+			,{"attributename":"Vehicle Trafficability, Type 6, 1 Pass, Wet Season","attributekey":"126"}
+			,{"attributename":"Vehicle Trafficability, Type 6, 50 Passes, Wet Season","attributekey":"127"}
+			,{"attributename":"Vehicle Trafficability, Type 6, Dry Season","attributekey":"128"}
+			,{"attributename":"Vehicle Trafficability, Type 7, 1 Pass, Wet Season","attributekey":"129"}
+			,{"attributename":"Vehicle Trafficability, Type 7, 50 Passes, Wet Season","attributekey":"130"}
+			,{"attributename":"Vehicle Trafficability, Type 7, Dry Season","attributekey":"131"}
+	]},
+	{"foldername":"Recreational Development"
+		,"attributes":[
+			{"attributename":"Camp Areas","attributekey":"3"}
+			,{"attributename":"Off-Road Motorcycle Trails","attributekey":"48"}
+			,{"attributename":"Paths and Trails","attributekey":"1"}
+			,{"attributename":"Picnic Areas","attributekey":"27"}
+			,{"attributename":"Playgrounds","attributekey":"38"}
+	]},
+	{"foldername":"Sanitary Facilities"
+		,"attributes":[
+			{"attributename":"Daily Cover for Landfill","attributekey":"103"}
+			,{"attributename":"Sanitary Landfill (Area)","attributekey":"62"}
+			,{"attributename":"Sanitary Landfill (Trench)","attributekey":"90"}
+			,{"attributename":"Septic Tank Absorption Fields","attributekey":"18"}
+			,{"attributename":"Sewage Lagoons","attributekey":"84"}
+			,{"attributename":"Soil-Based Residential Wastewater Disposal Ratings (VT)","attributekey":"526"}
+	]},
+	{"foldername":"Soil Health"
+		,"attributes":[
+			{"attributename":"Agricultural Organic Soil Subsidence","attributekey":"2753"}
+			,{"attributename":"Farm and Garden Composting Facility - Surface","attributekey":"2712"}
+			,{"attributename":"Fragile Soil Index","attributekey":"2682"}
+			,{"attributename":"Organic Matter Depletion","attributekey":"2752"}
+			,{"attributename":"Soil Surface Sealing","attributekey":"2763"}
+			,{"attributename":"Soil Susceptibility to Compaction","attributekey":"2764"}
+			,{"attributename":"Suitability for Aerobic Soil Organisms","attributekey":"2751"}
+			,{"attributename":"Surface Salt Concentration","attributekey":"2754"}
+	]},
+	{"foldername":"Vegetative Productivity"
+		,"attributes":[
+			{"attributename":"Crop Productivity Index","attributekey":"190"}
+			,{"attributename":"Forest Productivity (Cubic Feet per Acre per Year)","attributekey":"77"}
+			,{"attributename":"Forest Productivity (Tree Site Index)","attributekey":"49"}
+			,{"attributename":"Iowa Corn Suitability Rating CSR2 (IA)","attributekey":"189"}
+			,{"attributename":"Minnesota Crop Productivity Index","attributekey":"2660"}
+			,{"attributename":"Range Production (Favorable Year)","attributekey":"14"}
+			,{"attributename":"Range Production (Normal Year)","attributekey":"81"}
+			,{"attributename":"Range Production (Unfavorable Year)","attributekey":"89"}
+			,{"attributename":"Yields of Irrigated Crops (Component)","attributekey":"58"}
+			,{"attributename":"Yields of Irrigated Crops (Map Unit)","attributekey":"99"}
+			,{"attributename":"Yields of Non-Irrigated Crops (Component)","attributekey":"25"}
+			,{"attributename":"Yields of Non-Irrigated Crops (Map Unit)","attributekey":"100"}
+	]},
+	{"foldername":"Waste Management"
+		,"attributes":[
+			{"attributename":"Disposal of Wastewater by Irrigation","attributekey":"78"}
+			,{"attributename":"Disposal of Wastewater by Rapid Infiltration","attributekey":"57"}
+			,{"attributename":"Land Application of Municipal Sewage Sludge","attributekey":"17"}
+			,{"attributename":"Manure and Food-Processing Waste","attributekey":"29"}
+			,{"attributename":"Overland Flow Treatment of Wastewater","attributekey":"64"}
+			,{"attributename":"Slow Rate Treatment of Wastewater","attributekey":"24"}
+	]},
+	{"foldername":"Water Management"
+		,"attributes":[
+			{"attributename":"Embankments, Dikes, and Levees","attributekey":"30"}
+			,{"attributename":"Excavated Ponds (Aquifer-Fed)","attributekey":"72"}
+			,{"attributename":"Irrigation, General","attributekey":"386"}
+			,{"attributename":"Irrigation, Micro (Above Ground)","attributekey":"387"}
+			,{"attributename":"Irrigation, Micro (Subsurface Drip)","attributekey":"388"}
+			,{"attributename":"Irrigation, Sprinkler (Close Spaced Drops)","attributekey":"389"}
+			,{"attributename":"Irrigation, Sprinkler (General)","attributekey":"390"}
+			,{"attributename":"Irrigation, Surface (Graded)","attributekey":"391"}
+			,{"attributename":"Irrigation, Surface (Level)","attributekey":"392"}
+			,{"attributename":"Pond Reservoir Areas","attributekey":"33"}
+			,{"attributename":"Subsurface Water Management, Outflow Quality","attributekey":"633"}
+			,{"attributename":"Subsurface Water Management, System Installation","attributekey":"634"}
+			,{"attributename":"Subsurface Water Management, System Performance","attributekey":"636"}
+			,{"attributename":"Surface Water Management, System","attributekey":"635"}
+]}
+]}]}
+<br>fetching description for Soil Taxonomy Classification (471), postdata={"service":"interpretation","request":"getdescription","attributekey":471,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getInterpDescription\")"}<br>Interpretation description of Soil Taxonomy Classification (471):<br>{"description":"This rating presents the taxonomic classification based on Soil Taxonomy.\r\n\r\nThe system of soil classification used by the National Cooperative Soil Survey has six categories (Soil Survey Staff, 1999 and 2003). Beginning with the broadest, these categories are the order, suborder, great group, subgroup, family, and series. Classification is based on soil properties observed in the field or inferred from those observations or from laboratory measurements. This table shows the classification of the soils in the survey area. The categories are defined in the following paragraphs.\r\n\r\nORDER. Twelve soil orders are recognized. The differences among orders reflect the dominant soil-forming processes and the degree of soil formation. Each order is identified by a word ending in sol. An example is Alfisols.\r\n\r\nSUBORDER. Each order is divided into suborders primarily on the basis of properties that influence soil genesis and are important to plant growth or properties that reflect the most important variables within the orders. The last syllable in the name of a suborder indicates the order. An example is Udalfs (Ud, meaning humid, plus alfs, from Alfisols).\r\n\r\nGREAT GROUP. Each suborder is divided into great groups on the basis of close similarities in kind, arrangement, and degree of development of pedogenic horizons; soil moisture and temperature regimes; type of saturation; and base status. Each great group is identified by the name of a suborder and by a prefix that indicates a property of the soil. An example is Hapludalfs (Hapl, meaning minimal horizonation, plus udalfs, the suborder of the Alfisols that has a udic moisture regime).\r\n\r\nSUBGROUP. Each great group has a typic subgroup. Other subgroups are intergrades or extragrades. The typic subgroup is the central concept of the great group; it is not necessarily the most extensive. Intergrades are transitions to other orders, suborders, or great groups. Extragrades have some properties that are not representative of the great group but do not indicate transitions to any other taxonomic class. Each subgroup is identified by one or more adjectives preceding the name of the great group. The adjective Typic identifies the subgroup that typifies the great group. An example is Typic Hapludalfs.\r\n\r\nFAMILY. Families are established within a subgroup on the basis of physical and chemical properties and other characteristics that affect management. Generally, the properties are those of horizons below plow depth where there is much biological activity. Among the properties and characteristics considered are particle-size class, mineralogy class, cation-exchange activity class, soil temperature regime, soil depth, and reaction class. A family name consists of the name of a subgroup preceded by terms that indicate soil properties. An example is fine-loamy, mixed, active, mesic Typic Hapludalfs.\r\n\r\nSERIES. The series consists of soils within a family that have horizons similar in color, texture, structure, reaction, consistence, mineral and chemical composition, and arrangement in the profile.\r\n\r\nReferences:\r\nSoil Survey Staff. 1999. Soil taxonomy: A basic system of soil classification for making and interpreting soil surveys. 2nd edition. Natural Resources Conservation Service. U.S. Department of Agriculture Handbook 436.\r\n\r\nSoil Survey Staff. 2006. Keys to soil taxonomy. 10th edition. U.S. Department of Agriculture, Natural Resources Conservation Service. (The soils in a given survey area may have been classified according to earlier editions of this publication.)"}<br>fetching rule data for Soil Taxonomy Classification (471), postdata={"service":"interpretation","request":"getruledata","attributekey":471,"aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getInterpRuledata\")"}<br>Interpretation short form data for Soil Taxonomy Classification (471):<br>{"ComponentPercentCutoff":"","aoiid":"19950","ruleid":"471","AggregationMethod":"Dominant Condition","TiebreakRule":"-1"}<br>fetching rating results for Soil Taxonomy Classification (471), postdata={"service":"interpretation","request":"getrating","attributekey":471,"aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getInterpRating\")"}<br>interpresultid=1529<br>thematic map request URL:<br>https://SDMDataAccess-dev.dev.sc.egov.usda.gov/Spatial/SDM.wms?SERVICE=WMS&amp;VERSION=1.1.1&amp;REQUEST=GetMap&amp;srs=EPSG:3857&amp;bbox=-10975793,4840398,-10971723,4843303&amp;width=937&amp;height=684&amp;format=image/png&amp;transparent=true&amp;LAYERS=mapunitpolythematic,aoilabeled&amp;INTERPRESULTID=1529&amp;*auditdata*=(application="SDA" description="DailyChecksForServices fetchInterpMap")<br>Interpretation map retrieved<br><br>Retrieving TM legend data<br><br><br>{"Table":[["19950","6445","1529","Fine, smectitic, mesic Typic Argiustolls","#5fb180"],["19950","6446","1529","Fine-loamy, mixed, mesic Entic Haplustolls","#8c985c"],["19950","6447","1529","Fine-silty, carbonatic, mesic Entic Haplustolls","#fc5656"],["19950","6448","1529","Fine-silty, mixed, superactive, mesic Cumulic Haplustolls","#608aca"],["19950","6449","1529","Fine-silty, mixed, superactive, mesic Typic Argiustolls","#805555"],["19950","6450","1529","Fine-silty, mixed, superactive, mesic Typic Haplustolls","#c85ce3"],["19950","6451","1529","Not rated or not available","#dcdcdc"]]}<br><br><br>Reports<br><br>fetching use categories, postdata={"service":"report","request":"getusecategories","*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getReportCategories\")"}<br>Report Use Categories: [{"usecategoryid":0, "usecategoryname":"All Uses"}
+,{"usecategoryid":4, "usecategoryname":"Cropland"}
+,{"usecategoryid":6, "usecategoryname":"Forestland"}
+,{"usecategoryid":7, "usecategoryname":"Horticulture"}
+,{"usecategoryid":9, "usecategoryname":"Hayland/Pastureland"}
+,{"usecategoryid":10, "usecategoryname":"Rangeland"}
+,{"usecategoryid":11, "usecategoryname":"Recreation"}
+,{"usecategoryid":16, "usecategoryname":"Urban Uses"}
+]
+<br>fetching report catalog, postdata={"service":"report","request":"getcatalog","aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getReportCatalog\")"}<br>Report catalog:<br>{"tables":[{"tablename":"reports", "folders":
+[
+	{"foldername":"AOI Inventory"
+		,"reports":[
+			{"reportname":"Component Description (Nontechnical)","reportid":"461"}
+			,{"reportname":"Component Legend","reportid":"40"}
+			,{"reportname":"Component Text Descriptions","reportid":"534"}
+			,{"reportname":"Descripción de la Unidad de Mapa","reportid":"352"}
+			,{"reportname":"Descripción de la Unidad de Mapa (Breve, Generada)","reportid":"353"}
+			,{"reportname":"Legend","reportid":"479"}
+			,{"reportname":"Map Unit Description","reportid":"666"}
+			,{"reportname":"Map Unit Description (Brief)","reportid":"38"}
+			,{"reportname":"Map Unit Description (Brief, Generated)","reportid":"119"}
+			,{"reportname":"Selected Soil Interpretation Description and Criteria Summary","reportid":"49"}
+			,{"reportname":"Selected Soil Interpretations","reportid":"39"}
+			,{"reportname":"Survey Area Data Summary","reportid":"48"}
+			,{"reportname":"Survey Area Map Unit Symbols and Names","reportid":"437"}
+			,{"reportname":"Water Quality Index (WQIag) Soil Factors","reportid":"486"}
+	]},
+	{"foldername":"Building Site Development"
+		,"reports":[
+			{"reportname":"Dwellings and Small Commercial Buildings","reportid":"17"}
+			,{"reportname":"Roads and Streets, Shallow Excavations, and Lawns and Landscaping","reportid":"18"}
+	]},
+	{"foldername":"Construction Materials"
+		,"reports":[
+			{"reportname":"Source of Reclamation Material, Roadfill, and Topsoil","reportid":"16"}
+			,{"reportname":"Source of Sand and Gravel","reportid":"15"}
+	]},
+	{"foldername":"Disaster Recovery Planning"
+		,"reports":[
+			{"reportname":"Large Animal Disposal, Pit","reportid":"309"}
+	]},
+	{"foldername":"Land Classifications"
+		,"reports":[
+			{"reportname":"Conservation Tree and Shrub Suitability Groups","reportid":"184"}
+			,{"reportname":"Forage Suitability Groups","reportid":"450"}
+			,{"reportname":"Hydric Soil List - All Components","reportid":"397"}
+			,{"reportname":"Hydric Soils","reportid":"51"}
+			,{"reportname":"Land Capability Classification","reportid":"126"}
+			,{"reportname":"NCCPI Overall","reportid":"407"}
+			,{"reportname":"Prime and other Important Farmlands","reportid":"37"}
+			,{"reportname":"Taxonomic Classification of the Soils","reportid":"33"}
+	]},
+	{"foldername":"Land Management"
+		,"reports":[
+			{"reportname":"Damage by Fire and Seedling Mortality on Forestland","reportid":"25"}
+			,{"reportname":"Forestland Planting and Harvesting","reportid":"23"}
+			,{"reportname":"Forestland Site Preparation","reportid":"24"}
+			,{"reportname":"Haul Roads, Log Landings, and Soil Rutting on Forestland","reportid":"21"}
+			,{"reportname":"Hazard of Erosion and Suitability for Roads on Forestland","reportid":"22"}
+	]},
+	{"foldername":"Recreational Development"
+		,"reports":[
+			{"reportname":"Camp Areas, Picnic Areas, and Playgrounds","reportid":"34"}
+			,{"reportname":"Paths, Trails, and Golf Fairways","reportid":"35"}
+	]},
+	{"foldername":"Sanitary Facilities"
+		,"reports":[
+			{"reportname":"Landfills","reportid":"20"}
+			,{"reportname":"Sewage Disposal","reportid":"19"}
+	]},
+	{"foldername":"Soil Chemical Properties"
+		,"reports":[
+			{"reportname":"Chemical Soil Properties","reportid":"30"}
+	]},
+	{"foldername":"Soil Erosion"
+		,"reports":[
+			{"reportname":"Conservation Planning","reportid":"460"}
+			,{"reportname":"RUSLE2 Related Attributes","reportid":"46"}
+			,{"reportname":"Windbreaks and Environmental Plantings","reportid":"36"}
+	]},
+	{"foldername":"Soil Health"
+		,"reports":[
+			{"reportname":"Organic Matter Depletion, Salt Concentration, Aerobic Soil Organisms, Organic Soil Subsidence","reportid":"611"}
+			,{"reportname":"Soil Health - Aggregate Stability (West US)","reportid":"531"}
+			,{"reportname":"Soil Health - Bulk Density and Texture","reportid":"535"}
+			,{"reportname":"Soil Health - Compaction, Surface Sealing","reportid":"612"}
+			,{"reportname":"Soil Health - Organic Matter","reportid":"508"}
+	]},
+	{"foldername":"Soil Physical Properties"
+		,"reports":[
+			{"reportname":"Engineering Properties","reportid":"26"}
+			,{"reportname":"Fragments on the Soil Surface","reportid":"586"}
+			,{"reportname":"Particle Size and Coarse Fragments","reportid":"297"}
+			,{"reportname":"Physical Soil Properties","reportid":"27"}
+	]},
+	{"foldername":"Soil Qualities and Features"
+		,"reports":[
+			{"reportname":"Soil Features","reportid":"32"}
+			,{"reportname":"Soil Locations","reportid":"530"}
+	]},
+	{"foldername":"Vegetative Productivity"
+		,"reports":[
+			{"reportname":"Environmental Plantings and Windbreaks","reportid":"592"}
+			,{"reportname":"Forestland Productivity","reportid":"14"}
+			,{"reportname":"Irrigated and Nonirrigated Yields by Map Unit Component","reportid":"6"}
+			,{"reportname":"Irrigated Yields by Map Unit","reportid":"10"}
+			,{"reportname":"Irrigated Yields by Map Unit Component","reportid":"9"}
+			,{"reportname":"Link to Ecological Site Descriptions in EDIT","reportid":"634"}
+			,{"reportname":"Nonirrigated Yields by Map Unit","reportid":"11"}
+			,{"reportname":"Nonirrigated Yields by Map Unit Component","reportid":"8"}
+			,{"reportname":"Rangeland and Forest Vegetation Classification, Productivity, and Plant Composition","reportid":"249"}
+			,{"reportname":"Rangeland Productivity","reportid":"12"}
+			,{"reportname":"Rangeland Productivity and Plant Composition","reportid":"13"}
+	]},
+	{"foldername":"Waste Management"
+		,"reports":[
+			{"reportname":"Agricultural Disposal of Manure, Food-Processing Waste, and Sewage Sludge","reportid":"4"}
+			,{"reportname":"Agricultural Disposal of Wastewater by Irrigation and Overland Flow","reportid":"50"}
+			,{"reportname":"Agricultural Disposal of Wastewater by Rapid Infiltration and Slow Rate Treatment","reportid":"5"}
+			,{"reportname":"Large Animal Carcass Disposal","reportid":"118"}
+	]},
+	{"foldername":"Water Features"
+		,"reports":[
+			{"reportname":"Hydrologic Soil Group and Surface Runoff","reportid":"474"}
+			,{"reportname":"Water Features","reportid":"504"}
+	]},
+	{"foldername":"Water Management"
+		,"reports":[
+			{"reportname":"Irrigation - General and Sprinkler","reportid":"178"}
+			,{"reportname":"Irrigation - Micro","reportid":"179"}
+			,{"reportname":"Irrigation - Surface","reportid":"180"}
+			,{"reportname":"Ponds and Embankments","reportid":"47"}
+]}
+]}]}
+<br>fetching description for Taxonomic Classification of the Soils (33), postdata={"service":"report","request":"getdescription","reportid":33,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getReportDescription\")"}<br>Report description of Taxonomic Classification of the Soils (33):<br><!--?xml version="1.0" encoding="UTF-8"?--><section><title>Taxonomic Classification of the Soils</title><para>The system of soil classification used by the National Cooperative Soil Survey has six categories (Soil Survey Staff, 1999 and 2003). Beginning with the broadest, these categories are the order, suborder, great group, subgroup, family, and series. Classification is based on soil properties observed in the field or inferred from those observations or from laboratory measurements. This table shows the classification of the soils in the survey area. The categories are defined in the following paragraphs.</para><para>ORDER.  Twelve soil orders are recognized. The differences among orders reflect the dominant soil-forming processes and the degree of soil formation. Each order is identified by a word ending in <emphasis role="italic">sol.</emphasis> An example is Alfisols.</para><para>SUBORDER.  Each order is divided into suborders primarily on the basis of properties that influence soil genesis and are important to plant growth or properties that reflect the most important variables within the orders. The last syllable in the name of a suborder indicates the order. An example is Udalfs (<emphasis role="italic">Ud</emphasis>, meaning humid, plus <emphasis role="italic">alfs</emphasis>, from Alfisols).</para><para>GREAT GROUP.  Each suborder is divided into great groups on the basis of close similarities in kind, arrangement, and degree of development of pedogenic horizons; soil moisture and temperature regimes; type of saturation; and base status. Each great group is identified by the name of a suborder and by a prefix that indicates a property of the soil. An example is Hapludalfs (<emphasis role="italic">Hapl</emphasis>, meaning minimal horizonation, plus <emphasis role="italic">udalfs</emphasis>, the suborder of the Alfisols that has a udic moisture regime).</para><para>SUBGROUP.  Each great group has a typic subgroup. Other subgroups are intergrades or extragrades. The typic subgroup is the central concept of the great group; it is not necessarily the most extensive. Intergrades are transitions to other orders, suborders, or great groups. Extragrades have some properties that are not representative of the great group but do not indicate transitions to any other taxonomic class. Each subgroup is identified by one or more adjectives preceding the name of the great group. The adjective <emphasis role="italic">Typic</emphasis> identifies the subgroup that typifies the great group. An example is Typic Hapludalfs.</para><para>FAMILY.  Families are established within a subgroup on the basis of physical and chemical properties and other characteristics that affect management. Generally, the properties are those of horizons below plow depth where there is much biological activity. Among the properties and characteristics considered are particle-size class, mineralogy class, cation-exchange activity class, soil temperature regime, soil depth, and reaction class. A family name consists of the name of a subgroup preceded by terms that indicate soil properties. An example is fine-loamy, mixed, active, mesic Typic Hapludalfs.</para><para>SERIES.  The series consists of soils within a family that have horizons similar in color, texture, structure, reaction, consistence, mineral and chemical composition, and arrangement in the profile.</para><para>References:
+
+<citation>Soil Survey Staff. 1999. Soil taxonomy: A basic system of soil classification for making and interpreting soil surveys. 2nd edition. Natural Resources Conservation Service. U.S. Department of Agriculture Handbook 436.</citation><citation>Soil Survey Staff. 2006. Keys to soil taxonomy. 10th edition. U.S. Department of Agriculture, Natural Resources Conservation Service. (The soils in a given survey area may have been classified according to earlier editions of this publication.) </citation></para></section><br>fetching report data for Taxonomic Classification of the Soils (33), postdata={"service":"report","request":"getreportdata","reportid":33,"aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getReportdata\")"}<br>Report short form data for Taxonomic Classification of the Soils (33):<br>{"aoiid":"19950","reportid":"33","reportname":"Taxonomic Classification of the Soils","Includeminorsoils":"false","Displaynationalmapunitsymbols":"false"}<br>fetching report of Taxonomic Classification of the Soils (33), postdata={"service":"report","request":"getreport","reportid":33,"aoiId":19950,"*auditdata*":"(application=\"SDA\" description=\"DailyChecksForServices getReport\")"}<br>final response: true</div>
+
+
+</body></html>
