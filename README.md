@@ -13,7 +13,7 @@ This documentation describes the SQL queries that access soils data for CART.  T
 3.  Area of Interest (AOI) Geometry examples to copy into the SQL script:  [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
 4.  Prototype: [Click here](https://jneme910.github.io/CART/documents/rev00_Organic_Matter_Depletion.html)
 5.  Prototype2: [Click here](https://jneme910.github.io/CART/documents/rev00.html)
-6.  Prototype3: [Click here](https://jneme910.github.io/CART/documents/rev00_with_description.html)
+6.  Prototype3: [Click here](https://jneme910.github.io/CART/documents/rev00_with_description.html) 
 
 ### The soils data used in CART can be found in four main sections.
 1. Resource Assessment (Resource Concerns); 
