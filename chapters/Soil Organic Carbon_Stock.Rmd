@@ -1877,10 +1877,11 @@ The SOCstock for 0--30 cm (high, rv, and low) was exported for further GIS inter
 
 ![Figure 3.---Soil organic carbon stock: Puerto Rico](https://jneme910.github.io/CART/TableImages/PR_SOC_0-30.jpg)
 
+![Figure 4.---Soil organic carbon stock:  CONUS (Credit Steve Campbell)](https://jneme910.github.io/CART/TableImages/SOC_0_30cm_gSSURGO_CONUS_FY2019_map.jpg)
 
-![Figure 4.---Soil organic carbon stock: CONUS (Credit Steve Campbell)](https://jneme910.github.io/CART/TableImages/SOC_0_30cm_gSSURGO_CONUS_FY2019_map.jpg)
-![Figure 4.---Soil organic carbon stock: CONUS - Credit Chad Ferguson (Array)](https://jneme910.github.io/CART/TableImages/SOC_Fig_14_soc_conus.svg)
-![Figure 4.---Soil organic carbon stock: HI, AK and PR; Credit Chad Ferguson (Array)](https://jneme910.github.io/CART/TableImages/SOC_Fig_14_soc_conus.svg)
+![Figure 5.---Soil organic carbon stock: CONUS - Credit Chad Ferguson (Array)](https://jneme910.github.io/CART/TableImages/SOC_Fig_14_soc_conus.svg)
+
+![Figure 6.---Soil organic carbon stock: HI, AK and PR; Credit Chad Ferguson (Array)](https://jneme910.github.io/CART/TableImages/SOC_Fig_15_soc_prvi_hi_ak.svg)
 
 ## Sources and Citations
 The source of this data is  STATSGO and SSURGO from the U.S. National Cooperative Soil Survey. The following references cover data definitions, derivation and quality procedures.
