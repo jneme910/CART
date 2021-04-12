@@ -1865,7 +1865,7 @@ T9981 Fld3          |328.952|Soil Organic Carbon Stock:3|Soil Organic Carbon Sto
 T9981 Fld4          |318.722|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.19|37.09|82.56|Moderate
 
 
-![Figure 1.---Final output by land unit.](https://jneme910.github.io/CART/TableImages/SOC_Final_Output_landunit.PNG)
+![Figure 1.---Final output by land unit.](https://jneme910.github.io/CART/TableImages/FarmClass.PNG)
 
 
 In field 3 the rating is `'Moderate'` with a weaighted average landunit value of `38.96` and in field 4 the rating class is `'Moderate'` and the value is `37.09`.
@@ -1879,7 +1879,8 @@ The SOCstock for 0--30 cm (high, rv, and low) was exported for further GIS inter
 
 
 ![Figure 4.---Soil organic carbon stock: CONUS (Credit Steve Campbell)](https://jneme910.github.io/CART/TableImages/SOC_0_30cm_gSSURGO_CONUS_FY2019_map.jpg)
-
+![Figure 4.---Soil organic carbon stock: CONUS - Credit Chad Ferguson (Array)](https://jneme910.github.io/CART/TableImages/SOC_Fig_14_soc_conus.svg)
+![Figure 4.---Soil organic carbon stock: HI, AK and PR; Credit Chad Ferguson (Array)](https://jneme910.github.io/CART/TableImages/SOC_Fig_14_soc_conus.svg)
 
 ## Sources and Citations
 The source of this data is  STATSGO and SSURGO from the U.S. National Cooperative Soil Survey. The following references cover data definitions, derivation and quality procedures.
