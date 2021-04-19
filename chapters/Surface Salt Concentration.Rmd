@@ -40,7 +40,7 @@ Water table persistence (months)|0|0-4|>4|Months per year the water table is nea
 Non-leaching climate (map-pet) (mm/yr)|>10|10-(-200)|<-200|Low excess moisture does not leach salts.
 Presence of salts (EC 0-150cm) (dS/m)|0|0-4|>4|If salts are available, accumulation is a possibility.
 Water gathering surface OR (Maximum of inputs)|convex|linear|concave|Concave areas accumulate surface and subsurface materials.
-Presence of salts (EC 0-150cm) (dS/m)|0|0-4|>4|Soil is already saline.
+
 
 
 ## Soil Script Breakdown
