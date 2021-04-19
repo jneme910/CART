@@ -1,0 +1,90 @@
+Column physical name,Column logical name,Column group label,Column label,Column description,Units of measure: Unabbreviated,Units of measure: Abbreviated
+airtempa_h,mean_annual_air_temperature_h,MAAT,High,"The arithmetic average of the daily maximum and minimum temperatures for a calendar year taken over the standard ""normal"" period, 1981 to 2010.",degrees centigrade,degrees c
+airtempa_l,mean_annual_air_temperature_l,MAAT,Low,"The arithmetic average of the daily maximum and minimum temperatures for a calendar year taken over the standard ""normal"" period, 1981 to 2010.",degrees centigrade,degrees c
+airtempa_r,mean_annual_air_temperature_r,MAAT,RV,"The arithmetic average of the daily maximum and minimum temperatures for a calendar year taken over the standard ""normal"" period, 1981 to 2010.",degrees centigrade,degrees c
+areasymbol,area_symbol,,Area Symbol,"A symbol that uniquely identifies a single occurrence of a particular type of area (e.g. Lancaster County, Nebraska, is NE109).",NULL,NULL
+areatypename,area_type_name,,Area Type Name,"The name of a particular type of area.  Area type names include ""state,"" ""county,"" ""mlra,"" etc.",NULL,NULL
+awc_r,available_water_capacity_r,AWC,RV,"The amount of water that an increment of soil depth, inclusive of fragments, can store and that is available to plants.  AWC is expressed as a volume fraction, and is commonly estimated as the difference between the water contents at 1/10- or 1/3-bar (field capacity) and 15-bars (permanent wilting point) tension and adjusted for salinity and fragments.",centimeters per centimeter,cm/cm
+aws0150wta,aws_0_150_wta,,Available Water Storage 0-150 cm - Weighted Average,"Available water storage (AWS).  The volume of water that the soil, to a depth of 150 centimeters, can store that is available to plants.  It is reported as the weighted average of all components in the map unit and is expressed as centimeters of water.",,
+cec7_h,cation_exch_capcty_nh4oacph7_h,CEC-7,High,"The amount of readily exchangeable cations that can be electrically adsorbed to negative charges in the soil, soil constituent, or other material, at pH 7.0, as estimated by the ammonium acetate method.",centimoles of charge per kilogram,cmol(+)/kg
+cec7_l,cation_exch_capcty_nh4oacph7_l,CEC-7,Low,"The amount of readily exchangeable cations that can be electrically adsorbed to negative charges in the soil, soil constituent, or other material, at pH 7.0, as estimated by the ammonium acetate method.",centimoles of charge per kilogram,cmol(+)/kg
+cec7_r,cation_exch_capcty_nh4oacph7_r,CEC-7,RV,"The amount of readily exchangeable cations that can be electrically adsorbed to negative charges in the soil, soil constituent, or other material, at pH 7.0, as estimated by the ammonium acetate method.",centimoles of charge per kilogram,cmol(+)/kg
+chkey,chorizon_key,,Chorizon Key,A non-connotative string of characters used to uniquely identify a record in the Horizon table.,NULL,NULL
+claytotal_h,clay_total_separate_h,Total Clay,High,Mineral particles less than 0.002 mm in equivalent diameter as a weight percentage of the less-than-2.0-mm fraction.,percent,percent
+claytotal_l,clay_total_separate_l,Total Clay,Low,Mineral particles less than 0.002 mm in equivalent diameter as a weight percentage of the less-than-2.0-mm fraction.,percent,percent
+claytotal_r,clay_total_separate_r,Total Clay,RV,Mineral particles less than 0.002 mm in equivalent diameter as a weight percentage of the less-than-2.0-mm fraction.,percent,percent
+cokey,component_key,,Component Key,A non-connotative string of characters used to uniquely identify a record in the Component table.,NULL,NULL
+compname,component_name,,Component Name,Name assigned to a component based on its range of properties.,NULL,NULL
+comppct_r,component_percent_r,Comp %,RV,The percentage of the component of the mapunit.,percent,percent
+dbthirdbar_r,bulk_density_one_third_bar_r,Db 0.33 bar H2O,RV,The oven dry weight of the less-than-2-mm soil material per unit volume of soil at a water tension of 1/3 bar.,grams per cubic centimeter,g/cm3
+desgnmaster,horz_desgn_master,,Master,"One of four kinds of symbols, that when concatenated, are used to distinguish different kinds of layers in soils.  Master horizons and layers are the base symbols to which other characters are added to complete the designations.  Capital letters, virgules (/), and ampersands (&) are used. (SSM)",NULL,NULL
+drainagecl,drainage_class,,Drainage Class,Identifies the natural drainage conditions of the soil and refers to the frequency and duration of wet periods.  An example of a drainage class is well drained.,NULL,NULL
+ec_h,electrical_conductivity_h,EC,High,The electrical conductivity of an extract from saturated soil paste.,decisiemens per meter,dS/m
+ec_l,electrical_conductivity_l,EC,Low,The electrical conductivity of an extract from saturated soil paste.,decisiemens per meter,dS/m
+ec_r,electrical_conductivity_r,EC,RV,The electrical conductivity of an extract from saturated soil paste.,decisiemens per meter,dS/m
+ecec_h,effective_cation_exch_capcty_h,ECEC,High,The sum of NH4OAc extractable bases plus KCl extractable aluminum.,centimoles of charge per kilogram,cmol(+)/kg
+ecec_l,effective_cation_exch_capcty_l,ECEC,Low,The sum of NH4OAc extractable bases plus KCl extractable aluminum.,centimoles of charge per kilogram,cmol(+)/kg
+ecec_r,effective_cation_exch_capcty_r,ECEC,RV,The sum of NH4OAc extractable bases plus KCl extractable aluminum.,centimoles of charge per kilogram,cmol(+)/kg
+elev_r,elevation_r,Elevation,RV,The vertical distance from mean sea level to a point on the earth's surface.,meters,meters
+extral_h,extractable_aluminum_h,Extract Al,High,"The amount of aluminum extracted in 1 normal potassium chloride.  The following laboratory method is applied:  55 ml of 1 normal potassium chloride is extracted through 2.5 g of soil sample.  The extract is analyzed by use of an atomic adsorption spectrometer or similar instrument (SSIR #42, method 6G9a; and NSSH).",centimoles of charge per kilogram,cmol(+)/kg
+extral_l,extractable_aluminum_l,Extract Al,Low,"The amount of aluminum extracted in 1 normal potassium chloride.  The following laboratory method is applied:  55 ml of 1 normal potassium chloride is extracted through 2.5 g of soil sample.  The extract is analyzed by use of an atomic adsorption spectrometer or similar instrument (SSIR #42, method 6G9a; and NSSH).",centimoles of charge per kilogram,cmol(+)/kg
+extral_r,extractable_aluminum_r,Extract Al,RV,"The amount of aluminum extracted in 1 normal potassium chloride.  The following laboratory method is applied:  55 ml of 1 normal potassium chloride is extracted through 2.5 g of soil sample.  The extract is analyzed by use of an atomic adsorption spectrometer or similar instrument (SSIR #42, method 6G9a; and NSSH).",centimoles of charge per kilogram,cmol(+)/kg
+ffd_h,mean_annual_frost_free_days_h,Frost Free Days,High,"The expected number of days between the last freezing temperature (0 degrees Celsius) in spring (Jan-Jul) and the first freezing temperature (0 degrees Celsius) in the fall (Aug-Dec).  The number of days is based on the probability that the values for the standard ""normal"" period of 1961 to 1990 will be exceeded in 5 years out of 10.",days,days
+ffd_l,mean_annual_frost_free_days_l,Frost Free Days,Low,"The expected number of days between the last freezing temperature (0 degrees Celsius) in spring (Jan-Jul) and the first freezing temperature (0 degrees Celsius) in the fall (Aug-Dec).  The number of days is based on the probability that the values for the standard ""normal"" period of 1961 to 1990 will be exceeded in 5 years out of 10.",days,days
+ffd_r,mean_annual_frost_free_days_r,Frost Free Days,RV,"The expected number of days between the last freezing temperature (0 degrees Celsius) in spring (Jan-Jul) and the first freezing temperature (0 degrees Celsius) in the fall (Aug-Dec).  The number of days is based on the probability that the values for the standard ""normal"" period of 1961 to 1990 will be exceeded in 5 years out of 10.",days,days
+floddurcl,flooding_duration_class,,Flooding Duration,Average duration of inundation per flood occurrence and expressed as a class.  (NSSH),NULL,NULL
+flodfreqcl,flooding_frequency_class,,Flooding Frequency,The annual probability of a flood event expressed as a class.  (SSM).,NULL,NULL
+fragvol_r,fragment_volume_r,Vol %,RV,"The volume percentage of the horizon occupied by the 2 mm or larger fraction (20 mm or larger for wood fragments), on a whole soil base.",percent,percent
+gypsum_r,gypsum_r,Gypsum,RV,The percent by weight of hydrated calcium sulfate in the less than 20 mm fraction of soil.,percent,percent
+hydricrating,hydric_rating,,Hydric Rating,"A yes/no field that indicates whether or not a map unit component is classified as a ""hydric soil"".  If rated as hydric, the specific criteria met are listed in the Component Hydric Criteria table.",NULL,NULL
+hzdepb_h,horizon_depth_to_bottom_h,Bottom Depth,High,The distance from the top of the soil to the base of the soil horizon.,centimeters,cm
+hzdepb_l,horizon_depth_to_bottom_l,Bottom Depth,Low,The distance from the top of the soil to the base of the soil horizon.,centimeters,cm
+hzdepb_r,horizon_depth_to_bottom_r,Bottom Depth,RV,The distance from the top of the soil to the base of the soil horizon.,centimeters,cm
+hzdept_h,horizon_depth_to_top_h,Top Depth,High,The distance from the top of the soil to the upper boundary of the soil horizon.,centimeters,cm
+hzdept_l,horizon_depth_to_top_l,Top Depth,Low,The distance from the top of the soil to the upper boundary of the soil horizon.,centimeters,cm
+hzdept_r,horizon_depth_to_top_r,Top Depth,RV,The distance from the top of the soil to the upper boundary of the soil horizon.,centimeters,cm
+hzname,horizon_designation,,Designation,The concatenated string of four kinds of symbols (five data elements) used to distinguish different kinds of layers in the soil.  (SSM),NULL,NULL
+lieutex,terms_used_in_lieu_of_texture,,In Lieu,"Substitute terms applied to materials that do not fit into a textural class because of organic matter content, size, rupture resistance, solubility, or another reason.",NULL,NULL
+localphase,local_phase,,Local Phase,"Phase criterion to be used at a local level, in conjunction with ""component name"" to help identify a soil component.",NULL,NULL
+majcompflag,major_component_flag,,Major Component,Indicates whether or not a component is a major component in the mapunit.,NULL,NULL
+map_h,mean_annual_precipitation_h,MAP,High,"The arithmetic average of the total annual (liquid) precipitation taken over the standard ""normal"" period, 1961-1990.",millimeters,mm
+map_l,mean_annual_precipitation_l,MAP,Low,"The arithmetic average of the total annual (liquid) precipitation taken over the standard ""normal"" period, 1961-1990.",millimeters,mm
+map_r,mean_annual_precipitation_r,MAP,RV,"The arithmetic average of the total annual (liquid) precipitation taken over the standard ""normal"" period, 1961-1990.",millimeters,mm
+month,month,,Month,One of the twelve months of the year.,NULL,NULL
+mukey,mapunit_key,,Mapunit Key,A non-connotative string of characters used to uniquely identify a record in the Mapunit table.,NULL,NULL
+musym,mapunit_symbol,,Mapunit Symbol,The symbol used to uniquely identify the soil mapunit in the soil survey.,NULL,NULL
+om_h,organic_matter_percent_h,OM,High,The amount by weight of decomposed plant and animal residue expressed as a weight percentage of the less-than-2-mm soil material.,percent,percent
+om_l,organic_matter_percent_l,OM,Low,The amount by weight of decomposed plant and animal residue expressed as a weight percentage of the less-than-2-mm soil material.,percent,percent
+om_r,organic_matter_percent_r,OM,RV,The amount by weight of decomposed plant and animal residue expressed as a weight percentage of the less-than-2-mm soil material.,percent,percent
+ph01mcacl2_h,ph_01m_cacl2_h,pH CaCl2,High,"The negative logarithm to base 10 of the hydrogen ion activity in the soil, using the 0.01M CaCl2 method, in a 1:2 soil:solution ratio.  A numerical expression of the relative acidity or alkalinity of a soil sample. (SSM)",NULL,NULL
+ph01mcacl2_l,ph_01m_cacl2_l,pH CaCl2,Low,"The negative logarithm to base 10 of the hydrogen ion activity in the soil, using the 0.01M CaCl2 method, in a 1:2 soil:solution ratio.  A numerical expression of the relative acidity or alkalinity of a soil sample. (SSM)",NULL,NULL
+ph01mcacl2_r,ph_01m_cacl2_r,pH CaCl2,RV,"The negative logarithm to base 10 of the hydrogen ion activity in the soil, using the 0.01M CaCl2 method, in a 1:2 soil:solution ratio.  A numerical expression of the relative acidity or alkalinity of a soil sample. (SSM)",NULL,NULL
+ph1to1h2o_h,ph_1_1_water_h,pH H2O,High,The negative logarithm to base 10 of the hydrogen ion activity in the soil using the 1:1 soil-water ratio method.  A numerical expression of the relative acidity or alkalinity of a soil sample.  (SSM),NULL,NULL
+ph1to1h2o_l,ph_1_1_water_l,pH H2O,Low,The negative logarithm to base 10 of the hydrogen ion activity in the soil using the 1:1 soil-water ratio method.  A numerical expression of the relative acidity or alkalinity of a soil sample.  (SSM),NULL,NULL
+ph1to1h2o_r,ph_1_1_water_r,pH H2O,RV,The negative logarithm to base 10 of the hydrogen ion activity in the soil using the 1:1 soil-water ratio method.  A numerical expression of the relative acidity or alkalinity of a soil sample.  (SSM),NULL,NULL
+ponddurcl,ponding_duration_class,,Ponding Duration,"The average duration, or length of time, of the ponding occurrence.  (NSSH)",NULL,NULL
+pondfreqcl,ponding_frequency_class,,Ponding Frequency,The number of times ponding occurs over a period of time. (SSM),NULL,NULL
+resdept_h,restriction_depth_to_top_h,Top Depth,High,The distance from the soil surface to the upper boundary of the restrictive layer.,centimeters,cm
+resdept_l,restriction_depth_to_top_l,Top Depth,Low,The distance from the soil surface to the upper boundary of the restrictive layer.,centimeters,cm
+resdept_r,restriction_depth_to_top_r,Top Depth,RV,The distance from the soil surface to the upper boundary of the restrictive layer.,centimeters,cm
+reskind,restriction_kind,,Kind,"Type of nearly continuous layer that has one or more physical, chemical, or thermal property(ies) that significantly reduce the movement of water and air through the soil or that otherwise provides an unfavorable root environment.",NULL,NULL
+sandtotal_h,sand_total_separate_h,Total Sand,High,Mineral particles 0.05 mm to 2.0 mm in equivalent diameter as a weight percentage of the less-than-2-mm fraction.,percent,percent
+sandtotal_l,sand_total_separate_l,Total Sand,Low,Mineral particles 0.05 mm to 2.0 mm in equivalent diameter as a weight percentage of the less-than-2-mm fraction.,percent,percent
+sandtotal_r,sand_total_separate_r,Total Sand,RV,Mineral particles 0.05 mm to 2.0 mm in equivalent diameter as a weight percentage of the less-than-2-mm fraction.,percent,percent
+sar_h,sodium_adsorption_ratio_h,SAR,High,A measure of the amount of Sodium (Na) relative to Calcium (Ca) and Magnesium (Mg) in the water extract from saturated soil paste.,NULL,NULL
+sar_l,sodium_adsorption_ratio_l,SAR,Low,A measure of the amount of Sodium (Na) relative to Calcium (Ca) and Magnesium (Mg) in the water extract from saturated soil paste.,NULL,NULL
+sar_r,sodium_adsorption_ratio_r,SAR,RV,A measure of the amount of Sodium (Na) relative to Calcium (Ca) and Magnesium (Mg) in the water extract from saturated soil paste.,NULL,NULL
+shapeacross,shape_across,,Slope Shape Across,"The geometric, two dimensional profile (shape) of the slope parallel to elevation contours.",NULL,NULL
+shapedown,shape_down,,Slope Shape Up/Down,The longitudinal shape of the slope.,NULL,NULL
+silttotal_r,silt_total_separate_r,Total Silt,RV,Mineral particles 0.002 to 0.05 mm in equivalent diameter as a weight percentage of the less-than-2.0-mm fraction.,percent,percent
+soimoistdept_h,soil_moist_depth_to_top_h,Top Depth,High,The distance from the top of the soil to the upper boundary of the moisture layer.,centimeters,cm
+soimoistdept_l,soil_moist_depth_to_top_l,Top Depth,Low,The distance from the top of the soil to the upper boundary of the moisture layer.,centimeters,cm
+soimoistdept_r,soil_moist_depth_to_top_r,Top Depth,RV,The distance from the top of the soil to the upper boundary of the moisture layer.,centimeters,cm
+soimoiststat,soil_moisture_status,,Moisture Status,The mean monthly soil water state at a specified depth.,NULL,NULL
+taxgrtgroup,taxonomic_great_group,,Great Group,The third level of Soil Taxonomy.  The category is below the suborder and above the subgroup.,NULL,NULL
+taxorder,taxonomic_order,,Order,The highest level in Soil Taxonomy.,NULL,NULL
+taxsubgrp,taxonomic_subgroup,,Subgroup,The fourth level of Soil Taxonomy.  The subgroup is below great group and above family.,NULL,NULL
+taxtempcl,taxonomic_family_temp_class,,Temp Class,The taxonomic family temperature class used to construct the official classification name.  It may be null when the taxonomic family temperature class is embedded in the classification name.  The actual taxonomic temperature regime is recorded in another place.,NULL,NULL
+taxtempregime,taxonomic_temp_regime,,Temp Regime,Soil temperature regime as defined in Soil Taxonomy.,NULL,NULL
+texcl,texture_class,,Texture,"An expression, based on the USDA system of particle sizes, for the relative portions of the various size groups of individual mineral grains less-than-2-mm equivalent diameter in a mass of soil.",NULL,NULL
+texture,texture_modifier_and_class,,Tex Mod & Class,Name for the concatenation of TEXTURE_MODIFIER and TEXTURE_CLASS.,NULL,NULL

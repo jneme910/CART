@@ -1,0 +1,637 @@
+---
+title: "Hydric Rating By Mapunit"
+author: "Jason Nemecek,  Doug Slabaugh, and Steve Campbell"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+This rating for Hydric Soil Category indicates the components of map units that meet the criteria for hydric soils. Map units are composed of one or more major soil components or soil types that generally make up 20 percent or more of the map unit and are listed in the map unit name. Map units may also have one or more minor contrasting soil components that generally make up less than 20 percent of the map unit. Each major and minor component that meets the hydric criteria is rated hydric. The map unit class ratings based on hydric components are: hydric, predominantly hydric, partially hydric, predominantly nonhydric, and nonhydric. The report also shows the total representative percentage of each map unit that the hydric components comprise.
+
+1. **"Hydric"** means that all major and minor components listed for a given map unit are rated as hydric.
+2. **"Predominantly Hydric"** means that all major components listed for a given map unit are rated as hydric, and at least one contrasting minor component is not rated hydric.
+3. **"Partially Hydric"** means that at least one major component listed for a given map unit is rated as hydric, and at least one other major component is not rated hydric.
+4. **"Predominantly Nonhydric"** means that no major component listed for a given map unit is rated as hydric, and at least one contrasting minor component is rated hydric.
+5. **"Nonhydric"** means no major or minor components for the map unit are rated hydric. The assumption is that the map unit is nonhydric even if none of the components within the map unit have been rated.
+
+## Rating Class
+Rating class values for calculating component acres.
+
+
+|Hydric Class Count	|Low|	RV	|High|
+|--------------------|---|---|----|
+|Hydric|	100|	100|	100|
+|Predominantly Hydric| 	80|	85|	99|
+|Partially Hydric	|15|	50|	79|
+|Predominantly Nonhydric|	1|	5|	20|
+|Nonhydric|	0	|0|	0|
+
+Note: For undifferentiated mapunits in the "Predominantly Hydric" class, the low value is set to "0."
+
+
+Hydric soils are defined by the National Technical Committee for Hydric Soils (NTCHS) as soils that formed under conditions of saturation, flooding, or ponding long enough during the growing season to develop anaerobic conditions in the upper part (Federal Register, 1994). Under natural conditions, these soils are either saturated or inundated long enough during the growing season to support the growth and reproduction of hydrophytic vegetation.
+
+If soils are wet enough for a long enough period of time to be considered hydric, they typically exhibit certain properties that can be easily observed in the field. These visible properties are indicators of hydric soils. The indicators used to make onsite determinations of hydric soils are specified in "Field Indicators of Hydric Soils in the United States" (Vasilas, Hurt, and Berkowitz, 2018).
+
+The NTCHS has developed criteria to identify those soil properties unique to hydric soils (Federal Register, 2012). These criteria are used to identify map unit components that normally are associated with wetlands. The criteria use selected soil properties that are described in "Field Indicators of Hydric Soils in the United States." (Vasilas, Hurt, and Berkowitz, 2018), "Soil Taxonomy" (Soil Survey Staff, 1999), "Keys to Soil Taxonomy" (Soil Survey Staff, 2010), and the "Soil Survey Manual" (Soil Survey Division Staff, 1993).
+
+
+####  Insert identifier(s) string and WKT geometry for each area of interest (AOI) polygon
+
+```{SQL}
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+```
+
+## Soil SQL Script Breakdown
+
+|aoiid	|landunit|	aoigeom|
+|------|-------------|---------------------------------------------------------------------------------------|
+|1	|T9981 Fld3	|POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))|
+|2	|T9981 Fld4|	POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))|
+
+#### Create summary acres for each landunit
+
+```{SQL}
+CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;
+```
+
+|aoiid|	landunit|landunit_acres|
+|------|-------------|----------------|
+|1|	T9981 Fld3|          	328.952|
+|2|	T9981 Fld4  |        	318.722|
+
+
+#### Populate intersected soil polygon table with geometry
+```{SQL}
+-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;
+```
+
+
+
+
+####  Populate soil geometry with landunit attribute
+```{SQL}
+-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );
+```
+
+```{SQL}
+-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;
+```
+
+
+#### Populate soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+-- Soil map unit acres, aggregated by mukey (merges polygons together)
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );
+```
+
+
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+```
+
+aoiid|landunit|mukey|mapunit_acres
+------|----------|------------|---------------|
+1|T9981 Fld3          |354627|0.426
+1|T9981 Fld3          |354648|0.287
+1|T9981 Fld3          |2494708|1.729
+1|T9981 Fld3          |2525720|56.699
+1|T9981 Fld3          |2525732|1.35
+1|T9981 Fld3          |2525733|0.129
+1|T9981 Fld3          |2525739|28.479
+1|T9981 Fld3          |2525745|4.983
+1|T9981 Fld3          |2525746|16.106
+1|T9981 Fld3          |2525754|12.638
+1|T9981 Fld3          |2525764|17.691
+1|T9981 Fld3          |2525766|0.032
+1|T9981 Fld3          |2525769|181.356
+1|T9981 Fld3          |2755648|2.449
+1|T9981 Fld3          |2755654|4.599
+2|T9981 Fld4          |2525720|8.623
+2|T9981 Fld4          |2525724|0.458
+2|T9981 Fld4          |2525730|31.514
+2|T9981 Fld4          |2525745|62.205
+2|T9981 Fld4          |2525746|63.55
+2|T9981 Fld4          |2525754|23.138
+2|T9981 Fld4          |2525767|3.86
+2|T9981 Fld4          |2525769|103.909
+2|T9981 Fld4          |2755639|0.443
+2|T9981 Fld4          |2755643|9.641
+2|T9981 Fld4          |2755648|11.382
+
+
+
+## Component and Layer Tables
+
+These tables collect map unit and component information needed. This includes all map units selected above and all components (typically soil series) within each map unit that do not have a limiting layer within 200cm. The concepts of components are described by the NSSH (Part 627.034).  This example is limited to one mapunit, mukey = 2809839.  The information needed for further SOC stock calculations, individual layer information, is selected from each component.
+
+Component variables used in SOC stock calculation (r denotes that the value is representative of the central tendency):
+   * comppct_r = the composition of each map unit, reported as the proportion (%) of the map unit made up of that soil component as part of the map unit documentation process (NSSH, 2017 -- Part 627.08)
+   
+### Component Level Data and Mapunit Sum-of-comppct_r (major components only)    
+ 
+```{SQL}
+CREATE TABLE #M4
+(   aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    majcompflag CHAR(3),
+	mu_pct_sum INT, 
+	major_mu_pct_sum INT, 
+    drainagecl CHAR(254)
+    );
+```
+
+```{SQL}
+---Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r
+INSERT INTO #M4
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+FROM #M2 AS MM2
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+FROM #M2 AS M2
+INNER JOIN component AS CO ON CO.mukey = M2.mukey
+```
+
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|mu_pct_sum|major_mu_pct_sum|drainagecl
+-----|---------|-------|-------------|-------|---------|--------|-----------|----------------|-------------|----------------|------------|
+1|T9981 Fld3|354627|0.426|16464493|Slickspots|2|No |90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464494|Daglum    |25|Yes|90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464495|Farnuf    |65|Yes|90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464496|Grail     |3|No |90|100|Moderately well drained 
+1|T9981 Fld3|354627|0.426|16464497|Rhoades   |3|No |90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464498|Tally     |2|No |90|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464607|Amor      |25|Yes|85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464608|Arnegard  |4|No |85|100|Moderately well drained 
+1|T9981 Fld3|354648|0.287|16464609|Belfield  |4|No |85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464610|Heil      |1|No |85|100|Poorly drained
+1|T9981 Fld3|354648|0.287|16464611|Lantry    |3|No |85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464612|Reeder    |60|Yes|85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464613|Vebar     |3|No |85|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663928|Regent    |5|No |81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663929|Chama     |5|No |81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663930|Amor      |49|Yes|81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663931|Cabba     |32|Yes|81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663932|Shambo    |9|No |81|100|Well drained  
+1|T9981 Fld3|2525720|56.699|16663899|Daglum    |33|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525720|56.699|16663900|Savage    |3|No |176|100|Well drained  
+1|T9981 Fld3|2525720|56.699|16663901|Barkof    |2|No |176|100|Well drained  
+1|T9981 Fld3|2525720|56.699|16663902|Rhoades   |2|No |176|100|Moderately well drained 
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525720|56.699|16663904|Belfield  |5|No |176|100|Moderately well drained 
+1|T9981 Fld3|2525732|1.35|16663795|Lakota    |4|No |72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663797|Yegen     |17|Yes|72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663798|Desart    |14|No |72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663799|Parshall  |6|No |72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663800|Rhoades   |2|No |72|100|Moderately well drained 
+1|T9981 Fld3|2525732|1.35|16663801|Vebar     |2|No |72|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663950|Beisigl   |7|No |75|100|Somewhat excessively drained      
+1|T9981 Fld3|2525733|0.129|16663951|Vebar     |50|Yes|75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen   |25|Yes|75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663953|Tally     |14|No |75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663954|Amor      |2|No |75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663955|Arnegard  |2|No |75|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663916|Tally     |12|No |78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663917|Vebar     |58|Yes|78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663918|Arnegard  |8|No |78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663919|Cohagen   |2|No |78|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663920|Farnuf    |12|No |150|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663921|Shambo    |75|Yes|150|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663922|Arnegard  |10|No |150|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663923|Amor      |3|No |150|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663924|Arnegard  |10|No |156|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663925|Farnuf    |8|No |156|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663926|Amor      |4|No |156|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663927|Shambo    |78|Yes|156|100|Well drained  
+1|T9981 Fld3|2525754|12.638|16663598|Heil      |3|No |150|100|Poorly drained
+1|T9981 Fld3|2525754|12.638|16663599|Rhoades   |4|No |150|100|Moderately well drained 
+1|T9981 Fld3|2525754|12.638|16663600|Daglum    |2|No |150|100|Moderately well drained 
+1|T9981 Fld3|2525754|12.638|16663601|Vanda     |5|No |150|100|Well drained  
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|150|100|Poorly drained
+1|T9981 Fld3|2525754|12.638|16663603|Regan     |6|No |150|100|Poorly drained
+1|T9981 Fld3|2525754|12.638|16663604|Glenross  |5|No |150|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663605|Peta      |2|No |55|100|Somewhat poorly drained 
+1|T9981 Fld3|2525764|17.691|16663606|Dimmick   |6|No |55|100|Very poorly drained     
+1|T9981 Fld3|2525764|17.691|16663607|Arveson   |12|No |55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663608|Regan     |10|No |55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663609|Harriet   |7|No |55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663610|Straw     |3|No |55|100|Well drained  
+1|T9981 Fld3|2525764|17.691|16663611|Regan     |55|Yes|55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663612|Marysland |5|No |55|100|Poorly drained
+1|T9981 Fld3|2525766|0.032|16663539|Water     |100|Yes|100|100|NULL
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525769|181.356|16663986|Grail     |5|No |176|100|Moderately well drained 
+1|T9981 Fld3|2525769|181.356|16663987|Daglum    |40|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525769|181.356|16663988|Savage    |5|No |176|100|Well drained  
+1|T9981 Fld3|2525769|181.356|16663989|Rhoades   |2|No |176|100|Moderately well drained 
+1|T9981 Fld3|2755648|2.449|16663766|Reeder    |58|Yes|156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663768|Amor      |10|No |156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663769|Dogtooth  |5|No |156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663770|Regent    |3|No |156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663771|Belfield  |2|No |156|100|Moderately well drained 
+1|T9981 Fld3|2755648|2.449|16663772|Barkof    |2|No |156|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663846|Reeder    |60|Yes|85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663847|Amor      |25|Yes|85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663848|Belfield  |4|No |85|100|Moderately well drained 
+1|T9981 Fld3|2755654|4.599|16663849|Regent    |3|No |85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663850|Vebar     |3|No |85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663851|Chama     |3|No |85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663852|Arnegard  |2|No |85|100|Well drained  
+2|T9981 Fld4|2525720|8.623|16663899|Daglum    |33|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525720|8.623|16663900|Savage    |3|No |176|100|Well drained  
+2|T9981 Fld4|2525720|8.623|16663901|Barkof    |2|No |176|100|Well drained  
+2|T9981 Fld4|2525720|8.623|16663902|Rhoades   |2|No |176|100|Moderately well drained 
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525720|8.623|16663904|Belfield  |5|No |176|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664017|Savage    |30|Yes|85|100|Well drained  
+2|T9981 Fld4|2525724|0.458|16664018|Daglum    |20|Yes|85|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664019|Grail     |8|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664020|Regent    |5|No |85|100|Well drained  
+2|T9981 Fld4|2525724|0.458|16664021|Rhoades   |2|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|85|100|Moderately well drained 
+2|T9981 Fld4|2525730|31.514|16663990|Daglum    |2|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525730|31.514|16663991|Regent    |68|Yes|85|100|Well drained  
+2|T9981 Fld4|2525730|31.514|16663992|Savage    |17|Yes|85|100|Well drained  
+2|T9981 Fld4|2525730|31.514|16663993|Cabba     |2|No |85|100|Well drained  
+2|T9981 Fld4|2525730|31.514|16663994|Grail     |6|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525730|31.514|16663995|Moreau    |5|No |85|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663920|Farnuf    |12|No |150|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663921|Shambo    |75|Yes|150|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663922|Arnegard  |10|No |150|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663923|Amor      |3|No |150|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663924|Arnegard  |10|No |156|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663925|Farnuf    |8|No |156|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663926|Amor      |4|No |156|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663927|Shambo    |78|Yes|156|100|Well drained  
+2|T9981 Fld4|2525754|23.138|16663598|Heil      |3|No |150|100|Poorly drained
+2|T9981 Fld4|2525754|23.138|16663599|Rhoades   |4|No |150|100|Moderately well drained 
+2|T9981 Fld4|2525754|23.138|16663600|Daglum    |2|No |150|100|Moderately well drained 
+2|T9981 Fld4|2525754|23.138|16663601|Vanda     |5|No |150|100|Well drained  
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|150|100|Poorly drained
+2|T9981 Fld4|2525754|23.138|16663603|Regan     |6|No |150|100|Poorly drained
+2|T9981 Fld4|2525754|23.138|16663604|Glenross  |5|No |150|100|Poorly drained
+2|T9981 Fld4|2525767|3.86|16663540|Water     |100|Yes|100|100|NULL
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525769|103.909|16663986|Grail     |5|No |176|100|Moderately well drained 
+2|T9981 Fld4|2525769|103.909|16663987|Daglum    |40|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525769|103.909|16663988|Savage    |5|No |176|100|Well drained  
+2|T9981 Fld4|2525769|103.909|16663989|Rhoades   |2|No |176|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663552|Regent    |3|No |80|100|Well drained  
+2|T9981 Fld4|2755639|0.443|16663553|Lawther   |2|No |80|100|Well drained  
+2|T9981 Fld4|2755639|0.443|16663554|Savage    |62|Yes|80|100|Well drained  
+2|T9981 Fld4|2755639|0.443|16663555|Grail     |18|Yes|80|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663556|Belfield  |8|No |80|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663557|Daglum    |2|No |80|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663558|Farland   |5|No |80|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663956|Telfer    |3|No |88|100|Somewhat excessively drained      
+2|T9981 Fld4|2755643|9.641|16663957|Flasher   |30|Yes|88|100|Somewhat excessively drained      
+2|T9981 Fld4|2755643|9.641|16663958|Vebar     |40|Yes|88|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663959|Tally     |18|Yes|88|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663960|Parshall  |5|No |88|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663961|Amor      |4|No |88|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663766|Reeder    |58|Yes|156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663768|Amor      |10|No |156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663769|Dogtooth  |5|No |156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663770|Regent    |3|No |156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663771|Belfield  |2|No |156|100|Moderately well drained 
+2|T9981 Fld4|2755648|11.382|16663772|Barkof    |2|No |156|100|Well drained  
+
+### Hydric Soils at the Map Unit, Using All Map Units from Table #M2.
+```{SQL}
+-- Hydric soils at the Map Unit, using all map units from table #M2.
+CREATE TABLE #Hydric1
+(mukey INT,
+comp_count INT,        -- cnt_comp
+count_maj_comp INT,    -- cnt_mjr
+all_hydric INT,        -- cnt_hydric
+all_not_hydric INT,    -- cnt_nonhydric
+maj_hydric INT,        -- cnt_mjr_hydric
+maj_not_hydric INT,    -- cnt_mjr_nonhydric
+hydric_inclusions INT, -- cnt_minor_hydric
+hydric_null INT);      -- cnt_null_hydric
+```
+
+
+
+```{SQL}
+INSERT INTO #Hydric1 (mukey, comp_count, count_maj_comp, all_hydric, all_not_hydric, maj_hydric, maj_not_hydric, hydric_inclusions, hydric_null)
+SELECT DISTINCT M4.mukey,   
+(SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey) AS comp_count,
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND majcompflag = 'yes') AS count_maj_comp,
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND hydricrating = 'yes' ) AS all_hydric,
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND hydricrating  != 'yes') AS all_not_hydric, 
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND majcompflag = 'yes' AND hydricrating = 'yes') AS maj_hydric,
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND majcompflag = 'yes' AND hydricrating != 'yes') AS maj_not_hydric,
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND majcompflag != 'yes' AND hydricrating  = 'yes' ) AS hydric_inclusions,
+ (SELECT TOP 1 COUNT(*)
+ FROM mapunit
+ INNER JOIN component ON component.mukey = mapunit.mukey AND mapunit.mukey = M4.mukey
+ AND hydricrating  IS NULL ) AS hydric_null 
+FROM #M4 AS M4;
+```
+
+#### Get counts for major-minor components and different hydric ratings (Yes, No, NULL)
+* mukey,
+* total number of components,
+* number of major components,
+* total number of hydric components,
+* number of major hydric components,
+* number of major non-hydric components,
+* number of minor hydric components,
+* total number of non-hydric components,
+* number of components where hydric is null
+
+mukey|comp_count|count_maj_comp|all_hydric|all_not_hydric|maj_hydric|maj_not_hydric|hydric_inclusions|hydric_null
+-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------
+354627|6|2|0|6|0|2|0|0
+354648|7|2|1|6|0|2|1|0
+2494708|5|2|0|5|0|2|0|0
+2525720|6|2|0|6|0|2|0|0
+2525724|6|3|0|6|0|3|0|0
+2525730|6|2|0|6|0|2|0|0
+2525732|7|2|0|7|0|2|0|0
+2525733|6|2|0|6|0|2|0|0
+2525739|5|2|0|5|0|2|0|0
+2525745|4|1|0|4|0|1|0|0
+2525746|4|1|0|4|0|1|0|0
+2525754|7|1|4|3|1|0|3|0
+2525764|8|1|6|2|1|0|5|0
+2525766|1|1|0|1|0|1|0|0
+2525767|1|1|0|1|0|1|0|0
+2525769|5|2|0|5|0|2|0|0
+2755639|7|2|0|7|0|2|0|0
+2755643|6|3|0|6|0|3|0|0
+2755648|7|2|0|7|0|2|0|0
+2755654|7|2|0|7|0|2|0|0
+
+### Convert the hydric component count to a value acreage
+```{SQL}
+
+INSERT INTO #Hydric2 (mukey, hydric_rating, low_pct, rv_pct, high_pct)
+SELECT  
+mukey,
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN  'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND  maj_hydric >= 0.5 THEN 'Partially hydric'
+ELSE 'Error'
+END AS hydric_rating, 
+ 
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.80 --'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN 0.01 --'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND maj_hydric >= 0.5 THEN 0.15 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS low_pct, 
+ 
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.85 --'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND  maj_hydric < 0.5 THEN 0.05 --'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND  maj_hydric >= 0.5 THEN  0.50 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS rv_pct, 
+ 
+CASE WHEN comp_count = all_not_hydric + hydric_null THEN 0.00 --'Nonhydric' 
+WHEN comp_count = all_hydric  THEN 1 --'Hydric' 
+WHEN comp_count != all_hydric AND count_maj_comp = maj_hydric THEN 0.99 --'Predominantly hydric' 
+WHEN hydric_inclusions >= 0.5 AND maj_hydric < 0.5 THEN 0.20 --'Predominantly nonydric' 
+WHEN maj_not_hydric >= 0.5  AND maj_hydric >= 0.5 THEN  0.79 --'Partially hydric' 
+ELSE 0.00 --'Error' 
+END AS high_pct
+FROM #Hydric1;
+```
+
+* Takes hydric count statistics and converts them to interpretation-type rating classes (hydric_rating).
+* Also assigns fuzzy-type values as percent ratings. These will be used later in a calculation involving mapunit acres.
+* If a hydric rating of "Error"" or rating number of 0.0 is returned, there is an error that needs to be checked.
+
+mukey|hydric_rating|low_pct|rv_pct|high_pct|
+-----------|----------------|-----------|-----------|-----------|
+354627|Nonhydric                |0|0|0|
+354648|Predominantly nonydric   |0.01|0.05|0.2|
+2494708|Nonhydric                |0|0|0|
+2525720|Nonhydric                |0|0|0|
+2525724|Nonhydric                |0|0|0|
+2525730|Nonhydric                |0|0|0|
+2525732|Nonhydric                |0|0|0|
+2525733|Nonhydric                |0|0|0|
+2525739|Nonhydric                |0|0|0|
+2525745|Nonhydric                |0|0|0|
+2525746|Nonhydric                |0|0|0|
+2525754|Predominantly hydric     |0.8|0.85|0.99|
+2525764|Predominantly hydric     |0.8|0.85|0.99|
+2525766|Nonhydric                |0|0|0|
+2525767|Nonhydric                |0|0|0|
+2525769|Nonhydric                |0|0|0|
+2755639|Nonhydric                |0|0|0|
+2755643|Nonhydric                |0|0|0|
+2755648|Nonhydric                |0|0|0|
+2755654|Nonhydric                |0|0|0|
+
+### Calculating the Polygon Map Acres Based on the Class Range to Get a Percentage of Each Class
+```{SQL}
+INSERT INTO #Hydric3 ( aoiid, landunit, attributename, aoi_acres, mukey, hydric_flag, low_acres, rv_acres, high_acres)
+SELECT DISTINCT aoiid,
+landunit,
+'Hydric Soils' AS attributename,
+ROUND (SUM (mapunit_acres ) OVER(PARTITION BY aoiid), 2) AS aoi_acres,
+H3.mukey,
+CASE WHEN hydric_rating = 'Nonhydric' THEN 0 ELSE 1 END AS hydric_flag,
+mapunit_acres * low_pct AS low_acres, 
+mapunit_acres * rv_pct AS rv_acres , 
+mapunit_acres * high_pct AS high_acres  
+FROM #Hydric2 AS H3
+INNER JOIN #M2 AS MH2 ON MH2.mukey = H3.mukey
+GROUP BY aoiid, landunit, H3.mukey, mapunit_acres, hydric_rating, low_pct, rv_pct, high_pct
+```
+
+aoiid|landunit|attributename|AOI_Acres|rating|rating_key|mukey|hydric_flag|low_acres|rv_acres|high_acres
+------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|354627|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|354648|1|0.00287|0.01435|0.0574
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2494708|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525720|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525732|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525733|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525739|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525745|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525746|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525754|1|10.1104|10.7423|12.51162
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525764|1|14.1528|15.03735|17.51409
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525766|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2525769|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2755648|0|0|0|0
+1|T9981 Fld3 |Hydric Soils |328.95|NULL|NULL|2755654|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525720|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525724|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525730|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525745|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525746|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525754|1|18.5104|19.6673|22.90662
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525767|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2525769|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2755639|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2755643|0|0|0|0
+2|T9981 Fld4 |Hydric Soils |318.72|NULL|NULL|2755648|0|0|0|0
+
+
+### Return Hydric by Land Unit
+```{SQL}
+
+-- Return hydric by Land Unit
+SELECT DISTINCT landunit,
+CASE WHEN rv_acres  IS NOT NULL THEN CONCAT ('Hydric Soils' , ':' , 1) 
+WHEN rv_acres  = 0 THEN CONCAT ('Hydric Soils' , ':' , 0)
+WHEN rv_acres IS  NULL THEN CONCAT ('Hydric Soils', ':' , 'Not Rated') 
+END AS rating_key,
+
+attributename,
+ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_low_acres, 
+ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_rv_acres, 
+ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) AS aoiid_high_acres,
+ROUND((ROUND (SUM (low_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_low_pct, 
+ROUND((ROUND (SUM (rv_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_rv_pct,
+ROUND((ROUND (SUM (high_acres) OVER(PARTITION BY aoiid), 2) / aoi_acres) * 100.0, 2) AS aoiid_high_pct
+FROM #Hydric3
+```
+
+
+## Final Results Table
+andunit|rating_key|attributename|aoiid_low_acres|aoiid_rv_acres|aoiid_high_acres|aoiid_low_pct|aoiid_rv_pct|aoiid_high_pct|
+--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|
+T9981 Fld3          |Hydric Soils:1|Hydric Soils                                                |24.27|25.79|30.08|7.38|7.84|9.14|
+T9981 Fld4          |Hydric Soils:1|Hydric Soils                                                |18.51|19.67|22.91|5.81|6.17|7.19|
+
+## Map Results
+
+![Figure 1.---Hydric rating by map unit using component count.](https://jneme910.github.io/CART/TableImages/Hydric_Map_Final_Results.PNG)
+
+## The Criteria for Hydric Soils
+
+The criteria for hydric soils are represented by codes, for example, 2 or 3. Definitions for the codes are as follows:
+
+1. All Histels except for Folistels, and Histosols except for Folists.
+
+2. Soils in Aquic suborders, great groups, or subgroups, Albolls suborder, Historthels great group, Histoturbels great group, Pachic subgroups, or Cumulic subgroups that:
+
+    a. Based on the range of characteristics for the soil series, will at least in part meet one or more Field Indicators of Hydric Soils in the United States, or
+
+    b. Show evidence that the soil meets the definition of a hydric soil;
+
+3. Soils that are frequently ponded for long or very long duration during the growing season.
+
+    a. Based on the range of characteristics for the soil series, will at least in part meet one or more Field Indicators of Hydric Soils in the United States, or
+
+    b. Show evidence that the soil meets the definition of a hydric soil;
+
+4. Map unit components that are frequently flooded for long duration or very long duration during the growing season that:
+
+    a. Based on the range of characteristics for the soil series, will at least in part meet one or more Field Indicators of Hydric Soils in the United States, or
+
+    b. Show evidence that the soil meets the definition of a hydric soil;
+
+Hydric Condition: Food Security Act information regarding the ability to grow a commodity crop without removing woody vegetation or manipulating hydrology.
+
+## References
+
+1. Federal Register. July 13, 1994. Changes in hydric soils of the United States.
+2. Federal Register. February, 28, 2012. Hydric soils of the United States.
+3. Soil Survey Division Staff. 1993. Soil survey manual. Soil Conservation Service. U.S. Department of Agriculture Handbook 18.
+4. Soil Survey Staff. 1999. Soil taxonomy: A basic system of soil classification for making and interpreting soil surveys. 2nd edition. Natural Resources Conservation Service. U.S. Department of Agriculture Handbook 436.
+5. Soil Survey Staff. 2010. Keys to soil taxonomy. 11th edition. U.S. Department of Agriculture, Natural Resources Conservation Service.
+6. Vasilas, L.M., G.W. Hurt, and J.F Berkowitz, editors. 2018. Field indicators of hydric soils in the United States, version 8.2.

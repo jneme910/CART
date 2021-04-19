@@ -1,0 +1,1893 @@
+---
+title: "Soil Organic Carbon Stocks"
+author: "J. Nemecek, S.A. Wills, and C. Ferguson"
+date: '`r paste("First created on 2017-11-12. Updated on", Sys.Date())`'
+tags: []
+output: 
+  html_document: 
+    toc: true
+    toc_float: true
+    toc_depth: 4
+    highlight: pygments
+---
+
+
+# Soil Organic Carbon Stocks by Landunit
+[SQL Script Soil Organic Carbon Stock](https://github.com/jneme910/CART/blob/master/SQL-Library/SDA_CART_SoilsQuery_kitchensink_20190612.txt) 
+
+This query runs through the Soil Data Access tabular data query portal. The portal queries current databases maintained by the U.S. National Cooperative Soil Survey. 
+
+Soil organic carbon (SOC) stocks are estimates of the total mass of SOC in a soil profile for a given depth (0 cm up to the depth of the soil profile). SOC stocks in each soil component and map unit are expressed in metric tons (Mg) per hectare for predetermined depth increments. Null values are presented where data are incomplete or not available.
+
+General information about this query:
+
+* It uses all components with horizon data; and
+* It does not calculate component SOC below the following component restrictions:
+     + Lithic bedrock, paralithic bedrock, densic bedrock, fragipan, duripan, sulfuric, petrocalcic and petroferic.
+   
+   
+$$Layer\ SOC\ stock =  (hz_{T} * ( ( om / 1.724 ) * db3 ) * (100.0 - fragvol) / 100.0)$$
+
+where `hz_{T}` = horizon thickness, `om` = organic matter, `db3` = bulk density and `fragvol` = coarse fragment volume.
+
+## Rating Class and Values
+
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+
+|Rating Class|Value Range|
+|------------|------------|
+|Very Low| >0 to <10|
+|Low| >=10 to 25|
+|Moderate| >=25 to <50|
+|Moderately High| >=50 to 100|
+|High| >100|
+
+
+####  Insert identifier(s) string and WKT geometry for each area of interest (AOI) polygon
+
+```{SQL}
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+```
+
+
+|aoiid	|landunit|	aoigeom|
+|------|-------------|---------------------------------------------------------------------------------------|
+|1	|T9981 Fld3	|POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))|
+|2	|T9981 Fld4|	POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))|
+
+#### Create summary acres for each landunit
+
+```{SQL}
+CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;
+```
+
+|aoiid|	landunit|landunit_acres|
+|------|-------------|----------------|
+|1|	T9981 Fld3|          	328.952|
+|2|	T9981 Fld4  |        	318.722|
+
+
+#### Populate intersected soil polygon table with geometry
+```{SQL}
+-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;
+```
+
+
+
+
+####  Populate soil geometry with landunit attribute
+```{SQL}
+-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );
+```
+
+```{SQL}
+-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;
+```
+
+
+#### Populate soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+-- Soil map unit acres, aggregated by mukey (merges polygons together)
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );
+```
+
+
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+```
+
+aoiid|landunit|mukey|mapunit_acres
+------|----------|------------|---------------|
+1|T9981 Fld3          |354627|0.426
+1|T9981 Fld3          |354648|0.287
+1|T9981 Fld3          |2494708|1.729
+1|T9981 Fld3          |2525720|56.699
+1|T9981 Fld3          |2525732|1.35
+1|T9981 Fld3          |2525733|0.129
+1|T9981 Fld3          |2525739|28.479
+1|T9981 Fld3          |2525745|4.983
+1|T9981 Fld3          |2525746|16.106
+1|T9981 Fld3          |2525754|12.638
+1|T9981 Fld3          |2525764|17.691
+1|T9981 Fld3          |2525766|0.032
+1|T9981 Fld3          |2525769|181.356
+1|T9981 Fld3          |2755648|2.449
+1|T9981 Fld3          |2755654|4.599
+2|T9981 Fld4          |2525720|8.623
+2|T9981 Fld4          |2525724|0.458
+2|T9981 Fld4          |2525730|31.514
+2|T9981 Fld4          |2525745|62.205
+2|T9981 Fld4          |2525746|63.55
+2|T9981 Fld4          |2525754|23.138
+2|T9981 Fld4          |2525767|3.86
+2|T9981 Fld4          |2525769|103.909
+2|T9981 Fld4          |2755639|0.443
+2|T9981 Fld4          |2755643|9.641
+2|T9981 Fld4          |2755648|11.382
+
+
+
+## Component and Layer Tables
+
+These tables collect the information needed on map units and components. This includes all map units selected above and all components (typically soil series) within each map unit that do not have a limiting layer within 200 cm. The concepts of components are described by the NSSH (Part 627.034). This example is limited to one mapunit, mukey = 2809839. The information needed for further SOC stock calculations, individual layer information, is selected from each component.
+
+Component variables used in SOC stock calculation (r denotes that the value is representative of the central tendency):
+   * comppct_r = the composition of each map unit, reported as the proportion (%) of the map unit made up of that soil component as part of the map unit documentation process (NSSH, 2017 -- Part 627.08)
+   
+### Component Level Data and Mapunit Sum-of-comppct_r (major components only)    
+ 
+```{SQL}
+CREATE TABLE #M4
+(   aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT,
+    cokey INT,
+    compname CHAR(60),
+    comppct_r INT,
+    majcompflag CHAR(3),
+	mu_pct_sum INT, 
+	major_mu_pct_sum INT, 
+    drainagecl CHAR(254)
+    );
+```
+
+```{SQL}
+---Populate component level data with cokey, comppct_r and mapunit sum-of-comppct_r
+INSERT INTO #M4
+SELECT M2.aoiid, M2.landunit, M2.mukey, mapunit_acres, CO.cokey, CO.compname, CO.comppct_r, CO.majcompflag, (SELECT SUM (CCO.comppct_r) 
+FROM #M2 AS MM2
+INNER JOIN component AS CCO ON CCO.mukey=MM2.mukey  AND M2.mukey=MM2.mukey AND majcompflag = 'Yes'  )  AS  major_mu_pct_sum,
+SUM (CO.comppct_r) OVER(PARTITION BY M2.landunit, M2.mukey) AS mu_pct_sum, drainagecl
+FROM #M2 AS M2
+INNER JOIN component AS CO ON CO.mukey = M2.mukey
+```
+
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|mu_pct_sum|major_mu_pct_sum|drainagecl
+-----|---------|-------|-------------|-------|---------|--------|-----------|----------------|-------------|----------------|------------|
+1|T9981 Fld3|354627|0.426|16464493|Slickspots|2|No |90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464494|Daglum    |25|Yes|90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464495|Farnuf    |65|Yes|90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464496|Grail     |3|No |90|100|Moderately well drained 
+1|T9981 Fld3|354627|0.426|16464497|Rhoades   |3|No |90|100|Well drained  
+1|T9981 Fld3|354627|0.426|16464498|Tally     |2|No |90|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464607|Amor      |25|Yes|85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464608|Arnegard  |4|No |85|100|Moderately well drained 
+1|T9981 Fld3|354648|0.287|16464609|Belfield  |4|No |85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464610|Heil      |1|No |85|100|Poorly drained
+1|T9981 Fld3|354648|0.287|16464611|Lantry    |3|No |85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464612|Reeder    |60|Yes|85|100|Well drained  
+1|T9981 Fld3|354648|0.287|16464613|Vebar     |3|No |85|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663928|Regent    |5|No |81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663929|Chama     |5|No |81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663930|Amor      |49|Yes|81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663931|Cabba     |32|Yes|81|100|Well drained  
+1|T9981 Fld3|2494708|1.729|16663932|Shambo    |9|No |81|100|Well drained  
+1|T9981 Fld3|2525720|56.699|16663899|Daglum    |33|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525720|56.699|16663900|Savage    |3|No |176|100|Well drained  
+1|T9981 Fld3|2525720|56.699|16663901|Barkof    |2|No |176|100|Well drained  
+1|T9981 Fld3|2525720|56.699|16663902|Rhoades   |2|No |176|100|Moderately well drained 
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525720|56.699|16663904|Belfield  |5|No |176|100|Moderately well drained 
+1|T9981 Fld3|2525732|1.35|16663795|Lakota    |4|No |72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663797|Yegen     |17|Yes|72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663798|Desart    |14|No |72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663799|Parshall  |6|No |72|100|Well drained  
+1|T9981 Fld3|2525732|1.35|16663800|Rhoades   |2|No |72|100|Moderately well drained 
+1|T9981 Fld3|2525732|1.35|16663801|Vebar     |2|No |72|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663950|Beisigl   |7|No |75|100|Somewhat excessively drained      
+1|T9981 Fld3|2525733|0.129|16663951|Vebar     |50|Yes|75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen   |25|Yes|75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663953|Tally     |14|No |75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663954|Amor      |2|No |75|100|Well drained  
+1|T9981 Fld3|2525733|0.129|16663955|Arnegard  |2|No |75|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663916|Tally     |12|No |78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663917|Vebar     |58|Yes|78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663918|Arnegard  |8|No |78|100|Well drained  
+1|T9981 Fld3|2525739|28.479|16663919|Cohagen   |2|No |78|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663920|Farnuf    |12|No |150|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663921|Shambo    |75|Yes|150|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663922|Arnegard  |10|No |150|100|Well drained  
+1|T9981 Fld3|2525745|4.983|16663923|Amor      |3|No |150|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663924|Arnegard  |10|No |156|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663925|Farnuf    |8|No |156|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663926|Amor      |4|No |156|100|Well drained  
+1|T9981 Fld3|2525746|16.106|16663927|Shambo    |78|Yes|156|100|Well drained  
+1|T9981 Fld3|2525754|12.638|16663598|Heil      |3|No |150|100|Poorly drained
+1|T9981 Fld3|2525754|12.638|16663599|Rhoades   |4|No |150|100|Moderately well drained 
+1|T9981 Fld3|2525754|12.638|16663600|Daglum    |2|No |150|100|Moderately well drained 
+1|T9981 Fld3|2525754|12.638|16663601|Vanda     |5|No |150|100|Well drained  
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|150|100|Poorly drained
+1|T9981 Fld3|2525754|12.638|16663603|Regan     |6|No |150|100|Poorly drained
+1|T9981 Fld3|2525754|12.638|16663604|Glenross  |5|No |150|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663605|Peta      |2|No |55|100|Somewhat poorly drained 
+1|T9981 Fld3|2525764|17.691|16663606|Dimmick   |6|No |55|100|Very poorly drained     
+1|T9981 Fld3|2525764|17.691|16663607|Arveson   |12|No |55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663608|Regan     |10|No |55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663609|Harriet   |7|No |55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663610|Straw     |3|No |55|100|Well drained  
+1|T9981 Fld3|2525764|17.691|16663611|Regan     |55|Yes|55|100|Poorly drained
+1|T9981 Fld3|2525764|17.691|16663612|Marysland |5|No |55|100|Poorly drained
+1|T9981 Fld3|2525766|0.032|16663539|Water     |100|Yes|100|100|NULL
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525769|181.356|16663986|Grail     |5|No |176|100|Moderately well drained 
+1|T9981 Fld3|2525769|181.356|16663987|Daglum    |40|Yes|176|100|Moderately well drained 
+1|T9981 Fld3|2525769|181.356|16663988|Savage    |5|No |176|100|Well drained  
+1|T9981 Fld3|2525769|181.356|16663989|Rhoades   |2|No |176|100|Moderately well drained 
+1|T9981 Fld3|2755648|2.449|16663766|Reeder    |58|Yes|156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663768|Amor      |10|No |156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663769|Dogtooth  |5|No |156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663770|Regent    |3|No |156|100|Well drained  
+1|T9981 Fld3|2755648|2.449|16663771|Belfield  |2|No |156|100|Moderately well drained 
+1|T9981 Fld3|2755648|2.449|16663772|Barkof    |2|No |156|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663846|Reeder    |60|Yes|85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663847|Amor      |25|Yes|85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663848|Belfield  |4|No |85|100|Moderately well drained 
+1|T9981 Fld3|2755654|4.599|16663849|Regent    |3|No |85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663850|Vebar     |3|No |85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663851|Chama     |3|No |85|100|Well drained  
+1|T9981 Fld3|2755654|4.599|16663852|Arnegard  |2|No |85|100|Well drained  
+2|T9981 Fld4|2525720|8.623|16663899|Daglum    |33|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525720|8.623|16663900|Savage    |3|No |176|100|Well drained  
+2|T9981 Fld4|2525720|8.623|16663901|Barkof    |2|No |176|100|Well drained  
+2|T9981 Fld4|2525720|8.623|16663902|Rhoades   |2|No |176|100|Moderately well drained 
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525720|8.623|16663904|Belfield  |5|No |176|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664017|Savage    |30|Yes|85|100|Well drained  
+2|T9981 Fld4|2525724|0.458|16664018|Daglum    |20|Yes|85|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664019|Grail     |8|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664020|Regent    |5|No |85|100|Well drained  
+2|T9981 Fld4|2525724|0.458|16664021|Rhoades   |2|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|85|100|Moderately well drained 
+2|T9981 Fld4|2525730|31.514|16663990|Daglum    |2|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525730|31.514|16663991|Regent    |68|Yes|85|100|Well drained  
+2|T9981 Fld4|2525730|31.514|16663992|Savage    |17|Yes|85|100|Well drained  
+2|T9981 Fld4|2525730|31.514|16663993|Cabba     |2|No |85|100|Well drained  
+2|T9981 Fld4|2525730|31.514|16663994|Grail     |6|No |85|100|Moderately well drained 
+2|T9981 Fld4|2525730|31.514|16663995|Moreau    |5|No |85|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663920|Farnuf    |12|No |150|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663921|Shambo    |75|Yes|150|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663922|Arnegard  |10|No |150|100|Well drained  
+2|T9981 Fld4|2525745|62.205|16663923|Amor      |3|No |150|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663924|Arnegard  |10|No |156|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663925|Farnuf    |8|No |156|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663926|Amor      |4|No |156|100|Well drained  
+2|T9981 Fld4|2525746|63.55|16663927|Shambo    |78|Yes|156|100|Well drained  
+2|T9981 Fld4|2525754|23.138|16663598|Heil      |3|No |150|100|Poorly drained
+2|T9981 Fld4|2525754|23.138|16663599|Rhoades   |4|No |150|100|Moderately well drained 
+2|T9981 Fld4|2525754|23.138|16663600|Daglum    |2|No |150|100|Moderately well drained 
+2|T9981 Fld4|2525754|23.138|16663601|Vanda     |5|No |150|100|Well drained  
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|150|100|Poorly drained
+2|T9981 Fld4|2525754|23.138|16663603|Regan     |6|No |150|100|Poorly drained
+2|T9981 Fld4|2525754|23.138|16663604|Glenross  |5|No |150|100|Poorly drained
+2|T9981 Fld4|2525767|3.86|16663540|Water     |100|Yes|100|100|NULL
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525769|103.909|16663986|Grail     |5|No |176|100|Moderately well drained 
+2|T9981 Fld4|2525769|103.909|16663987|Daglum    |40|Yes|176|100|Moderately well drained 
+2|T9981 Fld4|2525769|103.909|16663988|Savage    |5|No |176|100|Well drained  
+2|T9981 Fld4|2525769|103.909|16663989|Rhoades   |2|No |176|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663552|Regent    |3|No |80|100|Well drained  
+2|T9981 Fld4|2755639|0.443|16663553|Lawther   |2|No |80|100|Well drained  
+2|T9981 Fld4|2755639|0.443|16663554|Savage    |62|Yes|80|100|Well drained  
+2|T9981 Fld4|2755639|0.443|16663555|Grail     |18|Yes|80|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663556|Belfield  |8|No |80|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663557|Daglum    |2|No |80|100|Moderately well drained 
+2|T9981 Fld4|2755639|0.443|16663558|Farland   |5|No |80|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663956|Telfer    |3|No |88|100|Somewhat excessively drained      
+2|T9981 Fld4|2755643|9.641|16663957|Flasher   |30|Yes|88|100|Somewhat excessively drained      
+2|T9981 Fld4|2755643|9.641|16663958|Vebar     |40|Yes|88|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663959|Tally     |18|Yes|88|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663960|Parshall  |5|No |88|100|Well drained  
+2|T9981 Fld4|2755643|9.641|16663961|Amor      |4|No |88|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663766|Reeder    |58|Yes|156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663768|Amor      |10|No |156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663769|Dogtooth  |5|No |156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663770|Regent    |3|No |156|100|Well drained  
+2|T9981 Fld4|2755648|11.382|16663771|Belfield  |2|No |156|100|Moderately well drained 
+2|T9981 Fld4|2755648|11.382|16663772|Barkof    |2|No |156|100|Well drained  
+
+
+#### Acpf table
+
+```{SQL}
+CREATE TABLE #acpf
+(  aoiid INT ,
+landunit CHAR(20), 
+mukey INT,
+mapunit_acres FLOAT, 
+cokey INT,
+compname CHAR(60),
+comppct_r INT,
+majcompflag  CHAR(3),
+localphase CHAR(60),
+ hzname CHAR(20),
+ hzdept_r INT,
+ hzdepb_r INT,
+  awc_r FLOAT, 
+ restrictiondepth INT,
+ restrictiodepth INT,
+ TOPrestriction	CHAR(80),	
+tcl CHAR(40),	
+thickness	INT,
+om_r	FLOAT, 
+dbthirdbar_r FLOAT,
+fragvol	 INT,
+texture	CHAR(20),
+chkey	 INT,
+mu_pct_sum INT)
+;
+```
+
+```{SQL}
+INSERT INTO #acpf
+SELECT DISTINCT 
+ MA44.aoiid ,
+ MA44.landunit, 
+ MA44.mukey,
+ MA44.mapunit_acres, 
+ MA44.cokey,
+ MA44.compname,
+ MA44.comppct_r,
+ MA44.majcompflag,
+ localphase,
+ hzname,
+ hzdept_r,
+ hzdepb_r,
+  awc_r , 
+(SELECT CAST(MIN(resdept_r) AS INTEGER) FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND reskind  IS NOT NULL) AS restrictiondepth,
+(SELECT CASE WHEN MIN (resdept_r) IS NULL THEN 200 ELSE CAST (MIN (resdept_r) AS INT) END FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND reskind IS NOT NULL) AS restrictiodepth,
+(SELECT TOP 1  reskind  FROM component LEFT OUTER JOIN corestrictions ON component.cokey = corestrictions.cokey WHERE component.cokey = coa.cokey AND corestrictions.reskind IN ('Lithic bedrock','Duripan', 'Densic bedrock', 'Paralithic bedrock', 'Fragipan', 'Natric', 'Ortstein', 'Permafrost', 'Petrocalcic', 'Petrogypsic')
+AND reskind IS NOT NULL ORDER BY resdept_r) AS TOPrestriction,
+ (SELECT TOP 1 texcl FROM chtexturegrp AS chtg INNER JOIN chtexture AS cht ON chtg.chtgkey=cht.chtgkey  AND chtg.rvindicator = 'yes' AND chtg.chkey=cha.chkey) AS tcl,
+ CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST((hzdepb_r-hzdept_r) AS INT) END AS thickness,  
+CASE WHEN texture LIKE '%PM%' AND (om_r) IS NULL THEN 35
+WHEN texture LIKE '%MUCK%' AND (om_r) IS NULL THEN 35
+WHEN texture LIKE '%PEAT%' AND (om_r) IS NULL THEN 35 ELSE om_r END AS om_r , 
+
+CASE WHEN texture LIKE '%PM%' AND (dbthirdbar_r) IS NULL THEN 0.25
+WHEN texture LIKE '%MUCK%' AND (dbthirdbar_r) IS NULL THEN 0.25
+WHEN texture LIKE '%PEAT%' AND (dbthirdbar_r) IS NULL THEN 0.25 ELSE dbthirdbar_r END AS dbthirdbar_r, 
+  (SELECT CASE WHEN SUM (cf.fragvol_r) IS NULL THEN 0 ELSE CAST (SUM(cf.fragvol_r) AS INT) END FROM chfrags cf WHERE cf.chkey = cha.chkey) as fragvol,
+texture,
+cha.chkey,
+ mu_pct_sum
+FROM (#M4 AS MA44 INNER JOIN (component AS coa INNER JOIN  chorizon  AS cha  ON cha.cokey=coa.cokey  ) ON MA44.cokey=coa.cokey AND MA44.majcompflag = 'Yes' )
+LEFT OUTER JOIN  chtexturegrp AS ct ON cha.chkey=ct.chkey and ct.rvindicator = 'Yes'
+and CASE WHEN hzdept_r IS NULL THEN 2 
+WHEN texture LIKE '%PM%' AND om_r IS NULL THEN 1
+WHEN texture LIKE '%MUCK%' AND om_r IS NULL THEN 1
+WHEN texture LIKE '%PEAT%' AND om_r IS NULL THEN 1
+WHEN texture LIKE '%PM%' AND dbthirdbar_r IS NULL THEN 1
+WHEN texture LIKE '%MUCK%' AND dbthirdbar_r IS NULL THEN 1
+WHEN texture LIKE '%PEAT%' AND dbthirdbar_r IS NULL THEN 1
+WHEN om_r IS NULL THEN 2 
+WHEN om_r = 0 THEN 2 
+WHEN dbthirdbar_r IS NULL THEN 2
+WHEN dbthirdbar_r = 0 THEN 2
+ELSE 1 END = 1;
+
+---Sums the Component Percent and eliminate duplicate values by cokey
+SELECT landunit, aoiid, mapunit_acres , mukey, cokey, FORMAT ((1.0 * comppct_r / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct
+INTO #muacpf
+FROM #acpf AS acpf2
+WHERE acpf2.cokey=cokey
+GROUP BY landunit, aoiid, mapunit_acres , mukey, cokey, comppct_r, mu_pct_sum
+```
+
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|majcompflag|localphase|hzname|hzdept_r|hzdepb_r|awc_r|restrictiondepth|restrictiodepth|TOPrestriction|tcl|thickness|om_r|dbthirdbar_r|fragvol|texture|chkey|mu_pct_sum
+-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------
+1|T9981 Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H2|18|43|0.129999995|NULL|200|NULL|Clay  |25|1.5|1.450000048|0|C |47888422|90
+1|T9981 Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H1|0|18|0.140000001|NULL|200|NULL|Loam  |18|3|1.350000024|0|L |47888421|90
+1|T9981 Fld3|354627|0.426|16464494|Daglum|25|Yes|NULL|H3|43|152|0.129999995|NULL|200|NULL|Silty clay loam |109|0.5|1.600000024|0|SICL  |47888423|90
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H2|20|41|0.180000007|NULL|200|NULL|Clay loam |21|1.5|1.299999952|0|CL|47887710|90
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H1|0|20|0.189999998|NULL|200|NULL|Loam  |20|3|1.299999952|0|L |47887709|90
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H3|41|89|0.180000007|NULL|200|NULL|Loam  |48|0.75|1.330000043|0|L |47887707|90
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|Yes|NULL|H4|89|152|0.180000007|NULL|200|NULL|Loam  |63|0.25|1.350000024|0|L |47887708|90
+1|T9981 Fld3|354648|0.287|16464607|Amor  |25|Yes|NULL|Cr|86|152|NULL|77|77|Paralithic bedrock  |NULL|66|0.25|NULL|0|NULL|47888315|85
+1|T9981 Fld3|354648|0.287|16464607|Amor  |25|Yes|NULL|H2|20|33|0.180000007|77|77|Paralithic bedrock  |Loam  |13|2|1.299999952|2|L |47888313|85
+1|T9981 Fld3|354648|0.287|16464607|Amor  |25|Yes|NULL|H1|0|20|0.189999998|77|77|Paralithic bedrock  |Loam  |20|4.5|1.279999971|2|L |47888312|85
+1|T9981 Fld3|354648|0.287|16464607|Amor  |25|Yes|NULL|H3|33|86|0.170000002|77|77|Paralithic bedrock  |Loam  |53|0.75|1.399999976|2|L |47888314|85
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|Yes|NULL|Cr|81|152|0|77|77|Paralithic bedrock  |NULL|71|NULL|NULL|0|NULL|47887978|85
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|Yes|NULL|H3|48|81|0.159999996|77|77|Paralithic bedrock  |Clay loam |33|1.25|1.350000024|13|CL|47887981|85
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|Yes|NULL|H2|13|48|0.170000002|77|77|Paralithic bedrock  |Clay loam |35|2|1.299999952|0|CL|47887980|85
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|Yes|NULL|H1|0|13|0.189999998|77|77|Paralithic bedrock  |Loam  |13|4|1.279999971|8|L |47887979|85
+1|T9981 Fld3|2494708|1.729|16663930|Amor  |49|Yes|NULL|Cr|76|200|NULL|76|76|Paralithic bedrock  |NULL|124|NULL|NULL|0|NULL|48509159|81
+1|T9981 Fld3|2494708|1.729|16663930|Amor  |49|Yes|NULL|Bw1   |13|23|0.189999998|76|76|Paralithic bedrock  |Loam  |10|2|1.399999976|0|L |48509160|81
+1|T9981 Fld3|2494708|1.729|16663930|Amor  |49|Yes|NULL|Ap|0|13|0.189999998|76|76|Paralithic bedrock  |Loam  |13|3|1.399999976|2|L |48509164|81
+1|T9981 Fld3|2494708|1.729|16663930|Amor  |49|Yes|NULL|Bw2   |23|38|0.170000002|76|76|Paralithic bedrock  |Loam  |15|1.5|1.350000024|0|L |48509163|81
+1|T9981 Fld3|2494708|1.729|16663930|Amor  |49|Yes|NULL|BCk   |58|76|0.170000002|76|76|Paralithic bedrock  |Loam  |18|0.5|1.399999976|0|L |48509162|81
+1|T9981 Fld3|2494708|1.729|16663930|Amor  |49|Yes|NULL|Bk|38|58|0.170000002|76|76|Paralithic bedrock  |Loam  |20|0.800000012|1.350000024|0|L |48509161|81
+1|T9981 Fld3|2494708|1.729|16663931|Cabba |32|Yes|NULL|Cr|38|200|NULL|38|38|Paralithic bedrock  |NULL|162|NULL|NULL|0|NULL|48509165|81
+1|T9981 Fld3|2494708|1.729|16663931|Cabba |32|Yes|NULL|Ap|0|13|0.189999998|38|38|Paralithic bedrock  |Loam  |13|2|1.399999976|5|L |48509166|81
+1|T9981 Fld3|2494708|1.729|16663931|Cabba |32|Yes|NULL|Bk|13|38|0.170000002|38|38|Paralithic bedrock  |Loam  |25|0.800000012|1.399999976|2|L |48509167|81
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|Yes|NULL|C |119|200|0.100000001|12|12|Natric|Clay  |81|0.25|1.450000048|0|C |48509110|176
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|Yes|NULL|Btkny |46|81|0.129999995|12|12|Natric|Clay loam |35|0.75|1.450000048|0|CL|48509108|176
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|Yes|NULL|BCk   |81|119|0.109999999|12|12|Natric|Clay loam |38|0.5|1.399999976|0|CL|48509109|176
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|Yes|NULL|E |7|12|0.219999999|12|12|Natric|Silt loam |5|3.5|1.350000024|0|SIL   |48509106|176
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|Yes|NULL|A |0|7|0.230000004|12|12|Natric|Silt loam |7|5.5|1.200000048|0|SIL   |48509105|176
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|Yes|NULL|Btn   |12|46|0.170000002|12|12|Natric|Silty clay loam |34|2|1.350000024|0|SICL  |48509107|176
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|NULL|C |117|200|0.100000001|8|8|Natric|Clay  |83|0.25|1.450000048|0|C |48509123|176
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|NULL|Btn   |8|20|0.180000007|8|8|Natric|Clay loam |12|1.25|1.399999976|0|CL|48509121|176
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|NULL|Btknyz|20|36|0.129999995|8|8|Natric|Clay loam |16|1.25|1.399999976|0|CL|48509122|176
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|NULL|Bkyz  |36|117|0.109999999|8|8|Natric|Clay loam |81|0.25|1.450000048|0|CL|48509124|176
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades   |55|Yes|NULL|E |0|8|0.209999993|8|8|Natric|Loam  |8|4|1.399999976|0|L |48509125|176
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|NULL|Btn   |30|43|0.119999997|30|30|Natric|Fine sandy loam |13|0.5|1.5|0|FSL   |48508966|72
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|NULL|Ap|0|15|0.170000002|30|30|Natric|Fine sandy loam |15|1.5|1.399999976|0|FSL   |48508969|72
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|NULL|E |15|30|0.170000002|30|30|Natric|Fine sandy loam |15|1.5|1.450000048|0|FSL   |48508965|72
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|NULL|Bz|43|84|0.150000006|30|30|Natric|Fine sandy loam |41|0.5|1.5|0|FSL   |48508968|72
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka   |55|Yes|NULL|C |84|152|0.090000004|30|30|Natric|Loamy fine sand |68|0.25|1.450000048|0|LFS   |48508967|72
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|Yes|NULL|Ap|0|15|0.170000002|NULL|200|NULL|Fine sandy loam |15|3|1.25|0|FSL   |48508961|72
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|Yes|NULL|Bt|15|71|0.170000002|NULL|200|NULL|Sandy clay loam |56|1|1.549999952|0|SCL   |48508962|72
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|Yes|NULL|Bk|71|86|0.129999995|NULL|200|NULL|Sandy loam|15|0.5|1.549999952|0|SL|48508963|72
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|Yes|NULL|BC|86|152|0.119999997|NULL|200|NULL|Sandy loam|66|0.25|1.549999952|0|SL|48508964|72
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen   |25|Yes|NULL|Cr|43|200|NULL|43|43|Paralithic bedrock  |NULL|157|NULL|NULL|0|NULL|48507618|75
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen   |25|Yes|NULL|Ap|0|15|0.159999996|43|43|Paralithic bedrock  |Fine sandy loam |15|1|1.5|3|FSL   |48507620|75
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen   |25|Yes|NULL|C |15|43|0.140000001|43|43|Paralithic bedrock  |Fine sandy loam |28|0.5|1.5|5|FSL   |48507619|75
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|Yes|NULL|Cr|74|200|NULL|74|74|Paralithic bedrock  |NULL|126|NULL|NULL|0|NULL|48507613|75
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|Yes|NULL|Bw1   |15|28|0.150000006|74|74|Paralithic bedrock  |Fine sandy loam |13|1.5|1.450000048|4|FSL   |48507615|75
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|Yes|NULL|Bw2   |28|43|0.140000001|74|74|Paralithic bedrock  |Fine sandy loam |15|1|1.5|6|FSL   |48507616|75
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|Yes|NULL|Ap|0|15|0.159999996|74|74|Paralithic bedrock  |Fine sandy loam |15|2|1.399999976|4|FSL   |48507614|75
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|Yes|NULL|Bk|43|74|0.129999995|74|74|Paralithic bedrock  |Fine sandy loam |31|0.5|1.549999952|7|FSL   |48507617|75
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|NULL|Bw2   |60|75|0.150000006|NULL|200|NULL|Fine sandy loam |15|1|1.549999952|2|FSL   |48509145|78
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|NULL|A |15|30|0.170000002|NULL|200|NULL|Fine sandy loam |15|2.5|1.450000048|1|FSL   |48509143|78
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|NULL|Ap|0|15|0.170000002|NULL|200|NULL|Fine sandy loam |15|3.5|1.5|1|FSL   |48509148|78
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|NULL|Bw1   |30|60|0.159999996|NULL|200|NULL|Fine sandy loam |30|1.5|1.5|1|FSL   |48509144|78
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|NULL|Bk|75|122|0.140000001|NULL|200|NULL|Fine sandy loam |47|0.75|1.549999952|3|FSL   |48509146|78
+1|T9981 Fld3|2525739|28.479|16663915|Parshall  |20|Yes|NULL|C |122|200|0.129999995|NULL|200|NULL|Fine sandy loam |78|0.25|1.600000024|5|FSL   |48509147|78
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|Yes|NULL|Cr|81|200|NULL|81|81|Paralithic bedrock  |NULL|119|NULL|NULL|0|NULL|48507454|78
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|Yes|NULL|BCk   |66|81|0.140000001|81|81|Paralithic bedrock  |Fine sandy loam |15|0.5|1.549999952|7|FSL   |48507456|78
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|Yes|NULL|Ap|0|15|0.170000002|81|81|Paralithic bedrock  |Fine sandy loam |15|2|1.549999952|3|FSL   |48507458|78
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|Yes|NULL|Bw1   |15|32|0.159999996|81|81|Paralithic bedrock  |Fine sandy loam |17|1.5|1.5|4|FSL   |48507455|78
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|Yes|NULL|Bw2   |32|66|0.150000006|81|81|Paralithic bedrock  |Fine sandy loam |34|1|1.5|6|FSL   |48507457|78
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|A |15|20|0.200000003|NULL|200|NULL|Loam  |5|3|1.299999952|0|L |48507476|150
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|Bw1   |20|33|0.180000007|NULL|200|NULL|Loam  |13|2.5|1.299999952|0|L |48507471|150
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|BCk   |107|122|0.170000002|NULL|200|NULL|Loam  |15|0.5|1.399999976|0|L |48507473|150
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|Ap|0|15|0.200000003|NULL|200|NULL|Loam  |15|3.5|1.299999952|0|L |48507475|150
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|Bk|72|107|0.180000007|NULL|200|NULL|Loam  |35|1|1.399999976|0|L |48507477|150
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|Bw2   |33|72|0.180000007|NULL|200|NULL|Loam  |39|1.5|1.299999952|0|L |48507472|150
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|Yes|NULL|C |122|200|0.170000002|NULL|200|NULL|Loam  |78|0.25|1.5|0|L |48507474|150
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|Yes|NULL|BCk   |107|122|0.170000002|NULL|200|NULL|Loam  |15|0.5|1.399999976|0|L |48507505|156
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|Yes|NULL|Ap|0|15|0.200000003|NULL|200|NULL|Loam  |15|3.5|1.299999952|0|L |48507502|156
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|Yes|NULL|Bw1   |15|33|0.200000003|NULL|200|NULL|Loam  |18|2.5|1.350000024|0|L |48507507|156
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|Yes|NULL|Bk|74|107|0.180000007|NULL|200|NULL|Loam  |33|1|1.399999976|0|L |48507504|156
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|Yes|NULL|Bw2   |33|74|0.180000007|NULL|200|NULL|Loam  |41|1.5|1.399999976|0|L |48507503|156
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|Yes|NULL|C |122|200|0.170000002|NULL|200|NULL|Loam  |78|0.25|1.5|0|L |48507506|156
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|occasionally flooded|3Ab   |97|102|0.109999999|5|5|Natric|Clay loam |5|0.25|1.450000048|0|CL|48508119|150
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|occasionally flooded|Btn   |5|46|0.129999995|5|5|Natric|Clay loam |41|2|1.399999976|0|CL|48508123|150
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|occasionally flooded|3C|102|152|0.109999999|5|5|Natric|Clay loam |50|0.25|1.399999976|0|CL|48508124|150
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|occasionally flooded|E |0|5|0.219999999|5|5|Natric|Loam  |5|4.5|1.25|0|L |48508122|150
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|occasionally flooded|Bz1   |46|71|0.129999995|5|5|Natric|Loam  |25|0.75|1.399999976|0|L |48508120|150
+1|T9981 Fld3|2525754|12.638|16663602|Harriet   |75|Yes|occasionally flooded|2Bz2  |71|97|0.119999997|5|5|Natric|Very fine sandy loam|26|0.5|1.5|0|VFSL  |48508121|150
+1|T9981 Fld3|2525764|17.691|16663611|Regan |55|Yes|saline, occasionally flooded  |2Czg  |71|152|0.119999997|NULL|200|NULL|Clay loam |81|0.75|1.399999976|0|CL|48508082|55
+1|T9981 Fld3|2525764|17.691|16663611|Regan |55|Yes|saline, occasionally flooded  |Az|0|23|0.140000001|NULL|200|NULL|Silt loam |23|4|1.149999976|0|SIL   |48508083|55
+1|T9981 Fld3|2525764|17.691|16663611|Regan |55|Yes|saline, occasionally flooded  |Bkzg  |23|71|0.140000001|NULL|200|NULL|Silty clay loam |48|2|1.399999976|0|SICL  |48508081|55
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|Btn1  |33|48|0.159999996|NULL|200|NULL|Clay  |15|2|1.350000024|0|C |48507781|176
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|E/B   |25|33|0.189999998|NULL|200|NULL|Clay loam |8|3|1.399999976|0|CL|48507780|176
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|Btn2  |48|66|0.159999996|NULL|200|NULL|Clay loam |18|1.5|1.399999976|0|CL|48507782|176
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|Bk|66|114|0.119999997|NULL|200|NULL|Clay loam |48|1|1.399999976|0|CL|48507783|176
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|C |114|200|0.100000001|NULL|200|NULL|Clay loam |86|0.5|1.5|0|CL|48507784|176
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|A |18|25|0.219999999|NULL|200|NULL|Silt loam |7|4|1.299999952|0|SIL   |48507779|176
+1|T9981 Fld3|2525769|181.356|16663985|Belfield  |48|Yes|NULL|Ap|0|18|0.219999999|NULL|200|NULL|Silt loam |18|4|1.299999952|0|SIL   |48507778|176
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|Yes|NULL|C |119|200|0.090000004|22|22|Natric|Clay  |81|0.25|1.450000048|0|C |48507795|176
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|Yes|NULL|Ap|0|18|0.180000007|22|22|Natric|Clay loam |18|3|1.350000024|0|CL|48507790|176
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|Yes|NULL|Btnky |47|81|0.129999995|22|22|Natric|Clay loam |34|1.5|1.399999976|0|CL|48507793|176
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|Yes|NULL|BCky  |81|119|0.109999999|22|22|Natric|Clay loam |38|0.75|1.399999976|0|CL|48507794|176
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|Yes|NULL|E |18|22|0.209999993|22|22|Natric|Silt loam |4|2.5|1.299999952|0|SIL   |48507791|176
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|Yes|NULL|Btn   |22|47|0.159999996|22|22|Natric|Silty clay loam |25|2|1.350000024|0|SICL  |48507792|176
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|NULL|Cr|66|152|0.079999998|25|25|Natric|NULL|86|0.25|1.5|0|BR|48507343|156
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|NULL|E |20|25|0.200000003|25|25|Natric|Silt loam |5|2.5|1.299999952|0|SIL   |48507341|156
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|NULL|BCk   |53|66|0.129999995|25|25|Natric|Silt loam |13|0.75|1.5|0|SIL   |48507344|156
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|NULL|Ap|0|20|0.219999999|25|25|Natric|Silt loam |20|3|1.149999976|0|SIL   |48507345|156
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|Yes|NULL|Btn   |25|53|0.129999995|25|25|Natric|Silty clay|28|1.5|1.5|0|SIC   |48507342|156
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|Yes|NULL|Cr|91|152|0.079999998|91|91|Paralithic bedrock  |NULL|61|0.25|1.529999971|0|BR|48507346|156
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|Yes|NULL|Bt|20|43|0.170000002|91|91|Paralithic bedrock  |Clay loam |23|2|1.399999976|0|CL|48507347|156
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|Yes|NULL|Ap|0|20|0.209999993|91|91|Paralithic bedrock  |Loam  |20|2|1.149999976|5|L |48507349|156
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|Yes|NULL|Bk|43|91|0.180000007|91|91|Paralithic bedrock  |Loam  |48|1.25|1.399999976|8|L |48507348|156
+1|T9981 Fld3|2755654|4.599|16663847|Amor  |25|Yes|NULL|Cr|79|152|0.079999998|79|79|Paralithic bedrock  |NULL|73|0.25|1.529999971|0|BR|48508787|85
+1|T9981 Fld3|2755654|4.599|16663847|Amor  |25|Yes|NULL|Ap|0|20|0.189999998|79|79|Paralithic bedrock  |Loam  |20|3|1.279999971|2|L |48508784|85
+1|T9981 Fld3|2755654|4.599|16663847|Amor  |25|Yes|NULL|Bw|20|48|0.180000007|79|79|Paralithic bedrock  |Loam  |28|2|1.299999952|2|L |48508785|85
+1|T9981 Fld3|2755654|4.599|16663847|Amor  |25|Yes|NULL|Bk|48|79|0.180000007|79|79|Paralithic bedrock  |Loam  |31|0.75|1.399999976|2|L |48508786|85
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|Yes|NULL|Cr|91|152|0.079999998|91|91|Paralithic bedrock  |NULL|61|0.25|1.529999971|0|BR|48508790|85
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|Yes|NULL|Bt|20|43|0.170000002|91|91|Paralithic bedrock  |Clay loam |23|2|1.399999976|0|CL|48508789|85
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|Yes|NULL|Ap|0|20|0.209999993|91|91|Paralithic bedrock  |Loam  |20|2|1.149999976|5|L |48508788|85
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|Yes|NULL|Bk|43|91|0.180000007|91|91|Paralithic bedrock  |Loam  |48|1.25|1.399999976|8|L |48508791|85
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|Yes|NULL|C |119|200|0.100000001|12|12|Natric|Clay  |81|0.25|1.450000048|0|C |48509110|176
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|Yes|NULL|Btkny |46|81|0.129999995|12|12|Natric|Clay loam |35|0.75|1.450000048|0|CL|48509108|176
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|Yes|NULL|BCk   |81|119|0.109999999|12|12|Natric|Clay loam |38|0.5|1.399999976|0|CL|48509109|176
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|Yes|NULL|E |7|12|0.219999999|12|12|Natric|Silt loam |5|3.5|1.350000024|0|SIL   |48509106|176
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|Yes|NULL|A |0|7|0.230000004|12|12|Natric|Silt loam |7|5.5|1.200000048|0|SIL   |48509105|176
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|Yes|NULL|Btn   |12|46|0.170000002|12|12|Natric|Silty clay loam |34|2|1.350000024|0|SICL  |48509107|176
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|NULL|C |117|200|0.100000001|8|8|Natric|Clay  |83|0.25|1.450000048|0|C |48509123|176
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|NULL|Btn   |8|20|0.180000007|8|8|Natric|Clay loam |12|1.25|1.399999976|0|CL|48509121|176
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|NULL|Btknyz|20|36|0.129999995|8|8|Natric|Clay loam |16|1.25|1.399999976|0|CL|48509122|176
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|NULL|Bkyz  |36|117|0.109999999|8|8|Natric|Clay loam |81|0.25|1.450000048|0|CL|48509124|176
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades   |55|Yes|NULL|E |0|8|0.209999993|8|8|Natric|Loam  |8|4|1.399999976|0|L |48509125|176
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|Btn   |31|46|0.159999996|NULL|200|NULL|Clay  |15|2|1.350000024|0|C |48509628|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|E/B   |23|31|0.189999998|NULL|200|NULL|Clay loam |8|3|1.350000024|0|CL|48509623|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|Btnk  |46|64|0.159999996|NULL|200|NULL|Clay loam |18|1.5|1.399999976|0|CL|48509629|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|Bk|64|110|0.119999997|NULL|200|NULL|Clay loam |46|0.75|1.450000048|0|CL|48509624|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|C |110|200|0.100000001|NULL|200|NULL|Clay loam |90|0.5|1.549999952|0|CL|48509625|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|A |15|23|0.230000004|NULL|200|NULL|Silt loam |8|3|1.320000052|0|SIL   |48509627|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield  |35|Yes|NULL|Ap|0|15|0.230000004|NULL|200|NULL|Silt loam |15|3|1.399999976|0|SIL   |48509626|85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|Yes|NULL|Btn   |22|42|0.159999996|22|22|Natric|Clay  |20|2|1.399999976|0|C |48509586|85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|Yes|NULL|C |93|162|0.090000004|22|22|Natric|Clay  |69|0.25|1.450000048|0|C |48509585|85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|Yes|NULL|BCkyz |78|93|0.109999999|22|22|Natric|Clay loam |15|0.75|1.399999976|0|CL|48509587|85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|Yes|NULL|Ap|0|15|0.180000007|22|22|Natric|Clay loam |15|3|1.350000024|0|CL|48509584|85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|Yes|NULL|Btnkyz|42|78|0.119999997|22|22|Natric|Clay loam |36|1.5|1.399999976|0|CL|48509588|85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|Yes|NULL|E |15|22|0.209999993|22|22|Natric|Loam  |7|2.5|1.299999952|0|L |48509583|85
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|Yes|NULL|Bt|15|35|0.170000002|NULL|200|NULL|Clay  |20|2|1.399999976|0|C |48509581|85
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|Yes|NULL|Ap|0|15|0.180000007|NULL|200|NULL|Clay loam |15|3|1.350000024|0|CL|48509578|85
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|Yes|NULL|Btk   |35|54|0.159999996|NULL|200|NULL|Clay loam |19|1|1.399999976|0|CL|48509582|85
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|Yes|NULL|Bk|54|125|0.150000006|NULL|200|NULL|Clay loam |71|0.75|1.450000048|0|CL|48509579|85
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|Yes|NULL|C |125|200|0.119999997|NULL|200|NULL|Clay loam |75|0.25|1.549999952|0|CL|48509580|85
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|Yes|NULL|Cr|91|200|NULL|91|91|Paralithic bedrock  |NULL|109|NULL|NULL|0|NULL|48507811|85
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|Yes|NULL|Bt1   |18|30|0.159999996|91|91|Paralithic bedrock  |Silty clay|12|2|1.350000024|0|SIC   |48507814|85
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|Yes|NULL|Bt2   |30|56|0.150000006|91|91|Paralithic bedrock  |Silty clay|26|1.200000048|1.399999976|0|SIC   |48507815|85
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|Yes|NULL|Bk|56|91|0.140000001|91|91|Paralithic bedrock  |Silty clay|35|0.75|1.399999976|0|SIC   |48507813|85
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|Yes|NULL|Ap|0|18|0.189999998|91|91|Paralithic bedrock  |Silty clay loam |18|3|1.350000024|0|SICL  |48507812|85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|Yes|NULL|Cr|170|200|NULL|170|170|Paralithic bedrock  |NULL|30|NULL|NULL|0|NULL|48507816|85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|Yes|NULL|Bt1   |18|35|0.170000002|170|170|Paralithic bedrock  |Silty clay|17|2|1.399999976|0|SIC   |48507820|85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|Yes|NULL|Bt2   |35|53|0.159999996|170|170|Paralithic bedrock  |Silty clay loam |18|1.25|1.399999976|0|SICL  |48507821|85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|Yes|NULL|Ap|0|18|0.200000003|170|170|Paralithic bedrock  |Silty clay loam |18|3|1.350000024|0|SICL  |48507817|85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|Yes|NULL|C |116|170|0.159999996|170|170|Paralithic bedrock  |Silty clay loam |54|0.25|1.399999976|0|SICL  |48507819|85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|Yes|NULL|Bk|53|116|0.159999996|170|170|Paralithic bedrock  |Silty clay loam |63|0.75|1.399999976|0|SICL  |48507818|85
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|A |15|20|0.200000003|NULL|200|NULL|Loam  |5|3|1.299999952|0|L |48507476|150
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|Bw1   |20|33|0.180000007|NULL|200|NULL|Loam  |13|2.5|1.299999952|0|L |48507471|150
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|BCk   |107|122|0.170000002|NULL|200|NULL|Loam  |15|0.5|1.399999976|0|L |48507473|150
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|Ap|0|15|0.200000003|NULL|200|NULL|Loam  |15|3.5|1.299999952|0|L |48507475|150
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|Bk|72|107|0.180000007|NULL|200|NULL|Loam  |35|1|1.399999976|0|L |48507477|150
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|Bw2   |33|72|0.180000007|NULL|200|NULL|Loam  |39|1.5|1.299999952|0|L |48507472|150
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|Yes|NULL|C |122|200|0.170000002|NULL|200|NULL|Loam  |78|0.25|1.5|0|L |48507474|150
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|Yes|NULL|BCk   |107|122|0.170000002|NULL|200|NULL|Loam  |15|0.5|1.399999976|0|L |48507505|156
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|Yes|NULL|Ap|0|15|0.200000003|NULL|200|NULL|Loam  |15|3.5|1.299999952|0|L |48507502|156
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|Yes|NULL|Bw1   |15|33|0.200000003|NULL|200|NULL|Loam  |18|2.5|1.350000024|0|L |48507507|156
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|Yes|NULL|Bk|74|107|0.180000007|NULL|200|NULL|Loam  |33|1|1.399999976|0|L |48507504|156
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|Yes|NULL|Bw2   |33|74|0.180000007|NULL|200|NULL|Loam  |41|1.5|1.399999976|0|L |48507503|156
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|Yes|NULL|C |122|200|0.170000002|NULL|200|NULL|Loam  |78|0.25|1.5|0|L |48507506|156
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|occasionally flooded|3Ab   |97|102|0.109999999|5|5|Natric|Clay loam |5|0.25|1.450000048|0|CL|48508119|150
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|occasionally flooded|Btn   |5|46|0.129999995|5|5|Natric|Clay loam |41|2|1.399999976|0|CL|48508123|150
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|occasionally flooded|3C|102|152|0.109999999|5|5|Natric|Clay loam |50|0.25|1.399999976|0|CL|48508124|150
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|occasionally flooded|E |0|5|0.219999999|5|5|Natric|Loam  |5|4.5|1.25|0|L |48508122|150
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|occasionally flooded|Bz1   |46|71|0.129999995|5|5|Natric|Loam  |25|0.75|1.399999976|0|L |48508120|150
+2|T9981 Fld4|2525754|23.138|16663602|Harriet   |75|Yes|occasionally flooded|2Bz2  |71|97|0.119999997|5|5|Natric|Very fine sandy loam|26|0.5|1.5|0|VFSL  |48508121|150
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|Btn1  |33|48|0.159999996|NULL|200|NULL|Clay  |15|2|1.350000024|0|C |48507781|176
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|E/B   |25|33|0.189999998|NULL|200|NULL|Clay loam |8|3|1.399999976|0|CL|48507780|176
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|Btn2  |48|66|0.159999996|NULL|200|NULL|Clay loam |18|1.5|1.399999976|0|CL|48507782|176
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|Bk|66|114|0.119999997|NULL|200|NULL|Clay loam |48|1|1.399999976|0|CL|48507783|176
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|C |114|200|0.100000001|NULL|200|NULL|Clay loam |86|0.5|1.5|0|CL|48507784|176
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|A |18|25|0.219999999|NULL|200|NULL|Silt loam |7|4|1.299999952|0|SIL   |48507779|176
+2|T9981 Fld4|2525769|103.909|16663985|Belfield  |48|Yes|NULL|Ap|0|18|0.219999999|NULL|200|NULL|Silt loam |18|4|1.299999952|0|SIL   |48507778|176
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|Yes|NULL|C |119|200|0.090000004|22|22|Natric|Clay  |81|0.25|1.450000048|0|C |48507795|176
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|Yes|NULL|Ap|0|18|0.180000007|22|22|Natric|Clay loam |18|3|1.350000024|0|CL|48507790|176
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|Yes|NULL|Btnky |47|81|0.129999995|22|22|Natric|Clay loam |34|1.5|1.399999976|0|CL|48507793|176
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|Yes|NULL|BCky  |81|119|0.109999999|22|22|Natric|Clay loam |38|0.75|1.399999976|0|CL|48507794|176
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|Yes|NULL|E |18|22|0.209999993|22|22|Natric|Silt loam |4|2.5|1.299999952|0|SIL   |48507791|176
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|Yes|NULL|Btn   |22|47|0.159999996|22|22|Natric|Silty clay loam |25|2|1.350000024|0|SICL  |48507792|176
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|Yes|NULL|Bt|25|61|0.159999996|NULL|200|NULL|Silty clay|36|3|1.299999952|2|SIC   |48508328|80
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|Yes|NULL|A |13|25|0.219999999|NULL|200|NULL|Silty clay loam |12|5|1.200000048|2|SICL  |48508327|80
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|Yes|NULL|Ap|0|13|0.219999999|NULL|200|NULL|Silty clay loam |13|5|1.200000048|2|SICL  |48508331|80
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|Yes|NULL|C |132|152|0.180000007|NULL|200|NULL|Silty clay loam |20|0.5|1.299999952|2|SICL  |48508329|80
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|Yes|NULL|Bk|61|132|0.170000002|NULL|200|NULL|Silty clay loam |71|1|1.299999952|1|SICL  |48508330|80
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|Yes|NULL|Bt|18|64|0.180000007|NULL|200|NULL|Silty clay|46|1.5|1.379999995|0|SIC   |48508333|80
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|Yes|NULL|Ap|0|18|0.209999993|NULL|200|NULL|Silty clay loam |18|2|1.149999976|0|SICL  |48508334|80
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|Yes|NULL|Bk|64|130|0.180000007|NULL|200|NULL|Silty clay loam |66|0.75|1.399999976|0|SICL  |48508335|80
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|Yes|NULL|C |130|203|0.180000007|NULL|200|NULL|Silty clay loam |73|0.25|1.399999976|0|SICL  |48508332|80
+2|T9981 Fld4|2755643|9.641|16663957|Flasher   |30|Yes|NULL|Cr|38|200|NULL|38|38|Paralithic bedrock  |NULL|162|NULL|NULL|0|NULL|48507642|88
+2|T9981 Fld4|2755643|9.641|16663957|Flasher   |30|Yes|NULL|AC|13|25|0.100000001|38|38|Paralithic bedrock  |Loamy fine sand |12|1|1.450000048|5|LFS   |48507644|88
+2|T9981 Fld4|2755643|9.641|16663957|Flasher   |30|Yes|NULL|C |25|38|0.100000001|38|38|Paralithic bedrock  |Loamy fine sand |13|0.5|1.5|8|LFS   |48507645|88
+2|T9981 Fld4|2755643|9.641|16663957|Flasher   |30|Yes|NULL|A |0|13|0.109999999|38|38|Paralithic bedrock  |Loamy fine sand |13|1.5|1.399999976|5|LFS   |48507643|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|Yes|NULL|Cr|178|200|NULL|178|178|Paralithic bedrock  |NULL|22|NULL|NULL|0|NULL|48507651|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|Yes|NULL|Bw2   |31|46|0.140000001|178|178|Paralithic bedrock  |Fine sandy loam |15|1.5|1.5|4|FSL   |48507654|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|Yes|NULL|A |0|15|0.170000002|178|178|Paralithic bedrock  |Fine sandy loam |15|2.5|1.5|3|FSL   |48507652|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|Yes|NULL|Bw1   |15|31|0.159999996|178|178|Paralithic bedrock  |Fine sandy loam |16|2|1.5|3|FSL   |48507653|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|Yes|NULL|Bk|46|84|0.129999995|178|178|Paralithic bedrock  |Fine sandy loam |38|1|1.549999952|5|FSL   |48507655|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|Yes|NULL|C |84|178|0.129999995|178|178|Paralithic bedrock  |Fine sandy loam |94|0.5|1.549999952|6|FSL   |48507656|88
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|Yes|NULL|Cr|74|200|NULL|74|74|Paralithic bedrock  |NULL|126|NULL|NULL|0|NULL|48507646|88
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|Yes|NULL|Bw1   |15|28|0.150000006|74|74|Paralithic bedrock  |Fine sandy loam |13|1.5|1.450000048|4|FSL   |48507650|88
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|Yes|NULL|Bw2   |28|43|0.140000001|74|74|Paralithic bedrock  |Fine sandy loam |15|1|1.5|6|FSL   |48507647|88
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|Yes|NULL|A |0|15|0.159999996|74|74|Paralithic bedrock  |Fine sandy loam |15|2|1.399999976|4|FSL   |48507649|88
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|Yes|NULL|Bk|43|74|0.129999995|74|74|Paralithic bedrock  |Fine sandy loam |31|0.5|1.549999952|7|FSL   |48507648|88
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|NULL|Cr|66|152|0.079999998|25|25|Natric|NULL|86|0.25|1.5|0|BR|48507343|156
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|NULL|E |20|25|0.200000003|25|25|Natric|Silt loam |5|2.5|1.299999952|0|SIL   |48507341|156
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|NULL|BCk   |53|66|0.129999995|25|25|Natric|Silt loam |13|0.75|1.5|0|SIL   |48507344|156
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|NULL|Ap|0|20|0.219999999|25|25|Natric|Silt loam |20|3|1.149999976|0|SIL   |48507345|156
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|Yes|NULL|Btn   |25|53|0.129999995|25|25|Natric|Silty clay|28|1.5|1.5|0|SIC   |48507342|156
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|Yes|NULL|Cr|91|152|0.079999998|91|91|Paralithic bedrock  |NULL|61|0.25|1.529999971|0|BR|48507346|156
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|Yes|NULL|Bt|20|43|0.170000002|91|91|Paralithic bedrock  |Clay loam |23|2|1.399999976|0|CL|48507347|156
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|Yes|NULL|Ap|0|20|0.209999993|91|91|Paralithic bedrock  |Loam  |20|2|1.149999976|5|L |48507349|156
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|Yes|NULL|Bk|43|91|0.180000007|91|91|Paralithic bedrock  |Loam  |48|1.25|1.399999976|8|L |48507348|156
+
+
+
+
+### Mapunit Component Composition Table
+
+This table summarizes the proportion of components in each map unit.  The components should sum to 100, but this step ensures that any database errors do not overestimate or underestimate stocks on an areal basis.
+
+
+#### MUACPF table
+```{SQL}
+---Sums the Component Percent and eliminate duplicate values by cokey
+SELECT landunit, aoiid, mapunit_acres , mukey, cokey, FORMAT ((1.0 * comppct_r / mu_pct_sum), '#,###,##0.00')  AS adj_comp_pct
+INTO #muacpf
+FROM #acpf AS acpf2
+WHERE acpf2.cokey=cokey
+GROUP BY landunit, aoiid, mapunit_acres , mukey, cokey, comppct_r, mu_pct_sum
+```
+landunit|aoiid|mapunit_acres|mukey|cokey|adj_comp_pct
+--------|--------|--------|--------|--------|--------
+T9981 Fld3|1|0.129|2525733|16663951|0.67
+T9981 Fld3|1|0.129|2525733|16663952|0.33
+T9981 Fld3|1|0.287|354648|16464607|0.29
+T9981 Fld3|1|0.287|354648|16464612|0.71
+T9981 Fld3|1|0.426|354627|16464494|0.28
+T9981 Fld3|1|0.426|354627|16464495|0.72
+T9981 Fld3|1|1.35|2525732|16663796|0.76
+T9981 Fld3|1|1.35|2525732|16663797|0.24
+T9981 Fld3|1|1.729|2494708|16663930|0.6
+T9981 Fld3|1|1.729|2494708|16663931|0.4
+T9981 Fld3|1|2.449|2755648|16663766|0.37
+T9981 Fld3|1|2.449|2755648|16663767|0.13
+T9981 Fld3|1|4.599|2755654|16663846|0.71
+T9981 Fld3|1|4.599|2755654|16663847|0.29
+T9981 Fld3|1|4.983|2525745|16663921|0.5
+T9981 Fld3|1|12.638|2525754|16663602|0.5
+T9981 Fld3|1|16.106|2525746|16663927|0.5
+T9981 Fld3|1|17.691|2525764|16663611|1
+T9981 Fld3|1|28.479|2525739|16663915|0.26
+T9981 Fld3|1|28.479|2525739|16663917|0.74
+T9981 Fld3|1|56.699|2525720|16663899|0.19
+T9981 Fld3|1|56.699|2525720|16663903|0.31
+T9981 Fld3|1|181.356|2525769|16663985|0.27
+T9981 Fld3|1|181.356|2525769|16663987|0.23
+T9981 Fld4|2|0.443|2755639|16663554|0.78
+T9981 Fld4|2|0.443|2755639|16663555|0.23
+T9981 Fld4|2|0.458|2525724|16664017|0.35
+T9981 Fld4|2|0.458|2525724|16664018|0.24
+T9981 Fld4|2|0.458|2525724|16664022|0.41
+T9981 Fld4|2|8.623|2525720|16663899|0.19
+T9981 Fld4|2|8.623|2525720|16663903|0.31
+T9981 Fld4|2|9.641|2755643|16663957|0.34
+T9981 Fld4|2|9.641|2755643|16663958|0.45
+T9981 Fld4|2|9.641|2755643|16663959|0.2
+T9981 Fld4|2|11.382|2755648|16663766|0.37
+T9981 Fld4|2|11.382|2755648|16663767|0.13
+T9981 Fld4|2|23.138|2525754|16663602|0.5
+T9981 Fld4|2|31.514|2525730|16663991|0.8
+T9981 Fld4|2|31.514|2525730|16663992|0.2
+T9981 Fld4|2|62.205|2525745|16663921|0.5
+T9981 Fld4|2|63.55|2525746|16663927|0.5
+T9981 Fld4|2|103.909|2525769|16663985|0.27
+T9981 Fld4|2|103.909|2525769|16663987|0.23
+
+## Layer Data
+The following tables collect data by layers (horizons) from each component needed for SOC stock calculation
+
+Layer variables used in SOC stock calculation (r denotes that the value is representative of the central tendency):
+* `hzdept_r`  = top depth of layer (NSSH, 2017 -- Part 618.36).
+* `hzdepb` = bottom depth of layer (NSSH, 2017 -- Part 618.35).
+* `om_r` = layer organic matter (%) content. U.S. Soil Survey databases report OM (NSSH, 2017 -- Part 618.43). This is typically based on measurement of total combustion carbon and calcium carbonate concentration by calcimeter (KSSL, 2014). 
+* `dbthirdbar_r` = bulk density representing field conditions(NSSH, 2017 -- Part 618.7). U.S. Soil Survey databases report this on a clod measurement of volume at 1/3-bar and of weight at oven-dry water content (KSSL, 2014) 
+* `fragvol_r` = volume of coarse fragments (>2mm in size), typically based on visual estimates (NSSH, 2017 -- Part 618.36).
+
+
+### Acpf Hzn Table
+```{SQL}
+SELECT
+mukey,
+cokey,
+hzname,
+restrictiodepth, 
+hzdept_r,
+hzdepb_r,
+CASE WHEN (hzdepb_r-hzdept_r) IS NULL THEN 0 ELSE CAST ((hzdepb_r-hzdept_r) AS INT) END AS thickness,
+texture,
+CASE WHEN dbthirdbar_r IS NULL THEN 0 ELSE dbthirdbar_r  END AS dbthirdbar_r, 
+CASE WHEN fragvol IS NULL THEN 0 ELSE fragvol  END AS fragvol, 
+CASE when om_r IS NULL THEN 0 ELSE om_r END AS om_r,
+chkey
+INTO #acpfhzn
+FROM #acpf
+```
+mukey|cokey|hzname|restrictiodepth|hzdept_r|hzdepb_r|thickness|texture|dbthirdbar_r|fragvol|om_r|chkey
+-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------
+354627|16464494|H2|200|18|43|25|C |1.450000048|0|1.5|47888422
+354627|16464494|H1|200|0|18|18|L |1.350000024|0|3|47888421
+354627|16464494|H3|200|43|152|109|SICL |1.600000024|0|0.5|47888423
+354627|16464495|H2|200|20|41|21|CL|1.299999952|0|1.5|47887710
+354627|16464495|H1|200|0|20|20|L |1.299999952|0|3|47887709
+354627|16464495|H3|200|41|89|48|L |1.330000043|0|0.75|47887707
+354627|16464495|H4|200|89|152|63|L |1.350000024|0|0.25|47887708
+354648|16464607|Cr|77|86|152|66|NULL|0|0|0.25|47888315
+354648|16464607|H2|77|20|33|13|L |1.299999952|2|2|47888313
+354648|16464607|H1|77|0|20|20|L |1.279999971|2|4.5|47888312
+354648|16464607|H3|77|33|86|53|L |1.399999976|2|0.75|47888314
+354648|16464612|Cr|77|81|152|71|NULL|0|0|0|47887978
+354648|16464612|H3|77|48|81|33|CL|1.350000024|13|1.25|47887981
+354648|16464612|H2|77|13|48|35|CL|1.299999952|0|2|47887980
+354648|16464612|H1|77|0|13|13|L |1.279999971|8|4|47887979
+2494708|16663930|Cr|76|76|200|124|NULL|0|0|0|48509159
+2494708|16663930|Bw1|76|13|23|10|L |1.399999976|0|2|48509160
+2494708|16663930|Ap|76|0|13|13|L |1.399999976|2|3|48509164
+2494708|16663930|Bw2|76|23|38|15|L |1.350000024|0|1.5|48509163
+2494708|16663930|BCk|76|58|76|18|L |1.399999976|0|0.5|48509162
+2494708|16663930|Bk|76|38|58|20|L |1.350000024|0|0.800000012|48509161
+2494708|16663931|Cr|38|38|200|162|NULL|0|0|0|48509165
+2494708|16663931|Ap|38|0|13|13|L |1.399999976|5|2|48509166
+2494708|16663931|Bk|38|13|38|25|L |1.399999976|2|0.800000012|48509167
+2525720|16663899|C |12|119|200|81|C |1.450000048|0|0.25|48509110
+2525720|16663899|Btkny|12|46|81|35|CL|1.450000048|0|0.75|48509108
+2525720|16663899|BCk|12|81|119|38|CL|1.399999976|0|0.5|48509109
+2525720|16663899|E |12|7|12|5|SIL|1.350000024|0|3.5|48509106
+2525720|16663899|A |12|0|7|7|SIL|1.200000048|0|5.5|48509105
+2525720|16663899|Btn|12|12|46|34|SICL |1.350000024|0|2|48509107
+2525720|16663903|C |8|117|200|83|C |1.450000048|0|0.25|48509123
+2525720|16663903|Btn|8|8|20|12|CL|1.399999976|0|1.25|48509121
+2525720|16663903|Btknyz|8|20|36|16|CL|1.399999976|0|1.25|48509122
+2525720|16663903|Bkyz |8|36|117|81|CL|1.450000048|0|0.25|48509124
+2525720|16663903|E |8|0|8|8|L |1.399999976|0|4|48509125
+2525732|16663796|Btn|30|30|43|13|FSL|1.5|0|0.5|48508966
+2525732|16663796|Ap|30|0|15|15|FSL|1.399999976|0|1.5|48508969
+2525732|16663796|E |30|15|30|15|FSL|1.450000048|0|1.5|48508965
+2525732|16663796|Bz|30|43|84|41|FSL|1.5|0|0.5|48508968
+2525732|16663796|C |30|84|152|68|LFS|1.450000048|0|0.25|48508967
+2525732|16663797|Ap|200|0|15|15|FSL|1.25|0|3|48508961
+2525732|16663797|Bt|200|15|71|56|SCL|1.549999952|0|1|48508962
+2525732|16663797|Bk|200|71|86|15|SL|1.549999952|0|0.5|48508963
+2525732|16663797|BC|200|86|152|66|SL|1.549999952|0|0.25|48508964
+2525733|16663952|Cr|43|43|200|157|NULL|0|0|0|48507618
+2525733|16663952|Ap|43|0|15|15|FSL|1.5|3|1|48507620
+2525733|16663952|C |43|15|43|28|FSL|1.5|5|0.5|48507619
+2525733|16663951|Cr|74|74|200|126|NULL|0|0|0|48507613
+2525733|16663951|Bw1|74|15|28|13|FSL|1.450000048|4|1.5|48507615
+2525733|16663951|Bw2|74|28|43|15|FSL|1.5|6|1|48507616
+2525733|16663951|Ap|74|0|15|15|FSL|1.399999976|4|2|48507614
+2525733|16663951|Bk|74|43|74|31|FSL|1.549999952|7|0.5|48507617
+2525739|16663915|Bw2|200|60|75|15|FSL|1.549999952|2|1|48509145
+2525739|16663915|A |200|15|30|15|FSL|1.450000048|1|2.5|48509143
+2525739|16663915|Ap|200|0|15|15|FSL|1.5|1|3.5|48509148
+2525739|16663915|Bw1|200|30|60|30|FSL|1.5|1|1.5|48509144
+2525739|16663915|Bk|200|75|122|47|FSL|1.549999952|3|0.75|48509146
+2525739|16663915|C |200|122|200|78|FSL|1.600000024|5|0.25|48509147
+2525739|16663917|Cr|81|81|200|119|NULL|0|0|0|48507454
+2525739|16663917|BCk|81|66|81|15|FSL|1.549999952|7|0.5|48507456
+2525739|16663917|Ap|81|0|15|15|FSL|1.549999952|3|2|48507458
+2525739|16663917|Bw1|81|15|32|17|FSL|1.5|4|1.5|48507455
+2525739|16663917|Bw2|81|32|66|34|FSL|1.5|6|1|48507457
+2525745|16663921|A |200|15|20|5|L |1.299999952|0|3|48507476
+2525745|16663921|Bw1|200|20|33|13|L |1.299999952|0|2.5|48507471
+2525745|16663921|BCk|200|107|122|15|L |1.399999976|0|0.5|48507473
+2525745|16663921|Ap|200|0|15|15|L |1.299999952|0|3.5|48507475
+2525745|16663921|Bk|200|72|107|35|L |1.399999976|0|1|48507477
+2525745|16663921|Bw2|200|33|72|39|L |1.299999952|0|1.5|48507472
+2525745|16663921|C |200|122|200|78|L |1.5|0|0.25|48507474
+2525746|16663927|BCk|200|107|122|15|L |1.399999976|0|0.5|48507505
+2525746|16663927|Ap|200|0|15|15|L |1.299999952|0|3.5|48507502
+2525746|16663927|Bw1|200|15|33|18|L |1.350000024|0|2.5|48507507
+2525746|16663927|Bk|200|74|107|33|L |1.399999976|0|1|48507504
+2525746|16663927|Bw2|200|33|74|41|L |1.399999976|0|1.5|48507503
+2525746|16663927|C |200|122|200|78|L |1.5|0|0.25|48507506
+2525754|16663602|3Ab|5|97|102|5|CL|1.450000048|0|0.25|48508119
+2525754|16663602|Btn|5|5|46|41|CL|1.399999976|0|2|48508123
+2525754|16663602|3C|5|102|152|50|CL|1.399999976|0|0.25|48508124
+2525754|16663602|E |5|0|5|5|L |1.25|0|4.5|48508122
+2525754|16663602|Bz1|5|46|71|25|L |1.399999976|0|0.75|48508120
+2525754|16663602|2Bz2 |5|71|97|26|VFSL |1.5|0|0.5|48508121
+2525764|16663611|2Czg |200|71|152|81|CL|1.399999976|0|0.75|48508082
+2525764|16663611|Az|200|0|23|23|SIL|1.149999976|0|4|48508083
+2525764|16663611|Bkzg |200|23|71|48|SICL |1.399999976|0|2|48508081
+2525769|16663985|Btn1 |200|33|48|15|C |1.350000024|0|2|48507781
+2525769|16663985|E/B|200|25|33|8|CL|1.399999976|0|3|48507780
+2525769|16663985|Btn2 |200|48|66|18|CL|1.399999976|0|1.5|48507782
+2525769|16663985|Bk|200|66|114|48|CL|1.399999976|0|1|48507783
+2525769|16663985|C |200|114|200|86|CL|1.5|0|0.5|48507784
+2525769|16663985|A |200|18|25|7|SIL|1.299999952|0|4|48507779
+2525769|16663985|Ap|200|0|18|18|SIL|1.299999952|0|4|48507778
+2525769|16663987|C |22|119|200|81|C |1.450000048|0|0.25|48507795
+2525769|16663987|Ap|22|0|18|18|CL|1.350000024|0|3|48507790
+2525769|16663987|Btnky|22|47|81|34|CL|1.399999976|0|1.5|48507793
+2525769|16663987|BCky |22|81|119|38|CL|1.399999976|0|0.75|48507794
+2525769|16663987|E |22|18|22|4|SIL|1.299999952|0|2.5|48507791
+2525769|16663987|Btn|22|22|47|25|SICL |1.350000024|0|2|48507792
+2755648|16663767|Cr|25|66|152|86|BR|1.5|0|0.25|48507343
+2755648|16663767|E |25|20|25|5|SIL|1.299999952|0|2.5|48507341
+2755648|16663767|BCk|25|53|66|13|SIL|1.5|0|0.75|48507344
+2755648|16663767|Ap|25|0|20|20|SIL|1.149999976|0|3|48507345
+2755648|16663767|Btn|25|25|53|28|SIC|1.5|0|1.5|48507342
+2755648|16663766|Cr|91|91|152|61|BR|1.529999971|0|0.25|48507346
+2755648|16663766|Bt|91|20|43|23|CL|1.399999976|0|2|48507347
+2755648|16663766|Ap|91|0|20|20|L |1.149999976|5|2|48507349
+2755648|16663766|Bk|91|43|91|48|L |1.399999976|8|1.25|48507348
+2755654|16663847|Cr|79|79|152|73|BR|1.529999971|0|0.25|48508787
+2755654|16663847|Ap|79|0|20|20|L |1.279999971|2|3|48508784
+2755654|16663847|Bw|79|20|48|28|L |1.299999952|2|2|48508785
+2755654|16663847|Bk|79|48|79|31|L |1.399999976|2|0.75|48508786
+2755654|16663846|Cr|91|91|152|61|BR|1.529999971|0|0.25|48508790
+2755654|16663846|Bt|91|20|43|23|CL|1.399999976|0|2|48508789
+2755654|16663846|Ap|91|0|20|20|L |1.149999976|5|2|48508788
+2755654|16663846|Bk|91|43|91|48|L |1.399999976|8|1.25|48508791
+2525720|16663899|C |12|119|200|81|C |1.450000048|0|0.25|48509110
+2525720|16663899|Btkny|12|46|81|35|CL|1.450000048|0|0.75|48509108
+2525720|16663899|BCk|12|81|119|38|CL|1.399999976|0|0.5|48509109
+2525720|16663899|E |12|7|12|5|SIL|1.350000024|0|3.5|48509106
+2525720|16663899|A |12|0|7|7|SIL|1.200000048|0|5.5|48509105
+2525720|16663899|Btn|12|12|46|34|SICL |1.350000024|0|2|48509107
+2525720|16663903|C |8|117|200|83|C |1.450000048|0|0.25|48509123
+2525720|16663903|Btn|8|8|20|12|CL|1.399999976|0|1.25|48509121
+2525720|16663903|Btknyz|8|20|36|16|CL|1.399999976|0|1.25|48509122
+2525720|16663903|Bkyz |8|36|117|81|CL|1.450000048|0|0.25|48509124
+2525720|16663903|E |8|0|8|8|L |1.399999976|0|4|48509125
+2525724|16664022|Btn|200|31|46|15|C |1.350000024|0|2|48509628
+2525724|16664022|E/B|200|23|31|8|CL|1.350000024|0|3|48509623
+2525724|16664022|Btnk |200|46|64|18|CL|1.399999976|0|1.5|48509629
+2525724|16664022|Bk|200|64|110|46|CL|1.450000048|0|0.75|48509624
+2525724|16664022|C |200|110|200|90|CL|1.549999952|0|0.5|48509625
+2525724|16664022|A |200|15|23|8|SIL|1.320000052|0|3|48509627
+2525724|16664022|Ap|200|0|15|15|SIL|1.399999976|0|3|48509626
+2525724|16664018|Btn|22|22|42|20|C |1.399999976|0|2|48509586
+2525724|16664018|C |22|93|162|69|C |1.450000048|0|0.25|48509585
+2525724|16664018|BCkyz|22|78|93|15|CL|1.399999976|0|0.75|48509587
+2525724|16664018|Ap|22|0|15|15|CL|1.350000024|0|3|48509584
+2525724|16664018|Btnkyz|22|42|78|36|CL|1.399999976|0|1.5|48509588
+2525724|16664018|E |22|15|22|7|L |1.299999952|0|2.5|48509583
+2525724|16664017|Bt|200|15|35|20|C |1.399999976|0|2|48509581
+2525724|16664017|Ap|200|0|15|15|CL|1.350000024|0|3|48509578
+2525724|16664017|Btk|200|35|54|19|CL|1.399999976|0|1|48509582
+2525724|16664017|Bk|200|54|125|71|CL|1.450000048|0|0.75|48509579
+2525724|16664017|C |200|125|200|75|CL|1.549999952|0|0.25|48509580
+2525730|16663991|Cr|91|91|200|109|NULL|0|0|0|48507811
+2525730|16663991|Bt1|91|18|30|12|SIC|1.350000024|0|2|48507814
+2525730|16663991|Bt2|91|30|56|26|SIC|1.399999976|0|1.200000048|48507815
+2525730|16663991|Bk|91|56|91|35|SIC|1.399999976|0|0.75|48507813
+2525730|16663991|Ap|91|0|18|18|SICL |1.350000024|0|3|48507812
+2525730|16663992|Cr|170|170|200|30|NULL|0|0|0|48507816
+2525730|16663992|Bt1|170|18|35|17|SIC|1.399999976|0|2|48507820
+2525730|16663992|Bt2|170|35|53|18|SICL |1.399999976|0|1.25|48507821
+2525730|16663992|Ap|170|0|18|18|SICL |1.350000024|0|3|48507817
+2525730|16663992|C |170|116|170|54|SICL |1.399999976|0|0.25|48507819
+2525730|16663992|Bk|170|53|116|63|SICL |1.399999976|0|0.75|48507818
+2525745|16663921|A |200|15|20|5|L |1.299999952|0|3|48507476
+2525745|16663921|Bw1|200|20|33|13|L |1.299999952|0|2.5|48507471
+2525745|16663921|BCk|200|107|122|15|L |1.399999976|0|0.5|48507473
+2525745|16663921|Ap|200|0|15|15|L |1.299999952|0|3.5|48507475
+2525745|16663921|Bk|200|72|107|35|L |1.399999976|0|1|48507477
+2525745|16663921|Bw2|200|33|72|39|L |1.299999952|0|1.5|48507472
+2525745|16663921|C |200|122|200|78|L |1.5|0|0.25|48507474
+2525746|16663927|BCk|200|107|122|15|L |1.399999976|0|0.5|48507505
+2525746|16663927|Ap|200|0|15|15|L |1.299999952|0|3.5|48507502
+2525746|16663927|Bw1|200|15|33|18|L |1.350000024|0|2.5|48507507
+2525746|16663927|Bk|200|74|107|33|L |1.399999976|0|1|48507504
+2525746|16663927|Bw2|200|33|74|41|L |1.399999976|0|1.5|48507503
+2525746|16663927|C |200|122|200|78|L |1.5|0|0.25|48507506
+2525754|16663602|3Ab|5|97|102|5|CL|1.450000048|0|0.25|48508119
+2525754|16663602|Btn|5|5|46|41|CL|1.399999976|0|2|48508123
+2525754|16663602|3C|5|102|152|50|CL|1.399999976|0|0.25|48508124
+2525754|16663602|E |5|0|5|5|L |1.25|0|4.5|48508122
+2525754|16663602|Bz1|5|46|71|25|L |1.399999976|0|0.75|48508120
+2525754|16663602|2Bz2 |5|71|97|26|VFSL |1.5|0|0.5|48508121
+2525769|16663985|Btn1 |200|33|48|15|C |1.350000024|0|2|48507781
+2525769|16663985|E/B|200|25|33|8|CL|1.399999976|0|3|48507780
+2525769|16663985|Btn2 |200|48|66|18|CL|1.399999976|0|1.5|48507782
+2525769|16663985|Bk|200|66|114|48|CL|1.399999976|0|1|48507783
+2525769|16663985|C |200|114|200|86|CL|1.5|0|0.5|48507784
+2525769|16663985|A |200|18|25|7|SIL|1.299999952|0|4|48507779
+2525769|16663985|Ap|200|0|18|18|SIL|1.299999952|0|4|48507778
+2525769|16663987|C |22|119|200|81|C |1.450000048|0|0.25|48507795
+2525769|16663987|Ap|22|0|18|18|CL|1.350000024|0|3|48507790
+2525769|16663987|Btnky|22|47|81|34|CL|1.399999976|0|1.5|48507793
+2525769|16663987|BCky |22|81|119|38|CL|1.399999976|0|0.75|48507794
+2525769|16663987|E |22|18|22|4|SIL|1.299999952|0|2.5|48507791
+2525769|16663987|Btn|22|22|47|25|SICL |1.350000024|0|2|48507792
+2755639|16663555|Bt|200|25|61|36|SIC|1.299999952|2|3|48508328
+2755639|16663555|A |200|13|25|12|SICL |1.200000048|2|5|48508327
+2755639|16663555|Ap|200|0|13|13|SICL |1.200000048|2|5|48508331
+2755639|16663555|C |200|132|152|20|SICL |1.299999952|2|0.5|48508329
+2755639|16663555|Bk|200|61|132|71|SICL |1.299999952|1|1|48508330
+2755639|16663554|Bt|200|18|64|46|SIC|1.379999995|0|1.5|48508333
+2755639|16663554|Ap|200|0|18|18|SICL |1.149999976|0|2|48508334
+2755639|16663554|Bk|200|64|130|66|SICL |1.399999976|0|0.75|48508335
+2755639|16663554|C |200|130|203|73|SICL |1.399999976|0|0.25|48508332
+2755643|16663957|Cr|38|38|200|162|NULL|0|0|0|48507642
+2755643|16663957|AC|38|13|25|12|LFS|1.450000048|5|1|48507644
+2755643|16663957|C |38|25|38|13|LFS|1.5|8|0.5|48507645
+2755643|16663957|A |38|0|13|13|LFS|1.399999976|5|1.5|48507643
+2755643|16663959|Cr|178|178|200|22|NULL|0|0|0|48507651
+2755643|16663959|Bw2|178|31|46|15|FSL|1.5|4|1.5|48507654
+2755643|16663959|A |178|0|15|15|FSL|1.5|3|2.5|48507652
+2755643|16663959|Bw1|178|15|31|16|FSL|1.5|3|2|48507653
+2755643|16663959|Bk|178|46|84|38|FSL|1.549999952|5|1|48507655
+2755643|16663959|C |178|84|178|94|FSL|1.549999952|6|0.5|48507656
+2755643|16663958|Cr|74|74|200|126|NULL|0|0|0|48507646
+2755643|16663958|Bw1|74|15|28|13|FSL|1.450000048|4|1.5|48507650
+2755643|16663958|Bw2|74|28|43|15|FSL|1.5|6|1|48507647
+2755643|16663958|A |74|0|15|15|FSL|1.399999976|4|2|48507649
+2755643|16663958|Bk|74|43|74|31|FSL|1.549999952|7|0.5|48507648
+2755648|16663767|Cr|25|66|152|86|BR|1.5|0|0.25|48507343
+2755648|16663767|E |25|20|25|5|SIL|1.299999952|0|2.5|48507341
+2755648|16663767|BCk|25|53|66|13|SIL|1.5|0|0.75|48507344
+2755648|16663767|Ap|25|0|20|20|SIL|1.149999976|0|3|48507345
+2755648|16663767|Btn|25|25|53|28|SIC|1.5|0|1.5|48507342
+2755648|16663766|Cr|91|91|152|61|BR|1.529999971|0|0.25|48507346
+2755648|16663766|Bt|91|20|43|23|CL|1.399999976|0|2|48507347
+2755648|16663766|Ap|91|0|20|20|L |1.149999976|5|2|48507349
+2755648|16663766|Bk|91|43|91|48|L |1.399999976|8|1.25|48507348
+
+
+
+#### Set depths used for increments and organize variables for SOC stock calculations.
+##### SOC table
+```{SQL}
+SELECT hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness,
+CASE  WHEN hzdept_r < 150 then hzdept_r ELSE 0 END AS InRangeTop_0_150, 
+CASE  WHEN hzdepb_r <= 150 THEN hzdepb_r WHEN hzdepb_r > 150 and hzdept_r < 150 THEN 150 ELSE 0 END AS InRangeBot_0_150,
+CASE  WHEN hzdept_r < 5 then hzdept_r ELSE 0 END AS InRangeTop_0_5, 
+CASE  WHEN hzdepb_r <= 5 THEN hzdepb_r WHEN hzdepb_r > 5 and hzdept_r < 5 THEN 5 ELSE 0 END AS InRangeBot_0_5,
+CASE  WHEN hzdept_r < 30 then hzdept_r ELSE 0 END AS InRangeTop_0_30, 
+CASE  WHEN hzdepb_r <= 30  THEN hzdepb_r WHEN hzdepb_r > 30  and hzdept_r < 30 THEN 30  ELSE 0 END AS InRangeBot_0_30,
+---5 to 15 
+CASE    WHEN hzdepb_r < 5 THEN 0
+WHEN hzdept_r >15 THEN 0 
+WHEN hzdepb_r >= 5 AND hzdept_r < 5 THEN 5 
+WHEN hzdept_r < 5 THEN 0
+		WHEN hzdept_r < 15 then hzdept_r ELSE 5 END AS InRangeTop_5_15 ,
+		
+	
+CASE   WHEN hzdept_r > 15 THEN 0
+WHEN hzdepb_r < 5 THEN 0
+WHEN hzdepb_r <= 15 THEN hzdepb_r  WHEN hzdepb_r > 15 and hzdept_r < 15 THEN 15 ELSE 5 END AS InRangeBot_5_15,
+---15 to 30
+CASE    WHEN hzdepb_r < 15 THEN 0
+WHEN hzdept_r >30 THEN 0 
+WHEN hzdepb_r >= 15 AND hzdept_r < 15 THEN 15 
+WHEN hzdept_r < 15 THEN 0
+		WHEN hzdept_r < 30 then hzdept_r ELSE 15 END AS InRangeTop_15_30 ,
+		
+	
+CASE   WHEN hzdept_r > 30 THEN 0
+WHEN hzdepb_r < 15 THEN 0
+WHEN hzdepb_r <= 30 THEN hzdepb_r  WHEN hzdepb_r > 30 and hzdept_r < 30 THEN 30 ELSE 15 END AS InRangeBot_15_30,
+
+--30 to 60
+CASE    WHEN hzdepb_r < 30 THEN 0
+WHEN hzdept_r >60 THEN 0 
+WHEN hzdepb_r >= 30 AND hzdept_r < 30 THEN 30 
+WHEN hzdept_r < 30 THEN 0
+		WHEN hzdept_r < 60 then hzdept_r ELSE 30 END AS InRangeTop_30_60 ,
+		
+	
+CASE   WHEN hzdept_r > 60 THEN 0
+WHEN hzdepb_r < 30 THEN 0
+WHEN hzdepb_r <= 60 THEN hzdepb_r  WHEN hzdepb_r > 60 and hzdept_r < 60 THEN 60 ELSE 30 END AS InRangeBot_30_60,
+
+---60 to 100
+CASE    WHEN hzdepb_r < 60 THEN 0
+WHEN hzdept_r >100 THEN 0 
+WHEN hzdepb_r >= 60 AND hzdept_r < 60 THEN 60 
+WHEN hzdept_r < 60 THEN 0
+		WHEN hzdept_r < 100 then hzdept_r ELSE 60 END AS InRangeTop_60_100 ,
+		
+	
+CASE   WHEN hzdept_r > 100 THEN 0
+WHEN hzdepb_r < 60 THEN 0
+WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 60 END AS InRangeBot_60_100,
+
+--100 to 200
+CASE    WHEN hzdepb_r < 100 THEN 0
+WHEN hzdept_r >200 THEN 0 
+WHEN hzdepb_r >= 100 AND hzdept_r < 100 THEN 100 
+WHEN hzdept_r < 100 THEN 0
+		WHEN hzdept_r < 200 then hzdept_r ELSE 100 END AS InRangeTop_100_200 ,
+		
+	
+CASE   WHEN hzdept_r > 200 THEN 0
+WHEN hzdepb_r < 100 THEN 0
+WHEN hzdepb_r <= 200 THEN hzdepb_r  WHEN hzdepb_r > 200 and hzdept_r < 200 THEN 200 ELSE 100 END AS InRangeBot_100_200,
+CASE    WHEN hzdepb_r < 20 THEN 0
+WHEN hzdept_r >50 THEN 0 
+WHEN hzdepb_r >= 20 AND hzdept_r < 20 THEN 20 
+WHEN hzdept_r < 20 THEN 0
+		WHEN hzdept_r < 50 then hzdept_r ELSE 20 END AS InRangeTop_20_50 ,
+		
+	
+CASE   WHEN hzdept_r > 50 THEN 0
+WHEN hzdepb_r < 20 THEN 0
+WHEN hzdepb_r <= 50 THEN hzdepb_r  WHEN hzdepb_r > 50 and hzdept_r < 50 THEN 50 ELSE 20 END AS InRangeBot_20_50,
+
+
+
+CASE    WHEN hzdepb_r < 50 THEN 0
+WHEN hzdept_r >100 THEN 0 
+WHEN hzdepb_r >= 50 AND hzdept_r < 50 THEN 50 
+WHEN hzdept_r < 50 THEN 0
+		WHEN hzdept_r < 100 then hzdept_r ELSE 50 END AS InRangeTop_50_100 ,
+		
+	
+CASE   WHEN hzdept_r > 100 THEN 0
+WHEN hzdepb_r < 50 THEN 0
+WHEN hzdepb_r <= 100 THEN hzdepb_r  WHEN hzdepb_r > 100 and hzdept_r < 100 THEN 100 ELSE 50 END AS InRangeBot_50_100,
+
+
+om_r, fragvol, dbthirdbar_r, cokey, mukey, 100.0 - fragvol AS frag_main
+INTO #SOC
+FROM #acpf
+ORDER BY cokey, hzdept_r ASC, hzdepb_r ASC, chkey
+
+```
+hzname|chkey|comppct_r|hzdept_r|hzdepb_r|thickness|InRangeTop_0_150|InRangeBot_0_150|InRangeTop_0_5|InRangeBot_0_5|InRangeTop_0_30|InRangeBot_0_30|InRangeTop_5_15|InRangeBot_5_15|InRangeTop_15_30|InRangeBot_15_30|InRangeTop_30_60|InRangeBot_30_60|InRangeTop_60_100|InRangeBot_60_100|InRangeTop_100_200|InRangeBot_100_200|InRangeTop_20_50|InRangeBot_20_50|InRangeTop_50_100|InRangeBot_50_100|om_r|fragvol|dbthirdbar_r|cokey|mukey|frag_main
+----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------
+H2|47888422|25|18|43|25|18|43|0|0|18|30|0|0|18|30|30|43|0|0|0|0|20|43|0|0|1.5|0|1.450000048|16464494|354627|100
+H1|47888421|25|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16464494|354627|100
+H3|47888423|25|43|152|109|43|150|0|0|0|0|0|0|0|0|43|60|60|100|100|152|43|50|50|100|0.5|0|1.600000024|16464494|354627|100
+H2|47887710|65|20|41|21|20|41|0|0|20|30|0|0|20|30|30|41|0|0|0|0|20|41|0|0|1.5|0|1.299999952|16464495|354627|100
+H1|47887709|65|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|3|0|1.299999952|16464495|354627|100
+H3|47887707|65|41|89|48|41|89|0|0|0|0|0|0|0|0|41|60|60|89|0|0|41|50|50|89|0.75|0|1.330000043|16464495|354627|100
+H4|47887708|65|89|152|63|89|150|0|0|0|0|0|0|0|0|0|0|89|100|100|152|0|0|89|100|0.25|0|1.350000024|16464495|354627|100
+Cr|47888315|25|86|152|66|86|150|0|0|0|0|0|0|0|0|0|0|86|100|100|152|0|0|86|100|0.25|0|NULL|16464607|354648|100
+H2|47888313|25|20|33|13|20|33|0|0|20|30|0|0|20|30|30|33|0|0|0|0|20|33|0|0|2|2|1.299999952|16464607|354648|98
+H1|47888312|25|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|4.5|2|1.279999971|16464607|354648|98
+H3|47888314|25|33|86|53|33|86|0|0|0|0|0|0|0|0|33|60|60|86|0|0|33|50|50|86|0.75|2|1.399999976|16464607|354648|98
+Cr|47887978|60|81|152|71|81|150|0|0|0|0|0|0|0|0|0|0|81|100|100|152|0|0|81|100|NULL|0|NULL|16464612|354648|100
+H3|47887981|60|48|81|33|48|81|0|0|0|0|0|0|0|0|48|60|60|81|0|0|48|50|50|81|1.25|13|1.350000024|16464612|354648|87
+H2|47887980|60|13|48|35|13|48|0|0|13|30|13|15|15|30|30|48|0|0|0|0|20|48|0|0|2|0|1.299999952|16464612|354648|100
+H1|47887979|60|0|13|13|0|13|0|5|0|13|5|13|0|0|0|0|0|0|0|0|0|0|0|0|4|8|1.279999971|16464612|354648|92
+Cr|48509159|49|76|200|124|76|150|0|0|0|0|0|0|0|0|0|0|76|100|100|200|0|0|76|100|NULL|0|NULL|16663930|2494708|100
+Bw1|48509160|49|13|23|10|13|23|0|0|13|23|13|15|15|23|0|0|0|0|0|0|20|23|0|0|2|0|1.399999976|16663930|2494708|100
+Ap|48509164|49|0|13|13|0|13|0|5|0|13|5|13|0|0|0|0|0|0|0|0|0|0|0|0|3|2|1.399999976|16663930|2494708|98
+Bw2|48509163|49|23|38|15|23|38|0|0|23|30|0|0|23|30|30|38|0|0|0|0|23|38|0|0|1.5|0|1.350000024|16663930|2494708|100
+BCk|48509162|49|58|76|18|58|76|0|0|0|0|0|0|0|0|58|60|60|76|0|0|0|0|58|76|0.5|0|1.399999976|16663930|2494708|100
+Bk|48509161|49|38|58|20|38|58|0|0|0|0|0|0|0|0|38|58|0|0|0|0|38|50|50|58|0.800000012|0|1.350000024|16663930|2494708|100
+Cr|48509165|32|38|200|162|38|150|0|0|0|0|0|0|0|0|38|60|60|100|100|200|38|50|50|100|NULL|0|NULL|16663931|2494708|100
+Ap|48509166|32|0|13|13|0|13|0|5|0|13|5|13|0|0|0|0|0|0|0|0|0|0|0|0|2|5|1.399999976|16663931|2494708|95
+Bk|48509167|32|13|38|25|13|38|0|0|13|30|13|15|15|30|30|38|0|0|0|0|20|38|0|0|0.800000012|2|1.399999976|16663931|2494708|98
+C|48509110|33|119|200|81|119|150|0|0|0|0|0|0|0|0|0|0|0|0|119|200|0|0|0|0|0.25|0|1.450000048|16663899|2525720|100
+Btkny|48509108|33|46|81|35|46|81|0|0|0|0|0|0|0|0|46|60|60|81|0|0|46|50|50|81|0.75|0|1.450000048|16663899|2525720|100
+BCk|48509109|33|81|119|38|81|119|0|0|0|0|0|0|0|0|0|0|81|100|100|119|0|0|81|100|0.5|0|1.399999976|16663899|2525720|100
+E|48509106|33|7|12|5|7|12|0|0|7|12|7|12|0|0|0|0|0|0|0|0|0|0|0|0|3.5|0|1.350000024|16663899|2525720|100
+A|48509105|33|0|7|7|0|7|0|5|0|7|5|7|0|0|0|0|0|0|0|0|0|0|0|0|5.5|0|1.200000048|16663899|2525720|100
+Btn|48509107|33|12|46|34|12|46|0|0|12|30|12|15|15|30|30|46|0|0|0|0|20|46|0|0|2|0|1.350000024|16663899|2525720|100
+C|48509123|55|117|200|83|117|150|0|0|0|0|0|0|0|0|0|0|0|0|117|200|0|0|0|0|0.25|0|1.450000048|16663903|2525720|100
+Btn|48509121|55|8|20|12|8|20|0|0|8|20|8|15|15|20|0|0|0|0|0|0|20|20|0|0|1.25|0|1.399999976|16663903|2525720|100
+Btknyz|48509122|55|20|36|16|20|36|0|0|20|30|0|0|20|30|30|36|0|0|0|0|20|36|0|0|1.25|0|1.399999976|16663903|2525720|100
+Bkyz|48509124|55|36|117|81|36|117|0|0|0|0|0|0|0|0|36|60|60|100|100|117|36|50|50|100|0.25|0|1.450000048|16663903|2525720|100
+E|48509125|55|0|8|8|0|8|0|5|0|8|5|8|0|0|0|0|0|0|0|0|0|0|0|0|4|0|1.399999976|16663903|2525720|100
+Btn|48508966|55|30|43|13|30|43|0|0|0|0|0|0|15|15|30|43|0|0|0|0|30|43|0|0|0.5|0|1.5|16663796|2525732|100
+Ap|48508969|55|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|1.5|0|1.399999976|16663796|2525732|100
+E|48508965|55|15|30|15|15|30|0|0|15|30|5|5|15|30|30|30|0|0|0|0|20|30|0|0|1.5|0|1.450000048|16663796|2525732|100
+Bz|48508968|55|43|84|41|43|84|0|0|0|0|0|0|0|0|43|60|60|84|0|0|43|50|50|84|0.5|0|1.5|16663796|2525732|100
+C|48508967|55|84|152|68|84|150|0|0|0|0|0|0|0|0|0|0|84|100|100|152|0|0|84|100|0.25|0|1.450000048|16663796|2525732|100
+Ap|48508961|17|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3|0|1.25|16663797|2525732|100
+Bt|48508962|17|15|71|56|15|71|0|0|15|30|5|5|15|30|30|60|60|71|0|0|20|50|50|71|1|0|1.549999952|16663797|2525732|100
+Bk|48508963|17|71|86|15|71|86|0|0|0|0|0|0|0|0|0|0|71|86|0|0|0|0|71|86|0.5|0|1.549999952|16663797|2525732|100
+BC|48508964|17|86|152|66|86|150|0|0|0|0|0|0|0|0|0|0|86|100|100|152|0|0|86|100|0.25|0|1.549999952|16663797|2525732|100
+Cr|48507618|25|43|200|157|43|150|0|0|0|0|0|0|0|0|43|60|60|100|100|200|43|50|50|100|NULL|0|NULL|16663952|2525733|100
+Ap|48507620|25|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|1|3|1.5|16663952|2525733|97
+C|48507619|25|15|43|28|15|43|0|0|15|30|5|5|15|30|30|43|0|0|0|0|20|43|0|0|0.5|5|1.5|16663952|2525733|95
+Cr|48507613|50|74|200|126|74|150|0|0|0|0|0|0|0|0|0|0|74|100|100|200|0|0|74|100|NULL|0|NULL|16663951|2525733|100
+Bw1|48507615|50|15|28|13|15|28|0|0|15|28|5|5|15|28|0|0|0|0|0|0|20|28|0|0|1.5|4|1.450000048|16663951|2525733|96
+Bw2|48507616|50|28|43|15|28|43|0|0|28|30|0|0|28|30|30|43|0|0|0|0|28|43|0|0|1|6|1.5|16663951|2525733|94
+Ap|48507614|50|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|2|4|1.399999976|16663951|2525733|96
+Bk|48507617|50|43|74|31|43|74|0|0|0|0|0|0|0|0|43|60|60|74|0|0|43|50|50|74|0.5|7|1.549999952|16663951|2525733|93
+Bw2|48509145|20|60|75|15|60|75|0|0|0|0|0|0|0|0|30|30|60|75|0|0|0|0|60|75|1|2|1.549999952|16663915|2525739|98
+A|48509143|20|15|30|15|15|30|0|0|15|30|5|5|15|30|30|30|0|0|0|0|20|30|0|0|2.5|1|1.450000048|16663915|2525739|99
+Ap|48509148|20|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3.5|1|1.5|16663915|2525739|99
+Bw1|48509144|20|30|60|30|30|60|0|0|0|0|0|0|15|15|30|60|60|60|0|0|30|50|50|60|1.5|1|1.5|16663915|2525739|99
+Bk|48509146|20|75|122|47|75|122|0|0|0|0|0|0|0|0|0|0|75|100|100|122|0|0|75|100|0.75|3|1.549999952|16663915|2525739|97
+C|48509147|20|122|200|78|122|150|0|0|0|0|0|0|0|0|0|0|0|0|122|200|0|0|0|0|0.25|5|1.600000024|16663915|2525739|95
+Cr|48507454|58|81|200|119|81|150|0|0|0|0|0|0|0|0|0|0|81|100|100|200|0|0|81|100|NULL|0|NULL|16663917|2525739|100
+BCk|48507456|58|66|81|15|66|81|0|0|0|0|0|0|0|0|0|0|66|81|0|0|0|0|66|81|0.5|7|1.549999952|16663917|2525739|93
+Ap|48507458|58|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|2|3|1.549999952|16663917|2525739|97
+Bw1|48507455|58|15|32|17|15|32|0|0|15|30|5|5|15|30|30|32|0|0|0|0|20|32|0|0|1.5|4|1.5|16663917|2525739|96
+Bw2|48507457|58|32|66|34|32|66|0|0|0|0|0|0|0|0|32|60|60|66|0|0|32|50|50|66|1|6|1.5|16663917|2525739|94
+A|48507476|75|15|20|5|15|20|0|0|15|20|5|5|15|20|0|0|0|0|0|0|20|20|0|0|3|0|1.299999952|16663921|2525745|100
+Bw1|48507471|75|20|33|13|20|33|0|0|20|30|0|0|20|30|30|33|0|0|0|0|20|33|0|0|2.5|0|1.299999952|16663921|2525745|100
+BCk|48507473|75|107|122|15|107|122|0|0|0|0|0|0|0|0|0|0|0|0|107|122|0|0|0|0|0.5|0|1.399999976|16663921|2525745|100
+Ap|48507475|75|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3.5|0|1.299999952|16663921|2525745|100
+Bk|48507477|75|72|107|35|72|107|0|0|0|0|0|0|0|0|0|0|72|100|100|107|0|0|72|100|1|0|1.399999976|16663921|2525745|100
+Bw2|48507472|75|33|72|39|33|72|0|0|0|0|0|0|0|0|33|60|60|72|0|0|33|50|50|72|1.5|0|1.299999952|16663921|2525745|100
+C|48507474|75|122|200|78|122|150|0|0|0|0|0|0|0|0|0|0|0|0|122|200|0|0|0|0|0.25|0|1.5|16663921|2525745|100
+BCk|48507505|78|107|122|15|107|122|0|0|0|0|0|0|0|0|0|0|0|0|107|122|0|0|0|0|0.5|0|1.399999976|16663927|2525746|100
+Ap|48507502|78|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3.5|0|1.299999952|16663927|2525746|100
+Bw1|48507507|78|15|33|18|15|33|0|0|15|30|5|5|15|30|30|33|0|0|0|0|20|33|0|0|2.5|0|1.350000024|16663927|2525746|100
+Bk|48507504|78|74|107|33|74|107|0|0|0|0|0|0|0|0|0|0|74|100|100|107|0|0|74|100|1|0|1.399999976|16663927|2525746|100
+Bw2|48507503|78|33|74|41|33|74|0|0|0|0|0|0|0|0|33|60|60|74|0|0|33|50|50|74|1.5|0|1.399999976|16663927|2525746|100
+C|48507506|78|122|200|78|122|150|0|0|0|0|0|0|0|0|0|0|0|0|122|200|0|0|0|0|0.25|0|1.5|16663927|2525746|100
+3Ab|48508119|75|97|102|5|97|102|0|0|0|0|0|0|0|0|0|0|97|100|100|102|0|0|97|100|0.25|0|1.450000048|16663602|2525754|100
+Btn|48508123|75|5|46|41|5|46|0|0|5|30|5|15|15|30|30|46|0|0|0|0|20|46|0|0|2|0|1.399999976|16663602|2525754|100
+3C|48508124|75|102|152|50|102|150|0|0|0|0|0|0|0|0|0|0|0|0|102|152|0|0|0|0|0.25|0|1.399999976|16663602|2525754|100
+E|48508122|75|0|5|5|0|5|0|5|0|5|5|5|0|0|0|0|0|0|0|0|0|0|0|0|4.5|0|1.25|16663602|2525754|100
+Bz1|48508120|75|46|71|25|46|71|0|0|0|0|0|0|0|0|46|60|60|71|0|0|46|50|50|71|0.75|0|1.399999976|16663602|2525754|100
+2Bz2|48508121|75|71|97|26|71|97|0|0|0|0|0|0|0|0|0|0|71|97|0|0|0|0|71|97|0.5|0|1.5|16663602|2525754|100
+2Czg|48508082|55|71|152|81|71|150|0|0|0|0|0|0|0|0|0|0|71|100|100|152|0|0|71|100|0.75|0|1.399999976|16663611|2525764|100
+Az|48508083|55|0|23|23|0|23|0|5|0|23|5|15|15|23|0|0|0|0|0|0|20|23|0|0|4|0|1.149999976|16663611|2525764|100
+Bkzg|48508081|55|23|71|48|23|71|0|0|23|30|0|0|23|30|30|60|60|71|0|0|23|50|50|71|2|0|1.399999976|16663611|2525764|100
+Btn1|48507781|48|33|48|15|33|48|0|0|0|0|0|0|0|0|33|48|0|0|0|0|33|48|0|0|2|0|1.350000024|16663985|2525769|100
+E/B|48507780|48|25|33|8|25|33|0|0|25|30|0|0|25|30|30|33|0|0|0|0|25|33|0|0|3|0|1.399999976|16663985|2525769|100
+Btn2|48507782|48|48|66|18|48|66|0|0|0|0|0|0|0|0|48|60|60|66|0|0|48|50|50|66|1.5|0|1.399999976|16663985|2525769|100
+Bk|48507783|48|66|114|48|66|114|0|0|0|0|0|0|0|0|0|0|66|100|100|114|0|0|66|100|1|0|1.399999976|16663985|2525769|100
+C|48507784|48|114|200|86|114|150|0|0|0|0|0|0|0|0|0|0|0|0|114|200|0|0|0|0|0.5|0|1.5|16663985|2525769|100
+A|48507779|48|18|25|7|18|25|0|0|18|25|0|0|18|25|0|0|0|0|0|0|20|25|0|0|4|0|1.299999952|16663985|2525769|100
+Ap|48507778|48|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|4|0|1.299999952|16663985|2525769|100
+C|48507795|40|119|200|81|119|150|0|0|0|0|0|0|0|0|0|0|0|0|119|200|0|0|0|0|0.25|0|1.450000048|16663987|2525769|100
+Ap|48507790|40|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16663987|2525769|100
+Btnky|48507793|40|47|81|34|47|81|0|0|0|0|0|0|0|0|47|60|60|81|0|0|47|50|50|81|1.5|0|1.399999976|16663987|2525769|100
+BCky|48507794|40|81|119|38|81|119|0|0|0|0|0|0|0|0|0|0|81|100|100|119|0|0|81|100|0.75|0|1.399999976|16663987|2525769|100
+E|48507791|40|18|22|4|18|22|0|0|18|22|0|0|18|22|0|0|0|0|0|0|20|22|0|0|2.5|0|1.299999952|16663987|2525769|100
+Btn|48507792|40|22|47|25|22|47|0|0|22|30|0|0|22|30|30|47|0|0|0|0|22|47|0|0|2|0|1.350000024|16663987|2525769|100
+Cr|48507343|20|66|152|86|66|150|0|0|0|0|0|0|0|0|0|0|66|100|100|152|0|0|66|100|0.25|0|1.5|16663767|2755648|100
+E|48507341|20|20|25|5|20|25|0|0|20|25|0|0|20|25|0|0|0|0|0|0|20|25|0|0|2.5|0|1.299999952|16663767|2755648|100
+BCk|48507344|20|53|66|13|53|66|0|0|0|0|0|0|0|0|53|60|60|66|0|0|0|0|53|66|0.75|0|1.5|16663767|2755648|100
+Ap|48507345|20|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|3|0|1.149999976|16663767|2755648|100
+Btn|48507342|20|25|53|28|25|53|0|0|25|30|0|0|25|30|30|53|0|0|0|0|25|50|50|53|1.5|0|1.5|16663767|2755648|100
+Cr|48507346|58|91|152|61|91|150|0|0|0|0|0|0|0|0|0|0|91|100|100|152|0|0|91|100|0.25|0|1.529999971|16663766|2755648|100
+Bt|48507347|58|20|43|23|20|43|0|0|20|30|0|0|20|30|30|43|0|0|0|0|20|43|0|0|2|0|1.399999976|16663766|2755648|100
+Ap|48507349|58|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|2|5|1.149999976|16663766|2755648|95
+Bk|48507348|58|43|91|48|43|91|0|0|0|0|0|0|0|0|43|60|60|91|0|0|43|50|50|91|1.25|8|1.399999976|16663766|2755648|92
+Cr|48508787|25|79|152|73|79|150|0|0|0|0|0|0|0|0|0|0|79|100|100|152|0|0|79|100|0.25|0|1.529999971|16663847|2755654|100
+Ap|48508784|25|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|3|2|1.279999971|16663847|2755654|98
+Bw|48508785|25|20|48|28|20|48|0|0|20|30|0|0|20|30|30|48|0|0|0|0|20|48|0|0|2|2|1.299999952|16663847|2755654|98
+Bk|48508786|25|48|79|31|48|79|0|0|0|0|0|0|0|0|48|60|60|79|0|0|48|50|50|79|0.75|2|1.399999976|16663847|2755654|98
+Cr|48508790|60|91|152|61|91|150|0|0|0|0|0|0|0|0|0|0|91|100|100|152|0|0|91|100|0.25|0|1.529999971|16663846|2755654|100
+Bt|48508789|60|20|43|23|20|43|0|0|20|30|0|0|20|30|30|43|0|0|0|0|20|43|0|0|2|0|1.399999976|16663846|2755654|100
+Ap|48508788|60|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|2|5|1.149999976|16663846|2755654|95
+Bk|48508791|60|43|91|48|43|91|0|0|0|0|0|0|0|0|43|60|60|91|0|0|43|50|50|91|1.25|8|1.399999976|16663846|2755654|92
+C|48509110|33|119|200|81|119|150|0|0|0|0|0|0|0|0|0|0|0|0|119|200|0|0|0|0|0.25|0|1.450000048|16663899|2525720|100
+Btkny|48509108|33|46|81|35|46|81|0|0|0|0|0|0|0|0|46|60|60|81|0|0|46|50|50|81|0.75|0|1.450000048|16663899|2525720|100
+BCk|48509109|33|81|119|38|81|119|0|0|0|0|0|0|0|0|0|0|81|100|100|119|0|0|81|100|0.5|0|1.399999976|16663899|2525720|100
+E|48509106|33|7|12|5|7|12|0|0|7|12|7|12|0|0|0|0|0|0|0|0|0|0|0|0|3.5|0|1.350000024|16663899|2525720|100
+A|48509105|33|0|7|7|0|7|0|5|0|7|5|7|0|0|0|0|0|0|0|0|0|0|0|0|5.5|0|1.200000048|16663899|2525720|100
+Btn|48509107|33|12|46|34|12|46|0|0|12|30|12|15|15|30|30|46|0|0|0|0|20|46|0|0|2|0|1.350000024|16663899|2525720|100
+C|48509123|55|117|200|83|117|150|0|0|0|0|0|0|0|0|0|0|0|0|117|200|0|0|0|0|0.25|0|1.450000048|16663903|2525720|100
+Btn|48509121|55|8|20|12|8|20|0|0|8|20|8|15|15|20|0|0|0|0|0|0|20|20|0|0|1.25|0|1.399999976|16663903|2525720|100
+Btknyz|48509122|55|20|36|16|20|36|0|0|20|30|0|0|20|30|30|36|0|0|0|0|20|36|0|0|1.25|0|1.399999976|16663903|2525720|100
+Bkyz|48509124|55|36|117|81|36|117|0|0|0|0|0|0|0|0|36|60|60|100|100|117|36|50|50|100|0.25|0|1.450000048|16663903|2525720|100
+E|48509125|55|0|8|8|0|8|0|5|0|8|5|8|0|0|0|0|0|0|0|0|0|0|0|0|4|0|1.399999976|16663903|2525720|100
+Btn|48509628|35|31|46|15|31|46|0|0|0|0|0|0|0|0|31|46|0|0|0|0|31|46|0|0|2|0|1.350000024|16664022|2525724|100
+E/B|48509623|35|23|31|8|23|31|0|0|23|30|0|0|23|30|30|31|0|0|0|0|23|31|0|0|3|0|1.350000024|16664022|2525724|100
+Btnk|48509629|35|46|64|18|46|64|0|0|0|0|0|0|0|0|46|60|60|64|0|0|46|50|50|64|1.5|0|1.399999976|16664022|2525724|100
+Bk|48509624|35|64|110|46|64|110|0|0|0|0|0|0|0|0|0|0|64|100|100|110|0|0|64|100|0.75|0|1.450000048|16664022|2525724|100
+C|48509625|35|110|200|90|110|150|0|0|0|0|0|0|0|0|0|0|0|0|110|200|0|0|0|0|0.5|0|1.549999952|16664022|2525724|100
+A|48509627|35|15|23|8|15|23|0|0|15|23|5|5|15|23|0|0|0|0|0|0|20|23|0|0|3|0|1.320000052|16664022|2525724|100
+Ap|48509626|35|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3|0|1.399999976|16664022|2525724|100
+Btn|48509586|20|22|42|20|22|42|0|0|22|30|0|0|22|30|30|42|0|0|0|0|22|42|0|0|2|0|1.399999976|16664018|2525724|100
+C|48509585|20|93|162|69|93|150|0|0|0|0|0|0|0|0|0|0|93|100|100|162|0|0|93|100|0.25|0|1.450000048|16664018|2525724|100
+BCkyz|48509587|20|78|93|15|78|93|0|0|0|0|0|0|0|0|0|0|78|93|0|0|0|0|78|93|0.75|0|1.399999976|16664018|2525724|100
+Ap|48509584|20|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16664018|2525724|100
+Btnkyz|48509588|20|42|78|36|42|78|0|0|0|0|0|0|0|0|42|60|60|78|0|0|42|50|50|78|1.5|0|1.399999976|16664018|2525724|100
+E|48509583|20|15|22|7|15|22|0|0|15|22|5|5|15|22|0|0|0|0|0|0|20|22|0|0|2.5|0|1.299999952|16664018|2525724|100
+Bt|48509581|30|15|35|20|15|35|0|0|15|30|5|5|15|30|30|35|0|0|0|0|20|35|0|0|2|0|1.399999976|16664017|2525724|100
+Ap|48509578|30|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16664017|2525724|100
+Btk|48509582|30|35|54|19|35|54|0|0|0|0|0|0|0|0|35|54|0|0|0|0|35|50|50|54|1|0|1.399999976|16664017|2525724|100
+Bk|48509579|30|54|125|71|54|125|0|0|0|0|0|0|0|0|54|60|60|100|100|125|0|0|54|100|0.75|0|1.450000048|16664017|2525724|100
+C|48509580|30|125|200|75|125|150|0|0|0|0|0|0|0|0|0|0|0|0|125|200|0|0|0|0|0.25|0|1.549999952|16664017|2525724|100
+Cr|48507811|68|91|200|109|91|150|0|0|0|0|0|0|0|0|0|0|91|100|100|200|0|0|91|100|NULL|0|NULL|16663991|2525730|100
+Bt1|48507814|68|18|30|12|18|30|0|0|18|30|0|0|18|30|30|30|0|0|0|0|20|30|0|0|2|0|1.350000024|16663991|2525730|100
+Bt2|48507815|68|30|56|26|30|56|0|0|0|0|0|0|15|15|30|56|0|0|0|0|30|50|50|56|1.200000048|0|1.399999976|16663991|2525730|100
+Bk|48507813|68|56|91|35|56|91|0|0|0|0|0|0|0|0|56|60|60|91|0|0|0|0|56|91|0.75|0|1.399999976|16663991|2525730|100
+Ap|48507812|68|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16663991|2525730|100
+Cr|48507816|17|170|200|30|0|0|0|0|0|0|0|0|0|0|0|0|0|0|170|200|0|0|0|0|NULL|0|NULL|16663992|2525730|100
+Bt1|48507820|17|18|35|17|18|35|0|0|18|30|0|0|18|30|30|35|0|0|0|0|20|35|0|0|2|0|1.399999976|16663992|2525730|100
+Bt2|48507821|17|35|53|18|35|53|0|0|0|0|0|0|0|0|35|53|0|0|0|0|35|50|50|53|1.25|0|1.399999976|16663992|2525730|100
+Ap|48507817|17|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16663992|2525730|100
+C|48507819|17|116|170|54|116|150|0|0|0|0|0|0|0|0|0|0|0|0|116|170|0|0|0|0|0.25|0|1.399999976|16663992|2525730|100
+Bk|48507818|17|53|116|63|53|116|0|0|0|0|0|0|0|0|53|60|60|100|100|116|0|0|53|100|0.75|0|1.399999976|16663992|2525730|100
+A|48507476|75|15|20|5|15|20|0|0|15|20|5|5|15|20|0|0|0|0|0|0|20|20|0|0|3|0|1.299999952|16663921|2525745|100
+Bw1|48507471|75|20|33|13|20|33|0|0|20|30|0|0|20|30|30|33|0|0|0|0|20|33|0|0|2.5|0|1.299999952|16663921|2525745|100
+BCk|48507473|75|107|122|15|107|122|0|0|0|0|0|0|0|0|0|0|0|0|107|122|0|0|0|0|0.5|0|1.399999976|16663921|2525745|100
+Ap|48507475|75|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3.5|0|1.299999952|16663921|2525745|100
+Bk|48507477|75|72|107|35|72|107|0|0|0|0|0|0|0|0|0|0|72|100|100|107|0|0|72|100|1|0|1.399999976|16663921|2525745|100
+Bw2|48507472|75|33|72|39|33|72|0|0|0|0|0|0|0|0|33|60|60|72|0|0|33|50|50|72|1.5|0|1.299999952|16663921|2525745|100
+C|48507474|75|122|200|78|122|150|0|0|0|0|0|0|0|0|0|0|0|0|122|200|0|0|0|0|0.25|0|1.5|16663921|2525745|100
+BCk|48507505|78|107|122|15|107|122|0|0|0|0|0|0|0|0|0|0|0|0|107|122|0|0|0|0|0.5|0|1.399999976|16663927|2525746|100
+Ap|48507502|78|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|3.5|0|1.299999952|16663927|2525746|100
+Bw1|48507507|78|15|33|18|15|33|0|0|15|30|5|5|15|30|30|33|0|0|0|0|20|33|0|0|2.5|0|1.350000024|16663927|2525746|100
+Bk|48507504|78|74|107|33|74|107|0|0|0|0|0|0|0|0|0|0|74|100|100|107|0|0|74|100|1|0|1.399999976|16663927|2525746|100
+Bw2|48507503|78|33|74|41|33|74|0|0|0|0|0|0|0|0|33|60|60|74|0|0|33|50|50|74|1.5|0|1.399999976|16663927|2525746|100
+C|48507506|78|122|200|78|122|150|0|0|0|0|0|0|0|0|0|0|0|0|122|200|0|0|0|0|0.25|0|1.5|16663927|2525746|100
+3Ab|48508119|75|97|102|5|97|102|0|0|0|0|0|0|0|0|0|0|97|100|100|102|0|0|97|100|0.25|0|1.450000048|16663602|2525754|100
+Btn|48508123|75|5|46|41|5|46|0|0|5|30|5|15|15|30|30|46|0|0|0|0|20|46|0|0|2|0|1.399999976|16663602|2525754|100
+3C|48508124|75|102|152|50|102|150|0|0|0|0|0|0|0|0|0|0|0|0|102|152|0|0|0|0|0.25|0|1.399999976|16663602|2525754|100
+E|48508122|75|0|5|5|0|5|0|5|0|5|5|5|0|0|0|0|0|0|0|0|0|0|0|0|4.5|0|1.25|16663602|2525754|100
+Bz1|48508120|75|46|71|25|46|71|0|0|0|0|0|0|0|0|46|60|60|71|0|0|46|50|50|71|0.75|0|1.399999976|16663602|2525754|100
+2Bz2|48508121|75|71|97|26|71|97|0|0|0|0|0|0|0|0|0|0|71|97|0|0|0|0|71|97|0.5|0|1.5|16663602|2525754|100
+Btn1|48507781|48|33|48|15|33|48|0|0|0|0|0|0|0|0|33|48|0|0|0|0|33|48|0|0|2|0|1.350000024|16663985|2525769|100
+E/B|48507780|48|25|33|8|25|33|0|0|25|30|0|0|25|30|30|33|0|0|0|0|25|33|0|0|3|0|1.399999976|16663985|2525769|100
+Btn2|48507782|48|48|66|18|48|66|0|0|0|0|0|0|0|0|48|60|60|66|0|0|48|50|50|66|1.5|0|1.399999976|16663985|2525769|100
+Bk|48507783|48|66|114|48|66|114|0|0|0|0|0|0|0|0|0|0|66|100|100|114|0|0|66|100|1|0|1.399999976|16663985|2525769|100
+C|48507784|48|114|200|86|114|150|0|0|0|0|0|0|0|0|0|0|0|0|114|200|0|0|0|0|0.5|0|1.5|16663985|2525769|100
+A|48507779|48|18|25|7|18|25|0|0|18|25|0|0|18|25|0|0|0|0|0|0|20|25|0|0|4|0|1.299999952|16663985|2525769|100
+Ap|48507778|48|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|4|0|1.299999952|16663985|2525769|100
+C|48507795|40|119|200|81|119|150|0|0|0|0|0|0|0|0|0|0|0|0|119|200|0|0|0|0|0.25|0|1.450000048|16663987|2525769|100
+Ap|48507790|40|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|3|0|1.350000024|16663987|2525769|100
+Btnky|48507793|40|47|81|34|47|81|0|0|0|0|0|0|0|0|47|60|60|81|0|0|47|50|50|81|1.5|0|1.399999976|16663987|2525769|100
+BCky|48507794|40|81|119|38|81|119|0|0|0|0|0|0|0|0|0|0|81|100|100|119|0|0|81|100|0.75|0|1.399999976|16663987|2525769|100
+E|48507791|40|18|22|4|18|22|0|0|18|22|0|0|18|22|0|0|0|0|0|0|20|22|0|0|2.5|0|1.299999952|16663987|2525769|100
+Btn|48507792|40|22|47|25|22|47|0|0|22|30|0|0|22|30|30|47|0|0|0|0|22|47|0|0|2|0|1.350000024|16663987|2525769|100
+Bt|48508328|18|25|61|36|25|61|0|0|25|30|0|0|25|30|30|60|60|61|0|0|25|50|50|61|3|2|1.299999952|16663555|2755639|98
+A|48508327|18|13|25|12|13|25|0|0|13|25|13|15|15|25|0|0|0|0|0|0|20|25|0|0|5|2|1.200000048|16663555|2755639|98
+Ap|48508331|18|0|13|13|0|13|0|5|0|13|5|13|0|0|0|0|0|0|0|0|0|0|0|0|5|2|1.200000048|16663555|2755639|98
+C|48508329|18|132|152|20|132|150|0|0|0|0|0|0|0|0|0|0|0|0|132|152|0|0|0|0|0.5|2|1.299999952|16663555|2755639|98
+Bk|48508330|18|61|132|71|61|132|0|0|0|0|0|0|0|0|0|0|61|100|100|132|0|0|61|100|1|1|1.299999952|16663555|2755639|99
+Bt|48508333|62|18|64|46|18|64|0|0|18|30|0|0|18|30|30|60|60|64|0|0|20|50|50|64|1.5|0|1.379999995|16663554|2755639|100
+Ap|48508334|62|0|18|18|0|18|0|5|0|18|5|15|15|18|0|0|0|0|0|0|0|0|0|0|2|0|1.149999976|16663554|2755639|100
+Bk|48508335|62|64|130|66|64|130|0|0|0|0|0|0|0|0|0|0|64|100|100|130|0|0|64|100|0.75|0|1.399999976|16663554|2755639|100
+C|48508332|62|130|203|73|130|150|0|0|0|0|0|0|0|0|0|0|0|0|130|200|0|0|0|0|0.25|0|1.399999976|16663554|2755639|100
+Cr|48507642|30|38|200|162|38|150|0|0|0|0|0|0|0|0|38|60|60|100|100|200|38|50|50|100|NULL|0|NULL|16663957|2755643|100
+AC|48507644|30|13|25|12|13|25|0|0|13|25|13|15|15|25|0|0|0|0|0|0|20|25|0|0|1|5|1.450000048|16663957|2755643|95
+C|48507645|30|25|38|13|25|38|0|0|25|30|0|0|25|30|30|38|0|0|0|0|25|38|0|0|0.5|8|1.5|16663957|2755643|92
+A|48507643|30|0|13|13|0|13|0|5|0|13|5|13|0|0|0|0|0|0|0|0|0|0|0|0|1.5|5|1.399999976|16663957|2755643|95
+Cr|48507651|18|178|200|22|0|0|0|0|0|0|0|0|0|0|0|0|0|0|178|200|0|0|0|0|NULL|0|NULL|16663959|2755643|100
+Bw2|48507654|18|31|46|15|31|46|0|0|0|0|0|0|0|0|31|46|0|0|0|0|31|46|0|0|1.5|4|1.5|16663959|2755643|96
+A|48507652|18|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|2.5|3|1.5|16663959|2755643|97
+Bw1|48507653|18|15|31|16|15|31|0|0|15|30|5|5|15|30|30|31|0|0|0|0|20|31|0|0|2|3|1.5|16663959|2755643|97
+Bk|48507655|18|46|84|38|46|84|0|0|0|0|0|0|0|0|46|60|60|84|0|0|46|50|50|84|1|5|1.549999952|16663959|2755643|95
+C|48507656|18|84|178|94|84|150|0|0|0|0|0|0|0|0|0|0|84|100|100|178|0|0|84|100|0.5|6|1.549999952|16663959|2755643|94
+Cr|48507646|40|74|200|126|74|150|0|0|0|0|0|0|0|0|0|0|74|100|100|200|0|0|74|100|NULL|0|NULL|16663958|2755643|100
+Bw1|48507650|40|15|28|13|15|28|0|0|15|28|5|5|15|28|0|0|0|0|0|0|20|28|0|0|1.5|4|1.450000048|16663958|2755643|96
+Bw2|48507647|40|28|43|15|28|43|0|0|28|30|0|0|28|30|30|43|0|0|0|0|28|43|0|0|1|6|1.5|16663958|2755643|94
+A|48507649|40|0|15|15|0|15|0|5|0|15|5|15|15|15|0|0|0|0|0|0|0|0|0|0|2|4|1.399999976|16663958|2755643|96
+Bk|48507648|40|43|74|31|43|74|0|0|0|0|0|0|0|0|43|60|60|74|0|0|43|50|50|74|0.5|7|1.549999952|16663958|2755643|93
+Cr|48507343|20|66|152|86|66|150|0|0|0|0|0|0|0|0|0|0|66|100|100|152|0|0|66|100|0.25|0|1.5|16663767|2755648|100
+E|48507341|20|20|25|5|20|25|0|0|20|25|0|0|20|25|0|0|0|0|0|0|20|25|0|0|2.5|0|1.299999952|16663767|2755648|100
+BCk|48507344|20|53|66|13|53|66|0|0|0|0|0|0|0|0|53|60|60|66|0|0|0|0|53|66|0.75|0|1.5|16663767|2755648|100
+Ap|48507345|20|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|3|0|1.149999976|16663767|2755648|100
+Btn|48507342|20|25|53|28|25|53|0|0|25|30|0|0|25|30|30|53|0|0|0|0|25|50|50|53|1.5|0|1.5|16663767|2755648|100
+Cr|48507346|58|91|152|61|91|150|0|0|0|0|0|0|0|0|0|0|91|100|100|152|0|0|91|100|0.25|0|1.529999971|16663766|2755648|100
+Bt|48507347|58|20|43|23|20|43|0|0|20|30|0|0|20|30|30|43|0|0|0|0|20|43|0|0|2|0|1.399999976|16663766|2755648|100
+Ap|48507349|58|0|20|20|0|20|0|5|0|20|5|15|15|20|0|0|0|0|0|0|20|20|0|0|2|5|1.149999976|16663766|2755648|95
+Bk|48507348|58|43|91|48|43|91|0|0|0|0|0|0|0|0|43|60|60|91|0|0|43|50|50|91|1.25|8|1.399999976|16663766|2755648|92
+
+
+
+#### Execute SOC layer calculations
+Layer SOC stock =  ( (hzT * ( ( om / 1.724 ) * db3 )) / 100.0 ) * ((100.0 - fragvol) / 100.0) 
+
+$$Layer SOC stock  =  Thickness * (om/1.724)/100 * \rho * (1-FRAG)$$
+
+where Thickness is the layer/horizon thickness present within the depth increment in question ($cm$), $\rho$ is the bulk density in ($g oven dried soil in volume at one third bar, cm ^{-3}$), [om] is the concentration of organic matter in soil ($% of soil ^{-1}$), and FRAG is the proportion of sample greater than 2mm in diameter ($% by volumen$). 
+
+###### SOC2 table
+```{SQL}
+SELECT mukey, cokey, hzname, chkey, comppct_r, hzdept_r, hzdepb_r, thickness,
+InRangeTop_0_150, 
+InRangeBot_0_150, 
+ 
+InRangeTop_0_30, 
+InRangeBot_0_30, 
+
+InRangeTop_20_50, 
+InRangeBot_20_50, 
+
+InRangeTop_50_100 ,
+InRangeBot_50_100,
+(( ((InRangeBot_0_150 - InRangeTop_0_150) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_150,
+
+(( ((InRangeBot_0_30 - InRangeTop_0_30) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_30,
+---Removed * ( comppct_r * 100 ) 
+((((InRangeBot_20_50 - InRangeTop_20_50) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_20_50,
+---Removed * ( comppct_r * 100 ) 
+((((InRangeBot_50_100 - InRangeTop_50_100) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_50_100,
+
+(( ((InRangeBot_0_5 - InRangeTop_0_5) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_0_5,
+
+
+(( ((InRangeBot_5_15 - InRangeTop_5_15) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_5_15,
+
+(( ((InRangeBot_15_30 - InRangeTop_15_30) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_15_30,
+
+(( ((InRangeBot_30_60 - InRangeTop_30_60) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_30_60,
+
+
+(( ((InRangeBot_60_100 - InRangeTop_60_100) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_60_100,
+
+(( ((InRangeBot_100_200 - InRangeTop_100_200) * ( ( om_r / 1.724 ) * dbthirdbar_r )) / 100.0 ) * ((100.0 - fragvol) / 100.0))  AS HZ_SOC_100_200
+---Removed * ( comppct_r * 100 ) 
+INTO #SOC2
+FROM #SOC
+ORDER BY  mukey ,cokey, comppct_r DESC, hzdept_r ASC, hzdepb_r ASC, chkey
+```
+
+|mukey|cokey|hzname|chkey|comppct_r|hzdept_r|hzdepb_r|thickness|InRangeTop_0_150|InRangeBot_0_150|InRangeTop_0_30|InRangeBot_0_30|InRangeTop_20_50|InRangeBot_20_50|InRangeTop_50_100|InRangeBot_50_100|HZ_SOC_0_150|HZ_SOC_0_30|HZ_SOC_20_50|HZ_SOC_50_100|HZ_SOC_0_5|HZ_SOC_5_15|HZ_SOC_15_30|HZ_SOC_30_60|HZ_SOC_60_100|HZ_SOC_100_200|
+|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
+|354627|16464494|H2|47888422|25|18|43|25|18|43|18|30|20|43|0|0|0.315400242|0.151392116|0.290168223|0|0|0|0.151392116|0.164008126|0|0|
+|354627|16464494|H1|47888421|25|0|18|18|0|18|0|18|0|0|0|0|0.422853836|0.422853836|0|0|0.117459399|0.234918798|0.070475639|0|0|0|
+|354627|16464494|H3|47888423|25|43|152|109|43|150|0|0|43|50|50|100|0.496519729|0|0.032482599|0.232018565|0|0|0|0.078886312|0.185614852|0.241299308|
+|354627|16464495|H2|47887710|65|20|41|21|20|41|20|30|20|41|0|0|0.237528994|0.113109045|0.237528994|0|0|0|0.113109045|0.124419949|0|0|
+|354627|16464495|H1|47887709|65|0|20|20|0|20|0|20|20|20|0|0|0.452436178|0.452436178|0|0|0.113109045|0.226218089|0.113109045|0|0|0|
+|354627|16464495|H3|47887707|65|41|89|48|41|89|0|0|41|50|50|89|0.277726227|0|0.052073668|0.225652559|0|0|0|0.109933298|0.167792929|0|
+|354627|16464495|H4|47887708|65|89|152|63|89|150|0|0|0|0|89|100|0.119417055|0|0|0.021534223|0|0|0|0|0.021534223|0.101798146|
+|354648|16464607|Cr|47888315|25|86|152|66|86|150|0|0|0|0|86|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|354648|16464607|H2|47888313|25|20|33|13|20|33|20|30|20|33|0|0|0.192134564|0.147795818|0.192134564|0|0|0|0.147795818|0.044338745|0|0|
+|354648|16464607|H1|47888312|25|0|20|20|0|20|0|20|20|20|0|0|0.654849173|0.654849173|0|0|0.163712293|0.327424587|0.163712293|0|0|0|
+|354648|16464607|H3|47888314|25|33|86|53|33|86|0|0|33|50|50|86|0.316339902|0|0.101467516|0.214872386|0|0|0|0.16115429|0.155185612|0|
+|354648|16464612|Cr|47887978|60|81|152|71|81|150|0|0|0|0|81|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|354648|16464612|H3|47887981|60|48|81|33|48|81|0|0|48|50|50|81|0.281021612|0|0.017031613|0.263989999|0|0|0|0.102189677|0.178831935|0|
+|354648|16464612|H2|47887980|60|13|48|35|13|48|13|30|20|48|0|0|0.527842208|0.256380501|0.422273766|0|0|0.030162412|0.226218089|0.271461707|0|0|
+|354648|16464612|H1|47887979|60|0|13|13|0|13|0|13|0|0|0|0|0.355192567|0.355192567|0|0|0.136612526|0.218580042|0|0|0|0|
+|2494708|16663930|Cr|48509159|49|76|200|124|76|150|0|0|0|0|76|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2494708|16663930|Bw1 |48509160|49|13|23|10|13|23|13|23|20|23|0|0|0.16241299|0.16241299|0.048723897|0|0|0.032482598|0.129930392|0|0|0|
+|2494708|16663930|Ap|48509164|49|0|13|13|0|13|0|13|0|0|0|0|0.310371224|0.310371224|0|0|0.119373548|0.190997677|0|0|0|0|
+|2494708|16663930|Bw2 |48509163|49|23|38|15|23|38|23|30|23|38|0|0|0.176189098|0.082221579|0.176189098|0|0|0|0.082221579|0.093967519|0|0|
+|2494708|16663930|BCk |48509162|49|58|76|18|58|76|0|0|0|0|58|76|0.073085846|0|0|0.073085846|0|0|0|0.00812065|0.064965196|0|
+|2494708|16663930|Bk|48509161|49|38|58|20|38|58|0|0|38|50|50|58|0.125290027|0|0.075174016|0.050116011|0|0|0|0.125290027|0|0|
+|2494708|16663931|Cr|48509165|32|38|200|162|38|150|0|0|38|50|50|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2494708|16663931|Ap|48509166|32|0|13|13|0|13|0|13|0|0|0|0|0.200580043|0.200580043|0|0|0.07714617|0.123433873|0|0|0|0|
+|2494708|16663931|Bk|48509167|32|13|38|25|13|38|13|30|20|38|0|0|0.159164733|0.108232018|0.114598608|0|0|0.012733179|0.09549884|0.050932715|0|0|
+|2525720|16663899|C |48509110|33|119|200|81|119|150|0|0|0|0|0|0|0.065182717|0|0|0|0|0|0|0|0|0.170316131|
+|2525720|16663899|Btkny|48509108|33|46|81|35|46|81|0|0|46|50|50|81|0.22078017|0|0.025232019|0.19554815|0|0|0|0.088312068|0.132468102|0|
+|2525720|16663899|BCk |48509109|33|81|119|38|81|119|0|0|0|0|81|100|0.154292341|0|0|0.07714617|0|0|0|0|0.07714617|0.07714617|
+|2525720|16663899|E |48509106|33|7|12|5|7|12|7|12|0|0|0|0|0.137035965|0.137035965|0|0|0|0.137035965|0|0|0|0|
+|2525720|16663899|A |48509105|33|0|7|7|0|7|0|7|0|0|0|0|0.267981449|0.267981449|0|0|0.191415321|0.076566128|0|0|0|0|
+|2525720|16663899|Btn |48509107|33|12|46|34|12|46|12|30|20|46|0|0|0.532482608|0.281902557|0.407192583|0|0|0.04698376|0.234918798|0.250580051|0|0|
+|2525720|16663903|C |48509123|55|117|200|83|117|150|0|0|0|0|0|0|0.069388053|0|0|0|0|0|0|0|0|0.174521467|
+|2525720|16663903|Btn |48509121|55|8|20|12|8|20|8|20|20|20|0|0|0.121809743|0.121809743|0|0|0|0.071055683|0.050754059|0|0|0|
+|2525720|16663903|Btknyz |48509122|55|20|36|16|20|36|20|30|20|36|0|0|0.16241299|0.101508119|0.16241299|0|0|0|0.101508119|0.060904871|0|0|
+|2525720|16663903|Bkyz|48509124|55|36|117|81|36|117|0|0|36|50|50|100|0.170316131|0|0.029437356|0.105133414|0|0|0|0.050464039|0.084106731|0.035745361|
+|2525720|16663903|E |48509125|55|0|8|8|0|8|0|8|0|0|0|0|0.259860784|0.259860784|0|0|0.16241299|0.097447794|0|0|0|0|
+|2525732|16663796|Btn |48508966|55|30|43|13|30|43|0|0|30|43|0|0|0.056554524|0|0.056554524|0|0|0|0|0.056554524|0|0|
+|2525732|16663796|Ap|48508969|55|0|15|15|0|15|0|15|0|0|0|0|0.182714614|0.182714614|0|0|0.060904871|0.121809743|0|0|0|0|
+|2525732|16663796|E |48508965|55|15|30|15|15|30|15|30|20|30|0|0|0.189240145|0.189240145|0.126160097|0|0|0|0.189240145|0|0|0|
+|2525732|16663796|Bz|48508968|55|43|84|41|43|84|0|0|43|50|50|84|0.178364269|0|0.030452436|0.147911833|0|0|0|0.073955916|0.104408353|0|
+|2525732|16663796|C |48508967|55|84|152|68|84|150|0|0|0|0|84|100|0.138776107|0|0|0.033642693|0|0|0|0|0.033642693|0.109338751|
+|2525732|16663797|Ap|48508961|17|0|15|15|0|15|0|15|0|0|0|0|0.326276102|0.326276102|0|0|0.108758701|0.217517401|0|0|0|0|
+|2525732|16663797|Bt|48508962|17|15|71|56|15|71|15|30|20|50|50|71|0.503480263|0.134860785|0.269721569|0.188805099|0|0|0.134860785|0.269721569|0.098897909|0|
+|2525732|16663797|Bk|48508963|17|71|86|15|71|86|0|0|0|0|71|86|0.067430392|0|0|0.067430392|0|0|0|0|0.067430392|0|
+|2525732|16663797|BC|48508964|17|86|152|66|86|150|0|0|0|0|86|100|0.143851504|0|0|0.031467516|0|0|0|0|0.031467516|0.116879347|
+|2525733|16663952|Cr|48507618|25|43|200|157|43|150|0|0|43|50|50|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2525733|16663952|Ap|48507620|25|0|15|15|0|15|0|15|0|0|0|0|0.126595128|0.126595128|0|0|0.042198376|0.084396752|0|0|0|0|
+|2525733|16663952|C |48507619|25|15|43|28|15|43|15|30|20|43|0|0|0.115719258|0.061992459|0.095055104|0|0|0|0.061992459|0.053726798|0|0|
+|2525733|16663951|Cr|48507613|50|74|200|126|74|150|0|0|0|0|74|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2525733|16663951|Bw1 |48507615|50|15|28|13|15|28|15|28|20|28|0|0|0.157447801|0.157447801|0.096890954|0|0|0|0.157447801|0|0|0|
+|2525733|16663951|Bw2 |48507616|50|28|43|15|28|43|28|30|28|43|0|0|0.122679814|0.016357309|0.122679814|0|0|0|0.016357309|0.106322506|0|0|
+|2525733|16663951|Ap|48507614|50|0|15|15|0|15|0|15|0|0|0|0|0.233874706|0.233874706|0|0|0.077958235|0.155916471|0|0|0|0|
+|2525733|16663951|Bk|48507617|50|43|74|31|43|74|0|0|43|50|50|74|0.129601214|0|0.02926479|0.100336424|0|0|0|0.071071634|0.058529581|0|
+|2525739|16663915|Bw2 |48509145|20|60|75|15|60|75|0|0|0|0|60|75|0.132163569|0|0|0.132163569|0|0|0|0|0.132163569|0|
+|2525739|16663915|A |48509143|20|15|30|15|15|30|15|30|20|30|0|0|0.31224624|0.31224624|0.20816416|0|0|0|0.31224624|0|0|0|
+|2525739|16663915|Ap|48509148|20|0|15|15|0|15|0|15|0|0|0|0|0.452218677|0.452218677|0|0|0.150739559|0.301479118|0|0|0|0|
+|2525739|16663915|Bw1 |48509144|20|30|60|30|30|60|0|0|30|50|50|60|0.387616009|0|0.258410673|0.129205336|0|0|0|0.387616009|0|0|
+|2525739|16663915|Bk|48509146|20|75|122|47|75|122|0|0|0|0|75|100|0.307415159|0|0|0.163518701|0|0|0|0|0.163518701|0.143896457|
+|2525739|16663915|C |48509147|20|122|200|78|122|150|0|0|0|0|0|0|0.061716938|0|0|0|0|0|0|0|0|0.171925757|
+|2525739|16663917|Cr|48507454|58|81|200|119|81|150|0|0|0|0|81|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2525739|16663917|BCk |48507456|58|66|81|15|66|81|0|0|0|0|66|81|0.062710265|0|0|0.062710265|0|0|0|0|0.062710265|0|
+|2525739|16663917|Ap|48507458|58|0|15|15|0|15|0|15|0|0|0|0|0.261629922|0.261629922|0|0|0.087209974|0.174419948|0|0|0|0|
+|2525739|16663917|Bw1 |48507455|58|15|32|17|15|32|15|30|20|32|0|0|0.212993039|0.187935035|0.150348028|0|0|0|0.187935035|0.025058005|0|0|
+|2525739|16663917|Bw2 |48507457|58|32|66|34|32|66|0|0|32|50|50|66|0.278074246|0|0.147215777|0.130858469|0|0|0|0.22900232|0.049071926|0|
+|2525745|16663921|A |48507476|75|15|20|5|15|20|15|20|20|20|0|0|0.113109045|0.113109045|0|0|0|0|0.113109045|0|0|0|
+|2525745|16663921|Bw1 |48507471|75|20|33|13|20|33|20|30|20|33|0|0|0.245069597|0.188515074|0.245069597|0|0|0|0.188515074|0.056554522|0|0|
+|2525745|16663921|BCk |48507473|75|107|122|15|107|122|0|0|0|0|0|0|0.060904871|0|0|0|0|0|0|0|0|0.060904871|
+|2525745|16663921|Ap|48507475|75|0|15|15|0|15|0|15|0|0|0|0|0.395881656|0.395881656|0|0|0.131960552|0.263921104|0|0|0|0|
+|2525745|16663921|Bk|48507477|75|72|107|35|72|107|0|0|0|0|72|100|0.284222733|0|0|0.227378186|0|0|0|0|0.227378186|0.056844547|
+|2525745|16663921|Bw2 |48507472|75|33|72|39|33|72|0|0|33|50|50|72|0.441125274|0|0.192285376|0.248839898|0|0|0|0.30539442|0.135730853|0|
+|2525745|16663921|C |48507474|75|122|200|78|122|150|0|0|0|0|0|0|0.060904872|0|0|0|0|0|0|0|0|0.169663573|
+|2525746|16663927|BCk |48507505|78|107|122|15|107|122|0|0|0|0|0|0|0.060904871|0|0|0|0|0|0|0|0|0.060904871|
+|2525746|16663927|Ap|48507502|78|0|15|15|0|15|0|15|0|0|0|0|0.395881656|0.395881656|0|0|0.131960552|0.263921104|0|0|0|0|
+|2525746|16663927|Bw1 |48507507|78|15|33|18|15|33|15|30|20|33|0|0|0.352378196|0.293648497|0.254495364|0|0|0|0.293648497|0.058729699|0|0|
+|2525746|16663927|Bk|48507504|78|74|107|33|74|107|0|0|0|0|74|100|0.267981434|0|0|0.211136887|0|0|0|0|0.211136887|0.056844547|
+|2525746|16663927|Bw2 |48507503|78|33|74|41|33|74|0|0|33|50|50|74|0.499419945|0|0.207076563|0.292343382|0|0|0|0.328886305|0.17053364|0|
+|2525746|16663927|C |48507506|78|122|200|78|122|150|0|0|0|0|0|0|0.060904872|0|0|0|0|0|0|0|0|0.169663573|
+|2525754|16663602|3Ab |48508119|75|97|102|5|97|102|0|0|0|0|97|100|0.010513341|0|0|0.006308005|0|0|0|0|0.006308005|0.004205337|
+|2525754|16663602|Btn |48508123|75|5|46|41|5|46|5|30|20|46|0|0|0.66589326|0.406032476|0.422273775|0|0|0.16241299|0.243619485|0.259860784|0|0|
+|2525754|16663602|3C|48508124|75|102|152|50|102|150|0|0|0|0|0|0|0.097447794|0|0|0|0|0|0|0|0|0.101508119|
+|2525754|16663602|E |48508122|75|0|5|5|0|5|0|5|0|0|0|0|0.163138051|0.163138051|0|0|0.163138051|0|0|0|0|0|
+|2525754|16663602|Bz1 |48508120|75|46|71|25|46|71|0|0|46|50|50|71|0.152262178|0|0.024361949|0.12790023|0|0|0|0.08526682|0.066995358|0|
+|2525754|16663602|2Bz2|48508121|75|71|97|26|71|97|0|0|0|0|71|97|0.113109049|0|0|0.113109049|0|0|0|0|0.113109049|0|
+|2525764|16663611|2Czg|48508082|55|71|152|81|71|150|0|0|0|0|71|100|0.481148484|0|0|0.176624127|0|0|0|0|0.176624127|0.316705331|
+|2525764|16663611|Az|48508083|55|0|23|23|0|23|0|23|20|23|0|0|0.613689082|0.613689082|0.080046402|0|0.13341067|0.26682134|0.213457072|0|0|0|
+|2525764|16663611|Bkzg|48508081|55|23|71|48|23|71|23|30|23|50|50|71|0.779582353|0.113689093|0.438515074|0.34106728|0|0|0.113689093|0.487238971|0.178654289|0|
+|2525769|16663985|Btn1|48507781|48|33|48|15|33|48|0|0|33|48|0|0|0.234918798|0|0.234918798|0|0|0|0|0.234918798|0|0|
+|2525769|16663985|E/B |48507780|48|25|33|8|25|33|25|30|25|33|0|0|0.194895588|0.121809743|0.194895588|0|0|0|0.121809743|0.073085846|0|0|
+|2525769|16663985|Btn2|48507782|48|48|66|18|48|66|0|0|48|50|50|66|0.219257537|0|0.024361949|0.194895588|0|0|0|0.146171691|0.073085846|0|
+|2525769|16663985|Bk|48507783|48|66|114|48|66|114|0|0|0|0|66|100|0.389791177|0|0|0.276102083|0|0|0|0|0.276102083|0.113689093|
+|2525769|16663985|C |48507784|48|114|200|86|114|150|0|0|0|0|0|0|0.156612529|0|0|0|0|0|0|0|0|0.37412993|
+|2525769|16663985|A |48507779|48|18|25|7|18|25|18|25|20|25|0|0|0.211136883|0.211136883|0.150812059|0|0|0|0.211136883|0|0|0|
+|2525769|16663985|Ap|48507778|48|0|18|18|0|18|0|18|0|0|0|0|0.542923414|0.542923414|0|0|0.150812059|0.301624119|0.090487236|0|0|0|
+|2525769|16663987|C |48507795|40|119|200|81|119|150|0|0|0|0|0|0|0.065182717|0|0|0|0|0|0|0|0|0.170316131|
+|2525769|16663987|Ap|48507790|40|0|18|18|0|18|0|18|0|0|0|0|0.422853836|0.422853836|0|0|0.117459399|0.234918798|0.070475639|0|0|0|
+|2525769|16663987|Btnky|48507793|40|47|81|34|47|81|0|0|47|50|50|81|0.414153125|0|0.036542923|0.377610202|0|0|0|0.158352666|0.25580046|0|
+|2525769|16663987|BCky|48507794|40|81|119|38|81|119|0|0|0|0|81|100|0.231438511|0|0|0.115719256|0|0|0|0|0.115719256|0.115719256|
+|2525769|16663987|E |48507791|40|18|22|4|18|22|18|22|20|22|0|0|0.07540603|0.07540603|0.037703015|0|0|0|0.07540603|0|0|0|
+|2525769|16663987|Btn |48507792|40|22|47|25|22|47|22|30|22|47|0|0|0.391531329|0.125290025|0.391531329|0|0|0|0.125290025|0.266241304|0|0|
+|2755648|16663767|Cr|48507343|20|66|152|86|66|150|0|0|0|0|66|100|0.182714617|0|0|0.073955916|0|0|0|0|0.073955916|0.113109049|
+|2755648|16663767|E |48507341|20|20|25|5|20|25|20|25|20|25|0|0|0.094257537|0.094257537|0.094257537|0|0|0|0.094257537|0|0|0|
+|2755648|16663767|BCk |48507344|20|53|66|13|53|66|0|0|0|0|53|66|0.084831787|0|0|0.084831787|0|0|0|0.045678654|0.039153132|0|
+|2755648|16663767|Ap|48507345|20|0|20|20|0|20|0|20|20|20|0|0|0.40023201|0.40023201|0|0|0.100058003|0.200116005|0.100058003|0|0|0|
+|2755648|16663767|Btn |48507342|20|25|53|28|25|53|25|30|25|50|50|53|0.365429234|0.06525522|0.326276102|0.039153132|0|0|0.06525522|0.300174014|0|0|
+|2755648|16663766|Cr|48507346|58|91|152|61|91|150|0|0|0|0|91|100|0.13090197|0|0|0.019968097|0|0|0|0|0.019968097|0.115371228|
+|2755648|16663766|Bt|48507347|58|20|43|23|20|43|20|30|20|43|0|0|0.373549878|0.16241299|0.373549878|0|0|0|0.16241299|0.211136887|0|0|
+|2755648|16663766|Ap|48507349|58|0|20|20|0|20|0|20|20|20|0|0|0.253480273|0.253480273|0|0|0.063370068|0.126740137|0.063370068|0|0|0|
+|2755648|16663766|Bk|48507348|58|43|91|48|43|91|0|0|43|50|50|91|0.448259853|0|0.065371229|0.382888625|0|0|0|0.158758698|0.289501155|0|
+|2755654|16663847|Cr|48508787|25|79|152|73|79|150|0|0|0|0|79|100|0.157526099|0|0|0.046592227|0|0|0|0|0.046592227|0.115371228|
+|2755654|16663847|Ap|48508784|25|0|20|20|0|20|0|20|20|20|0|0|0.436566116|0.436566116|0|0|0.109141529|0.218283058|0.109141529|0|0|0|
+|2755654|16663847|Bw|48508785|25|20|48|28|20|48|20|30|20|48|0|0|0.413828291|0.147795818|0.413828291|0|0|0|0.147795818|0.266032473|0|0|
+|2755654|16663847|Bk|48508786|25|48|79|31|48|79|0|0|48|50|50|79|0.185028999|0|0.011937355|0.173091644|0|0|0|0.071624129|0.11340487|0|
+|2755654|16663846|Cr|48508790|60|91|152|61|91|150|0|0|0|0|91|100|0.13090197|0|0|0.019968097|0|0|0|0|0.019968097|0.115371228|
+|2755654|16663846|Bt|48508789|60|20|43|23|20|43|20|30|20|43|0|0|0.373549878|0.16241299|0.373549878|0|0|0|0.16241299|0.211136887|0|0|
+|2755654|16663846|Ap|48508788|60|0|20|20|0|20|0|20|20|20|0|0|0.253480273|0.253480273|0|0|0.063370068|0.126740137|0.063370068|0|0|0|
+|2755654|16663846|Bk|48508791|60|43|91|48|43|91|0|0|43|50|50|91|0.448259853|0|0.065371229|0.382888625|0|0|0|0.158758698|0.289501155|0|
+|2525720|16663899|C |48509110|33|119|200|81|119|150|0|0|0|0|0|0|0.065182717|0|0|0|0|0|0|0|0|0.170316131|
+|2525720|16663899|Btkny|48509108|33|46|81|35|46|81|0|0|46|50|50|81|0.22078017|0|0.025232019|0.19554815|0|0|0|0.088312068|0.132468102|0|
+|2525720|16663899|BCk |48509109|33|81|119|38|81|119|0|0|0|0|81|100|0.154292341|0|0|0.07714617|0|0|0|0|0.07714617|0.07714617|
+|2525720|16663899|E |48509106|33|7|12|5|7|12|7|12|0|0|0|0|0.137035965|0.137035965|0|0|0|0.137035965|0|0|0|0|
+|2525720|16663899|A |48509105|33|0|7|7|0|7|0|7|0|0|0|0|0.267981449|0.267981449|0|0|0.191415321|0.076566128|0|0|0|0|
+|2525720|16663899|Btn |48509107|33|12|46|34|12|46|12|30|20|46|0|0|0.532482608|0.281902557|0.407192583|0|0|0.04698376|0.234918798|0.250580051|0|0|
+|2525720|16663903|C |48509123|55|117|200|83|117|150|0|0|0|0|0|0|0.069388053|0|0|0|0|0|0|0|0|0.174521467|
+|2525720|16663903|Btn |48509121|55|8|20|12|8|20|8|20|20|20|0|0|0.121809743|0.121809743|0|0|0|0.071055683|0.050754059|0|0|0|
+|2525720|16663903|Btknyz |48509122|55|20|36|16|20|36|20|30|20|36|0|0|0.16241299|0.101508119|0.16241299|0|0|0|0.101508119|0.060904871|0|0|
+|2525720|16663903|Bkyz|48509124|55|36|117|81|36|117|0|0|36|50|50|100|0.170316131|0|0.029437356|0.105133414|0|0|0|0.050464039|0.084106731|0.035745361|
+|2525720|16663903|E |48509125|55|0|8|8|0|8|0|8|0|0|0|0|0.259860784|0.259860784|0|0|0.16241299|0.097447794|0|0|0|0|
+|2525724|16664022|Btn |48509628|35|31|46|15|31|46|0|0|31|46|0|0|0.234918798|0|0.234918798|0|0|0|0|0.234918798|0|0|
+|2525724|16664022|E/B |48509623|35|23|31|8|23|31|23|30|23|31|0|0|0.187935038|0.164443158|0.187935038|0|0|0|0.164443158|0.02349188|0|0|
+|2525724|16664022|Btnk|48509629|35|46|64|18|46|64|0|0|46|50|50|64|0.219257537|0|0.048723897|0.17053364|0|0|0|0.17053364|0.048723897|0|
+|2525724|16664022|Bk|48509624|35|64|110|46|64|110|0|0|0|0|64|100|0.290168223|0|0|0.227088175|0|0|0|0|0.227088175|0.063080048|
+|2525724|16664022|C |48509625|35|110|200|90|110|150|0|0|0|0|0|0|0.17981438|0|0|0|0|0|0|0|0|0.404582354|
+|2525724|16664022|A |48509627|35|15|23|8|15|23|15|23|20|23|0|0|0.183758708|0.183758708|0.068909515|0|0|0|0.183758708|0|0|0|
+|2525724|16664022|Ap|48509626|35|0|15|15|0|15|0|15|0|0|0|0|0.365429228|0.365429228|0|0|0.121809743|0.243619485|0|0|0|0|
+|2525724|16664018|Btn |48509586|20|22|42|20|22|42|22|30|22|42|0|0|0.324825981|0.129930392|0.324825981|0|0|0|0.129930392|0.194895588|0|0|
+|2525724|16664018|C |48509585|20|93|162|69|93|150|0|0|0|0|93|100|0.119852092|0|0|0.014718678|0|0|0|0|0.014718678|0.130365434|
+|2525724|16664018|BCkyz|48509587|20|78|93|15|78|93|0|0|0|0|78|93|0.091357307|0|0|0.091357307|0|0|0|0|0.091357307|0|
+|2525724|16664018|Ap|48509584|20|0|15|15|0|15|0|15|0|0|0|0|0.352378196|0.352378196|0|0|0.117459399|0.234918798|0|0|0|0|
+|2525724|16664018|Btnkyz |48509588|20|42|78|36|42|78|0|0|42|50|50|78|0.438515074|0|0.097447794|0.34106728|0|0|0|0.219257537|0.219257537|0|
+|2525724|16664018|E |48509583|20|15|22|7|15|22|15|22|20|22|0|0|0.131960552|0.131960552|0.037703015|0|0|0|0.131960552|0|0|0|
+|2525724|16664017|Bt|48509581|30|15|35|20|15|35|15|30|20|35|0|0|0.324825981|0.243619485|0.243619485|0|0|0|0.243619485|0.081206495|0|0|
+|2525724|16664017|Ap|48509578|30|0|15|15|0|15|0|15|0|0|0|0|0.352378196|0.352378196|0|0|0.117459399|0.234918798|0|0|0|0|
+|2525724|16664017|Btk |48509582|30|35|54|19|35|54|0|0|35|50|50|54|0.154292341|0|0.121809743|0.032482598|0|0|0|0.154292341|0|0|
+|2525724|16664017|Bk|48509579|30|54|125|71|54|125|0|0|0|0|54|100|0.447868344|0|0|0.290168223|0|0|0|0.037848029|0.252320194|0.157700121|
+|2525724|16664017|C |48509580|30|125|200|75|125|150|0|0|0|0|0|0|0.056191994|0|0|0|0|0|0|0|0|0.168575981|
+|2525730|16663991|Cr|48507811|68|91|200|109|91|150|0|0|0|0|91|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2525730|16663991|Bt1 |48507814|68|18|30|12|18|30|18|30|20|30|0|0|0.187935038|0.187935038|0.156612532|0|0|0|0.187935038|0|0|0|
+|2525730|16663991|Bt2 |48507815|68|30|56|26|30|56|0|0|30|50|50|56|0.253364275|0|0.194895596|0.058468679|0|0|0|0.253364275|0|0|
+|2525730|16663991|Bk|48507813|68|56|91|35|56|91|0|0|0|0|56|91|0.21316705|0|0|0.21316705|0|0|0|0.024361949|0.188805101|0|
+|2525730|16663991|Ap|48507812|68|0|18|18|0|18|0|18|0|0|0|0|0.422853836|0.422853836|0|0|0.117459399|0.234918798|0.070475639|0|0|0|
+|2525730|16663992|Cr|48507816|17|170|200|30|0|0|0|0|0|0|0|0|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2525730|16663992|Bt1 |48507820|17|18|35|17|18|35|18|30|20|35|0|0|0.276102083|0.194895588|0.243619485|0|0|0|0.194895588|0.081206495|0|0|
+|2525730|16663992|Bt2 |48507821|17|35|53|18|35|53|0|0|35|50|50|53|0.182714614|0|0.152262178|0.030452436|0|0|0|0.182714614|0|0|
+|2525730|16663992|Ap|48507817|17|0|18|18|0|18|0|18|0|0|0|0|0.422853836|0.422853836|0|0|0.117459399|0.234918798|0.070475639|0|0|0|
+|2525730|16663992|C |48507819|17|116|170|54|116|150|0|0|0|0|0|0|0.069025521|0|0|0|0|0|0|0|0|0.109628768|
+|2525730|16663992|Bk|48507818|17|53|116|63|53|116|0|0|0|0|53|100|0.38370069|0|0|0.286252895|0|0|0|0.04263341|0.243619485|0.097447794|
+|2525745|16663921|A |48507476|75|15|20|5|15|20|15|20|20|20|0|0|0.113109045|0.113109045|0|0|0|0|0.113109045|0|0|0|
+|2525745|16663921|Bw1 |48507471|75|20|33|13|20|33|20|30|20|33|0|0|0.245069597|0.188515074|0.245069597|0|0|0|0.188515074|0.056554522|0|0|
+|2525745|16663921|BCk |48507473|75|107|122|15|107|122|0|0|0|0|0|0|0.060904871|0|0|0|0|0|0|0|0|0.060904871|
+|2525745|16663921|Ap|48507475|75|0|15|15|0|15|0|15|0|0|0|0|0.395881656|0.395881656|0|0|0.131960552|0.263921104|0|0|0|0|
+|2525745|16663921|Bk|48507477|75|72|107|35|72|107|0|0|0|0|72|100|0.284222733|0|0|0.227378186|0|0|0|0|0.227378186|0.056844547|
+|2525745|16663921|Bw2 |48507472|75|33|72|39|33|72|0|0|33|50|50|72|0.441125274|0|0.192285376|0.248839898|0|0|0|0.30539442|0.135730853|0|
+|2525745|16663921|C |48507474|75|122|200|78|122|150|0|0|0|0|0|0|0.060904872|0|0|0|0|0|0|0|0|0.169663573|
+|2525746|16663927|BCk |48507505|78|107|122|15|107|122|0|0|0|0|0|0|0.060904871|0|0|0|0|0|0|0|0|0.060904871|
+|2525746|16663927|Ap|48507502|78|0|15|15|0|15|0|15|0|0|0|0|0.395881656|0.395881656|0|0|0.131960552|0.263921104|0|0|0|0|
+|2525746|16663927|Bw1 |48507507|78|15|33|18|15|33|15|30|20|33|0|0|0.352378196|0.293648497|0.254495364|0|0|0|0.293648497|0.058729699|0|0|
+|2525746|16663927|Bk|48507504|78|74|107|33|74|107|0|0|0|0|74|100|0.267981434|0|0|0.211136887|0|0|0|0|0.211136887|0.056844547|
+|2525746|16663927|Bw2 |48507503|78|33|74|41|33|74|0|0|33|50|50|74|0.499419945|0|0.207076563|0.292343382|0|0|0|0.328886305|0.17053364|0|
+|2525746|16663927|C |48507506|78|122|200|78|122|150|0|0|0|0|0|0|0.060904872|0|0|0|0|0|0|0|0|0.169663573|
+|2525754|16663602|3Ab |48508119|75|97|102|5|97|102|0|0|0|0|97|100|0.010513341|0|0|0.006308005|0|0|0|0|0.006308005|0.004205337|
+|2525754|16663602|Btn |48508123|75|5|46|41|5|46|5|30|20|46|0|0|0.66589326|0.406032476|0.422273775|0|0|0.16241299|0.243619485|0.259860784|0|0|
+|2525754|16663602|3C|48508124|75|102|152|50|102|150|0|0|0|0|0|0|0.097447794|0|0|0|0|0|0|0|0|0.101508119|
+|2525754|16663602|E |48508122|75|0|5|5|0|5|0|5|0|0|0|0|0.163138051|0.163138051|0|0|0.163138051|0|0|0|0|0|
+|2525754|16663602|Bz1 |48508120|75|46|71|25|46|71|0|0|46|50|50|71|0.152262178|0|0.024361949|0.12790023|0|0|0|0.08526682|0.066995358|0|
+|2525754|16663602|2Bz2|48508121|75|71|97|26|71|97|0|0|0|0|71|97|0.113109049|0|0|0.113109049|0|0|0|0|0.113109049|0|
+|2525769|16663985|Btn1|48507781|48|33|48|15|33|48|0|0|33|48|0|0|0.234918798|0|0.234918798|0|0|0|0|0.234918798|0|0|
+|2525769|16663985|E/B |48507780|48|25|33|8|25|33|25|30|25|33|0|0|0.194895588|0.121809743|0.194895588|0|0|0|0.121809743|0.073085846|0|0|
+|2525769|16663985|Btn2|48507782|48|48|66|18|48|66|0|0|48|50|50|66|0.219257537|0|0.024361949|0.194895588|0|0|0|0.146171691|0.073085846|0|
+|2525769|16663985|Bk|48507783|48|66|114|48|66|114|0|0|0|0|66|100|0.389791177|0|0|0.276102083|0|0|0|0|0.276102083|0.113689093|
+|2525769|16663985|C |48507784|48|114|200|86|114|150|0|0|0|0|0|0|0.156612529|0|0|0|0|0|0|0|0|0.37412993|
+|2525769|16663985|A |48507779|48|18|25|7|18|25|18|25|20|25|0|0|0.211136883|0.211136883|0.150812059|0|0|0|0.211136883|0|0|0|
+|2525769|16663985|Ap|48507778|48|0|18|18|0|18|0|18|0|0|0|0|0.542923414|0.542923414|0|0|0.150812059|0.301624119|0.090487236|0|0|0|
+|2525769|16663987|C |48507795|40|119|200|81|119|150|0|0|0|0|0|0|0.065182717|0|0|0|0|0|0|0|0|0.170316131|
+|2525769|16663987|Ap|48507790|40|0|18|18|0|18|0|18|0|0|0|0|0.422853836|0.422853836|0|0|0.117459399|0.234918798|0.070475639|0|0|0|
+|2525769|16663987|Btnky|48507793|40|47|81|34|47|81|0|0|47|50|50|81|0.414153125|0|0.036542923|0.377610202|0|0|0|0.158352666|0.25580046|0|
+|2525769|16663987|BCky|48507794|40|81|119|38|81|119|0|0|0|0|81|100|0.231438511|0|0|0.115719256|0|0|0|0|0.115719256|0.115719256|
+|2525769|16663987|E |48507791|40|18|22|4|18|22|18|22|20|22|0|0|0.07540603|0.07540603|0.037703015|0|0|0|0.07540603|0|0|0|
+|2525769|16663987|Btn |48507792|40|22|47|25|22|47|22|30|22|47|0|0|0.391531329|0.125290025|0.391531329|0|0|0|0.125290025|0.266241304|0|0|
+|2755639|16663555|Bt|48508328|18|25|61|36|25|61|25|30|25|50|50|61|0.798097419|0.110846864|0.554234318|0.2438631|0|0|0.110846864|0.665081182|0.022169373|0|
+|2755639|16663555|A |48508327|18|13|25|12|13|25|13|25|20|25|0|0|0.409280759|0.409280759|0.170533649|0|0|0.06821346|0.341067299|0|0|0|
+|2755639|16663555|Ap|48508331|18|0|13|13|0|13|0|13|0|0|0|0|0.443387489|0.443387489|0|0|0.170533649|0.272853839|0|0|0|0|
+|2755639|16663555|C |48508329|18|132|152|20|132|150|0|0|0|0|0|0|0.066508118|0|0|0|0|0|0|0|0|0.073897909|
+|2755639|16663555|Bk|48508330|18|61|132|71|61|132|0|0|0|0|61|100|0.530028983|0|0|0.291142681|0|0|0|0|0.291142681|0.238886302|
+|2755639|16663554|Bt|48508333|62|18|64|46|18|64|18|30|20|50|50|64|0.552320184|0.144083526|0.360208815|0.168097447|0|0|0.144083526|0.360208815|0.048027842|0|
+|2755639|16663554|Ap|48508334|62|0|18|18|0|18|0|18|0|0|0|0|0.240139206|0.240139206|0|0|0.066705335|0.13341067|0.040023201|0|0|0|
+|2755639|16663554|Bk|48508335|62|64|130|66|64|130|0|0|0|0|64|100|0.401972151|0|0|0.219257537|0|0|0|0|0.219257537|0.182714614|
+|2755639|16663554|C |48508332|62|130|203|73|130|150|0|0|0|0|0|0|0.040603248|0|0|0|0|0|0|0|0|0.142111366|
+|2755643|16663957|Cr|48507642|30|38|200|162|38|150|0|0|38|50|50|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2755643|16663957|AC|48507644|30|13|25|12|13|25|13|25|20|25|0|0|0.095881674|0.095881674|0.039950697|0|0|0.015980279|0.079901395|0|0|0|
+|2755643|16663957|C |48507645|30|25|38|13|25|38|25|30|25|38|0|0|0.052030162|0.020011601|0.052030162|0|0|0|0.020011601|0.032018561|0|0|
+|2755643|16663957|A |48507643|30|0|13|13|0|13|0|13|0|0|0|0|0.150435032|0.150435032|0|0|0.057859628|0.092575404|0|0|0|0|
+|2755643|16663959|Cr|48507651|18|178|200|22|0|0|0|0|0|0|0|0|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2755643|16663959|Bw2 |48507654|18|31|46|15|31|46|0|0|31|46|0|0|0.187935035|0|0.187935035|0|0|0|0|0.187935035|0|0|
+|2755643|16663959|A |48507652|18|0|15|15|0|15|0|15|0|0|0|0|0.316487819|0.316487819|0|0|0.10549594|0.210991879|0|0|0|0|
+|2755643|16663959|Bw1 |48507653|18|15|31|16|15|31|15|30|20|31|0|0|0.270069606|0.253190255|0.185672854|0|0|0|0.253190255|0.01687935|0|0|
+|2755643|16663959|Bk|48507655|18|46|84|38|46|84|0|0|46|50|50|84|0.324564955|0|0.034164732|0.290400223|0|0|0|0.119576562|0.204988393|0|
+|2755643|16663959|C |48507656|18|84|178|94|84|150|0|0|0|0|84|100|0.278892103|0|0|0.067610207|0|0|0|0|0.067610207|0.329599758|
+|2755643|16663958|Cr|48507646|40|74|200|126|74|150|0|0|0|0|74|100|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|NULL|
+|2755643|16663958|Bw1 |48507650|40|15|28|13|15|28|15|28|20|28|0|0|0.157447801|0.157447801|0.096890954|0|0|0|0.157447801|0|0|0|
+|2755643|16663958|Bw2 |48507647|40|28|43|15|28|43|28|30|28|43|0|0|0.122679814|0.016357309|0.122679814|0|0|0|0.016357309|0.106322506|0|0|
+|2755643|16663958|A |48507649|40|0|15|15|0|15|0|15|0|0|0|0|0.233874706|0.233874706|0|0|0.077958235|0.155916471|0|0|0|0|
+|2755643|16663958|Bk|48507648|40|43|74|31|43|74|0|0|43|50|50|74|0.129601214|0|0.02926479|0.100336424|0|0|0|0.071071634|0.058529581|0|
+|2755648|16663767|Cr|48507343|20|66|152|86|66|150|0|0|0|0|66|100|0.182714617|0|0|0.073955916|0|0|0|0|0.073955916|0.113109049|
+|2755648|16663767|E |48507341|20|20|25|5|20|25|20|25|20|25|0|0|0.094257537|0.094257537|0.094257537|0|0|0|0.094257537|0|0|0|
+|2755648|16663767|BCk |48507344|20|53|66|13|53|66|0|0|0|0|53|66|0.084831787|0|0|0.084831787|0|0|0|0.045678654|0.039153132|0|
+|2755648|16663767|Ap|48507345|20|0|20|20|0|20|0|20|20|20|0|0|0.40023201|0.40023201|0|0|0.100058003|0.200116005|0.100058003|0|0|0|
+|2755648|16663767|Btn |48507342|20|25|53|28|25|53|25|30|25|50|50|53|0.365429234|0.06525522|0.326276102|0.039153132|0|0|0.06525522|0.300174014|0|0|
+|2755648|16663766|Cr|48507346|58|91|152|61|91|150|0|0|0|0|91|100|0.13090197|0|0|0.019968097|0|0|0|0|0.019968097|0.115371228|
+|2755648|16663766|Bt|48507347|58|20|43|23|20|43|20|30|20|43|0|0|0.373549878|0.16241299|0.373549878|0|0|0|0.16241299|0.211136887|0|0|
+|2755648|16663766|Ap|48507349|58|0|20|20|0|20|0|20|20|20|0|0|0.253480273|0.253480273|0|0|0.063370068|0.126740137|0.063370068|0|0|0|
+|2755648|16663766|Bk|48507348|58|43|91|48|43|91|0|0|43|50|50|91|0.448259853|0|0.065371229|0.382888625|0|0|0|0.158758698|0.289501155|0|
+
+
+
+### Sum SOC Layers within Each Component
+
+Summarize SOC stocks by component
+Pedon SOC stock ($SOCstock_D$) were summed for soil depths (D) of 0--5, 0--30, and 0--100 cm using the fixed depth increment approach described by Ellert et al. (2008). Previous work has shows this to be comparable to the spline technique, particularly at shallow depths (such as 0--30 cm) 
+
+
+$$SOCstock_c = \sum_{D}^L SOC_{l} $$
+
+where L is the number of soil layers within the specified soil depth (D).
+
+##### SOC3 table
+```{SQL}
+SELECT DISTINCT cokey, mukey,  
+ROUND (SUM (HZ_SOC_0_150) over(PARTITION BY cokey) ,4) AS CO_SOC_0_150, 
+ROUND (SUM (HZ_SOC_0_30) over(PARTITION BY cokey) ,4) AS CO_SOC_0_30, 
+ROUND (SUM (HZ_SOC_20_50) over(PARTITION BY cokey),4) AS CO_SOC_20_50, 
+ROUND (SUM (HZ_SOC_50_100) over(PARTITION BY cokey),4)  AS CO_SOC_50_100,
+ROUND (SUM (HZ_SOC_0_5) over(PARTITION BY cokey),4) AS CO_SOC_0_5, 
+ROUND (SUM (HZ_SOC_5_15) over(PARTITION BY cokey),4) AS CO_SOC_5_15, 
+ROUND (SUM (HZ_SOC_15_30) over(PARTITION BY cokey),4) AS CO_SOC_15_30, 
+ROUND (SUM (HZ_SOC_30_60) over(PARTITION BY cokey),4) AS CO_SOC_30_60, 
+ROUND (SUM (HZ_SOC_60_100) over(PARTITION BY cokey),4) AS CO_SOC_60_100, 
+ROUND (SUM (HZ_SOC_100_200) over(PARTITION BY cokey),4) AS CO_SOC_100_200 
+INTO #SOC3
+FROM #SOC2
+GROUP BY mukey, cokey, HZ_SOC_0_150, HZ_SOC_0_30, HZ_SOC_20_50, HZ_SOC_50_100, HZ_SOC_0_5, HZ_SOC_5_15, HZ_SOC_15_30, HZ_SOC_30_60, HZ_SOC_60_100, HZ_SOC_100_200
+
+```
+|cokey|mukey|CO_SOC_0_150|CO_SOC_0_30|CO_SOC_20_50|CO_SOC_50_100|CO_SOC_0_5|CO_SOC_5_15|CO_SOC_15_30|CO_SOC_30_60|CO_SOC_60_100|CO_SOC_100_200|
+|------|------|------|------|------|------|------|------|------|------|------|------|
+|16464494|354627|1.2348|0.5742|0.3227|0.232|0.1175|0.2349|0.2219|0.2429|0.1856|0.2413|
+|16464495|354627|1.0871|0.5655|0.2896|0.2472|0.1131|0.2262|0.2262|0.2344|0.1893|0.1018|
+|16464607|354648|1.1633|0.8026|0.2936|0.2149|0.1637|0.3274|0.3115|0.2055|0.1552|0|
+|16464612|354648|1.1641|0.6116|0.4393|0.264|0.1366|0.2487|0.2262|0.3737|0.1788|0|
+|16663554|2755639|1.235|0.3842|0.3602|0.3874|0.0667|0.1334|0.1841|0.3602|0.2673|0.3248|
+|16663555|2755639|2.2473|0.9635|0.7248|0.535|0.1705|0.3411|0.4519|0.6651|0.3133|0.3128|
+|16663602|2525754|1.2024|0.5692|0.4466|0.2473|0.1631|0.1624|0.2436|0.3451|0.1864|0.1057|
+|16663611|2525764|1.8744|0.7274|0.5186|0.5177|0.1334|0.2668|0.3271|0.4872|0.3553|0.3167|
+|16663766|2755648|1.2062|0.4159|0.4389|0.4029|0.0634|0.1267|0.2258|0.3699|0.3095|0.1154|
+|16663767|2755648|1.1275|0.5597|0.4205|0.1979|0.1001|0.2001|0.2596|0.3459|0.1131|0.1131|
+|16663796|2525732|0.7456|0.372|0.2132|0.1816|0.0609|0.1218|0.1892|0.1305|0.1381|0.1093|
+|16663797|2525732|1.041|0.4611|0.2697|0.2877|0.1088|0.2175|0.1349|0.2697|0.1978|0.1169|
+|16663846|2755654|1.2062|0.4159|0.4389|0.4029|0.0634|0.1267|0.2258|0.3699|0.3095|0.1154|
+|16663847|2755654|1.1929|0.5844|0.4258|0.2197|0.1091|0.2183|0.2569|0.3377|0.16|0.1154|
+|16663899|2525720|1.3778|0.6869|0.4324|0.2727|0.1914|0.2606|0.2349|0.3389|0.2096|0.2475|
+|16663903|2525720|0.7838|0.4832|0.1919|0.1051|0.1624|0.1685|0.1523|0.1114|0.0841|0.2103|
+|16663915|2525739|1.6534|0.7645|0.4666|0.4249|0.1507|0.3015|0.3122|0.3876|0.2957|0.3158|
+|16663917|2525739|0.8154|0.4496|0.2976|0.1936|0.0872|0.1744|0.1879|0.2541|0.1118|0|
+|16663921|2525745|1.6012|0.6975|0.4374|0.4762|0.132|0.2639|0.3016|0.3619|0.3631|0.2874|
+|16663927|2525746|1.6375|0.6895|0.4616|0.5035|0.132|0.2639|0.2936|0.3876|0.3817|0.2874|
+|16663930|2494708|0.8473|0.555|0.3001|0.1232|0.1194|0.2235|0.2122|0.2274|0.065|0|
+|16663931|2494708|0.3597|0.3088|0.1146|0|0.0771|0.1362|0.0955|0.0509|0|0|
+|16663951|2525733|0.6436|0.4077|0.2488|0.1003|0.078|0.1559|0.1738|0.1774|0.0585|0|
+|16663952|2525733|0.2423|0.1886|0.0951|0|0.0422|0.0844|0.062|0.0537|0|0|
+|16663957|2755643|0.2983|0.2663|0.092|0|0.0579|0.1086|0.0999|0.032|0|0|
+|16663958|2755643|0.6436|0.4077|0.2488|0.1003|0.078|0.1559|0.1738|0.1774|0.0585|0|
+|16663959|2755643|1.3779|0.5697|0.4078|0.358|0.1055|0.211|0.2532|0.3244|0.2726|0.3296|
+|16663985|2525769|1.9495|0.8759|0.605|0.471|0.1508|0.3016|0.4234|0.4542|0.3492|0.4878|
+|16663987|2525769|1.6006|0.6235|0.4658|0.4933|0.1175|0.2349|0.2712|0.4246|0.3715|0.286|
+|16663991|2525730|1.0773|0.6108|0.3515|0.2716|0.1175|0.2349|0.2584|0.2777|0.1888|0|
+|16663992|2525730|1.3344|0.6177|0.3959|0.3167|0.1175|0.2349|0.2654|0.3066|0.2436|0.2071|
+|16664017|2525724|1.3356|0.596|0.3654|0.3227|0.1175|0.2349|0.2436|0.2733|0.2523|0.3263|
+|16664018|2525724|1.4589|0.6143|0.46|0.4471|0.1175|0.2349|0.2619|0.4142|0.3253|0.1304|
+|16664022|2525724|1.6613|0.7136|0.5405|0.3976|0.1218|0.2436|0.3482|0.4289|0.2758|0.4677|
+
+
+
+#### Weighted average of components within each map unit
+$$SOC_{mu} = (\sum_{C}^n SOC_d*Cpct) * 100$$
+where SOCmu is the average SOC stock in each map unit, c is the number of components, Cpct is the proportion of each component within the map unit and SOCd is the carbon stock within a given depth increment. Converted for expression in units of  $Mg C ha ^{-1}$:
+
+#### SOC4 table
+```{SQL}
+SELECT DISTINCT #SOC3.cokey, #SOC3.mukey,  adj_comp_pct  AS WEIGHTED_COMP_PCT, 
+CO_SOC_0_30, CO_SOC_0_30 * adj_comp_pct AS WEIGHTED_CO_SOC_0_30,
+CO_SOC_20_50, CO_SOC_20_50 * adj_comp_pct AS WEIGHTED_CO_SOC_20_50,
+CO_SOC_50_100, CO_SOC_50_100 * adj_comp_pct AS WEIGHTED_CO_SOC_50_100,
+CO_SOC_0_150, CO_SOC_0_150 * adj_comp_pct AS WEIGHTED_CO_SOC_0_150,
+CO_SOC_0_5, CO_SOC_0_5 * adj_comp_pct AS WEIGHTED_CO_SOC_0_5,
+CO_SOC_5_15, CO_SOC_5_15 * adj_comp_pct AS WEIGHTED_CO_SOC_5_15,
+CO_SOC_15_30, CO_SOC_15_30 * adj_comp_pct AS WEIGHTED_CO_SOC_15_30,
+CO_SOC_30_60, CO_SOC_30_60 * adj_comp_pct AS WEIGHTED_CO_SOC_30_60,
+CO_SOC_60_100, CO_SOC_60_100 * adj_comp_pct AS WEIGHTED_CO_SOC_60_100,
+CO_SOC_100_200 , CO_SOC_100_200  * adj_comp_pct AS WEIGHTED_CO_SOC_100_200
+INTO #SOC4
+FROM #SOC3
+INNER JOIN #muacpf ON #muacpf.cokey=#SOC3.cokey
+GROUP BY #SOC3.cokey, #SOC3.mukey,  adj_comp_pct , CO_SOC_0_30, CO_SOC_20_50,CO_SOC_50_100, CO_SOC_0_150, CO_SOC_0_5, CO_SOC_5_15, CO_SOC_15_30, CO_SOC_30_60,CO_SOC_60_100, CO_SOC_100_200
+```
+cokey|mukey|WEIGHTED_COMP_PCT|CO_SOC_0_30|WEIGHTED_CO_SOC_0_30
+----------|----------|----------|----------|----------
+16464494|354627|0.28|0.5742|0.160776
+16464495|354627|0.72|0.5655|0.40716
+16464607|354648|0.29|0.8026|0.232754
+16464612|354648|0.71|0.6116|0.434236
+16663554|2755639|0.78|0.3842|0.299676
+16663555|2755639|0.23|0.9635|0.221605
+16663602|2525754|0.50|0.5692|0.2846
+16663611|2525764|1|0.7274|0.7274
+16663766|2755648|0.37|0.4159|0.153883
+16663767|2755648|0.13|0.5597|0.072761
+16663796|2525732|0.76|0.372|0.28272
+16663797|2525732|0.24|0.4611|0.110664
+16663846|2755654|0.71|0.4159|0.295289
+16663847|2755654|0.29|0.5844|0.169476
+16663899|2525720|0.19|0.6869|0.130511
+16663903|2525720|0.31|0.4832|0.149792
+16663915|2525739|0.26|0.7645|0.19877
+16663917|2525739|0.74|0.4496|0.332704
+16663921|2525745|0.5|0.6975|0.34875
+16663927|2525746|0.5|0.6895|0.34475
+16663930|2494708|0.6|0.555|0.333
+16663931|2494708|0.4|0.3088|0.12352
+16663951|2525733|0.67|0.4077|0.273159
+16663952|2525733|0.33|0.1886|0.062238
+16663957|2755643|0.34|0.2663|0.090542
+16663958|2755643|0.45|0.4077|0.183465
+16663959|2755643|0.2|0.5697|0.11394
+16663985|2525769|0.27|0.8759|0.236493
+16663987|2525769|0.23|0.6235|0.143405
+16663991|2525730|0.8|0.6108|0.48864
+16663992|2525730|0.2|0.6177|0.12354
+16664017|2525724|0.35|0.596|0.2086
+16664018|2525724|0.24|0.6143|0.147432
+16664022|2525724|0.41|0.7136|0.292576
+
+
+
+##### Link to map unit table 
+
+1. Unit vonversion to a 100
+2. Links to the landunit
+
+```{SQL}
+SELECT DISTINCT #M4.mukey,   #M4.aoiid ,
+ #M4.landunit,  
+ landunit_acres, mapunit_acres, ROUND (SUM (WEIGHTED_CO_SOC_0_30) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_30 , 
+ROUND (SUM (WEIGHTED_CO_SOC_20_50) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_20_50 , 
+ROUND (SUM (WEIGHTED_CO_SOC_50_100) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_50_100,
+
+ROUND (SUM (WEIGHTED_CO_SOC_0_150) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_150,
+ROUND (SUM (WEIGHTED_CO_SOC_0_5) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_5 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_5_15) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_5_15 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_15_30) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_15_30 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_30_60) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_30_60 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_60_100) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_60_100 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_100_200) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_100_200
+INTO #SOC5
+FROM #SOC4
+LEFT OUTER JOIN #M4 ON #M4.mukey=#SOC4.mukey
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid
+GROUP BY  #M4.mukey,  #SOC4.mukey,  #M4.aoiid ,
+ #M4.landunit,  
+ landunit_acres, mapunit_acres,WEIGHTED_CO_SOC_0_30, WEIGHTED_CO_SOC_20_50, WEIGHTED_CO_SOC_50_100, WEIGHTED_CO_SOC_0_5, WEIGHTED_CO_SOC_5_15, WEIGHTED_CO_SOC_15_30, WEIGHTED_CO_SOC_30_60, WEIGHTED_CO_SOC_60_100, WEIGHTED_CO_SOC_100_200, #SOC4.WEIGHTED_CO_SOC_0_150
+
+```
+
+mukey|aoiid|landunit|SOCSTOCK_0_30|
+--------|--------|--------|--------|
+354627|1|T9981 Fld3          |56.79|
+354648|1|T9981 Fld3          |66.7|
+2494708|1|T9981 Fld3          |45.65|
+2525720|1|T9981 Fld3          |28.03|
+2525720|2|T9981 Fld4          |28.03|
+2525724|2|T9981 Fld4          |64.86|
+2525730|2|T9981 Fld4          |61.22|
+2525732|1|T9981 Fld3          |39.34|
+2525733|1|T9981 Fld3          |33.54|
+2525739|1|T9981 Fld3          |53.15|
+2525745|1|T9981 Fld3          |34.88|
+2525745|2|T9981 Fld4          |34.88|
+2525746|1|T9981 Fld3          |34.48|
+2525746|2|T9981 Fld4          |34.48|
+2525754|1|T9981 Fld3          |28.46|
+2525754|2|T9981 Fld4          |28.46|
+2525764|1|T9981 Fld3          |72.74|
+2525769|1|T9981 Fld3          |37.99|
+2525769|2|T9981 Fld4          |37.99|
+2755639|2|T9981 Fld4          |52.13|
+2755643|2|T9981 Fld4          |38.79|
+2755648|1|T9981 Fld3          |22.66|
+2755648|2|T9981 Fld4          |22.66|
+2755654|1|T9981 Fld3          |46.48|
+
+
+```{SQL}
+SELECT DISTINCT #M4.mukey,   #M4.aoiid ,
+ #M4.landunit,  
+ landunit_acres, mapunit_acres, ROUND (SUM (WEIGHTED_CO_SOC_0_30) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_30 , 
+ROUND (SUM (WEIGHTED_CO_SOC_20_50) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_20_50 , 
+ROUND (SUM (WEIGHTED_CO_SOC_50_100) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_50_100,
+
+ROUND (SUM (WEIGHTED_CO_SOC_0_150) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_150,
+ROUND (SUM (WEIGHTED_CO_SOC_0_5) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_0_5 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_5_15) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_5_15 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_15_30) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_15_30 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_30_60) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_30_60 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_60_100) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_60_100 , 
+
+ROUND (SUM (WEIGHTED_CO_SOC_100_200) over(PARTITION BY #M4.aoiid ,#SOC4.mukey) ,4) *100  AS SOCSTOCK_100_200
+INTO #SOC5
+FROM #SOC4
+LEFT OUTER JOIN #M4 ON #M4.mukey=#SOC4.mukey
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#M4.aoiid
+GROUP BY  #M4.mukey,  #SOC4.mukey,  #M4.aoiid ,
+ #M4.landunit,  
+ landunit_acres, mapunit_acres,WEIGHTED_CO_SOC_0_30, WEIGHTED_CO_SOC_20_50, WEIGHTED_CO_SOC_50_100, WEIGHTED_CO_SOC_0_5, WEIGHTED_CO_SOC_5_15, WEIGHTED_CO_SOC_15_30, WEIGHTED_CO_SOC_30_60, WEIGHTED_CO_SOC_60_100, WEIGHTED_CO_SOC_100_200, #SOC4.WEIGHTED_CO_SOC_0_150
+```
+
+#### Creates weighted average by land unit
+```{SQL}
+ CREATE TABLE #SOC6
+( aoiid INT,
+landunit CHAR(20),  
+landunit_acres FLOAT,
+SOCSTOCK_0_5_Weighted_Average FLOAT, 
+SOCSTOCK_0_30_Weighted_Average FLOAT, 
+SOCSTOCK_0_150_Weighted_Average FLOAT
+)
+;
+```
+```{SQL}
+INSERT INTO #SOC6
+SELECT DISTINCT 
+ aoiid ,
+ landunit,  
+ landunit_acres,
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*SOCSTOCK_0_5) over(partition by aoiid)  , '#,###,##0.00') AS SOCSTOCK_0_5_Weighted_Average, 
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*SOCSTOCK_0_30 ) over(partition by aoiid)  , '#,###,##0.00') AS SOCSTOCK_0_30_Weighted_Average,
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*SOCSTOCK_0_150) over(partition by aoiid)  , '#,###,##0.00') AS SOCSTOCK_0_150_Weighted_Average
+FROM #SOC5
+GROUP BY aoiid, landunit, mapunit_acres, landunit_acres, SOCSTOCK_0_5, SOCSTOCK_0_30, SOCSTOCK_0_150;
+
+SELECT DISTINCT  landunit, landunit_acres, 
+CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 0) 
+WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 1) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 2) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 3) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 4) 
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 5)  
+WHEN SOCSTOCK_0_30_Weighted_Average IS  NULL THEN CONCAT ('Soil Organic Carbon Stock' , ':' , 'Not Rated') END AS rating_key,
+ 'Soil Organic Carbon Stock' AS attributename,
+SOCSTOCK_0_5_Weighted_Average	AS [SOC_0_5],
+SOCSTOCK_0_30_Weighted_Average AS [SOC_0_30],
+SOCSTOCK_0_150_Weighted_Average AS [SOC_0_150], 
+CASE WHEN SOCSTOCK_0_30_Weighted_Average IS NULL THEN NULL
+WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN 'None'
+WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN 'Very low'
+WHEN SOCSTOCK_0_30_Weighted_Average >=10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN 'Low'
+WHEN SOCSTOCK_0_30_Weighted_Average >=25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN 'Moderate'
+WHEN SOCSTOCK_0_30_Weighted_Average >=50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN 'Moderately High'
+WHEN SOCSTOCK_0_30_Weighted_Average >=100 THEN 'High' END AS [SOC_0_30_High_Class]
+FROM #SOC6
+```
+
+### Final Table Output by Landunit
+landunit|landunit_acres|rating_key|attributename|SOC_0_5|SOC_0_30|SOC_0_150|SOC_0_30__Class
+-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------
+T9981 Fld3          |328.952|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.83|38.96|87.64|Moderate
+T9981 Fld4          |318.722|Soil Organic Carbon Stock:3|Soil Organic Carbon Stock|7.19|37.09|82.56|Moderate
+
+
+![Figure 1.---Final output by land unit.](https://jneme910.github.io/CART/TableImages/SOC_Final_Output_landunit.PNG)
+
+
+In field 3 the rating is `'Moderate'` with a weaighted average landunit value of `38.96` and in field 4 the rating class is `'Moderate'` and the value is `37.09`.
+
+## Global Soil Organic Carbon Output
+The SOCstock for 0--30 cm (high, rv, and low) was exported for further GIS interpolation and extrapolation.
+
+![Figure 2.---Soil organic carbon stock: Hawaii](https://jneme910.github.io/CART/TableImages/HI_SOC_0-30.jpg)
+
+![Figure 3.---Soil organic carbon stock: Puerto Rico](https://jneme910.github.io/CART/TableImages/PR_SOC_0-30.jpg)
+
+
+![Figure 4.---Soil organic carbon stock: CONUS (Credit Steve Campbell)](https://jneme910.github.io/CART/TableImages/SOC_0_30cm_gSSURGO_CONUS_FY2019_map.jpg)
+
+
+## Sources and Citations
+The source of this data is  STATSGO and SSURGO from the U.S. National Cooperative Soil Survey. The following references cover data definitions, derivation and quality procedures.
+ 
+1.	U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, title 430-VI. http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242 (accessed 13 October 2017).
+2.	U.S. Department of Agriculture, Natural Resources Conservation Service. 2014. Kellogg Soil Survey Laboratory methods manual (SSIR 42), version 5. https://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/research/guide/?cid=nrcs142p2_054247 (accessed 23 July 2019).
+3.	U.S. Department of Agriculture, Natural Resources Conservation Service. 2017a. Soil Data Access; Soil Survey Geographic (SSURGO) Database. https://sdmdataaccess.sc.egov.usda.gov. (accessed 12 October 2017). 
+4.	U.S. Department of Agriculture, Natural Resources Conservation Service. 2017b. Soil Data Access; U.S. General Soil Map (STATSGO2). https://sdmdataaccess.sc.egov.usda.gov (accessed 12 October 2017).
+5.	Ellert, B.H., H.H. Janzen, A.J. VandenBygaart, and E. Bremer. 2008. Measuring change in soil organic carbon storage. _In:_ Carter, M.R., and E.G. Gregorich, editors, Soil sampling and methods of analysis, 2nd edition. CRC Press, Boca Raton, FL, pp. 25--38.
+
+

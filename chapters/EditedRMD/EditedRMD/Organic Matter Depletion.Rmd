@@ -1,0 +1,727 @@
+---
+title: "Organic Matter Depletion"
+author: Bob Dobos, Cathy Seybold, Steve Campbell, Steve Peaslee, and Jason Nemecek
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Soil health is primarily influenced by human management, which is not captured in soil survey data at this time. This interpretation provides information on inherent soil properties that influence our ability to build healthy soils through management.
+
+Soil organic matter is the very foundation for healthy and productive soils. A fertile and healthy soil is the basis for healthy plants, animals, and humans. Understanding the role of organic matter in maintaining a healthy soil is essential for developing ecologically sound agricultural practices. Perhaps just as important is the task of identifying areas at greater risk of organic matter depletion. 
+
+For organic matter to accumulate in soil, the processes that synthesize organic matter generally need to be greater than the processes that destroy organic matter. These processes occur at continental and local scales. One continental-scale factor is the mean annual temperature. This factor ultimately governs the rates of biological processes, including both the synthesizing and destroying of organic matter. Another continental-scale factor is the amount of water generally available for use by plants and soil microbes. The amount of available water is governed by the amount of rainfall or snowmelt that an area receives in relation to evapotranspiration. This interpretation does not take into account the application of irrigation water.
+
+The continental-scale factors are modified by local factors, such as seasonal saturation, soil texture, and land-surface shape. Oxygen is needed for both the accumulation and destruction of organic matter. It can be excluded from the soil by seasonal saturation. Such exclusion generally favors the accumulation processes. The antecedent organic matter content is an indicator of a soil's vulnerability to loss of organic matter. In general, well aerated soils tend to have higher oxidation rates. Such soils may still accumulate organic matter, however, depending on other factors, such as ground cover, length of time that living roots are present in the soil, and management practices. Clay-sized particles in the soil help protect organic compounds and therefore tend to promote organic matter accumulation. The shape of the land surface also influences the organic matter content. Water and sediment tend to accumulate in concave areas, while material tends to disperse from convex areas. For each soil, the limitations caused by each of these properties are rated. The sum of the ratings is the overall rating.
+
+The ratings are both verbal and numerical. Numerical ratings indicate the propensity of the individual soil properties to influence organic matter degradation. The ratings are shown in decimal fractions ranging from 0.01 to 1.00. They indicate gradations between the point at which a soil feature has the greatest ability to enable organic carbon depletion (1.00) and the point at which the soil feature becomes least likely to allow organic matter depletion (0.00).
+
+Rating class terms indicate the extent to which the soils enable the depletion of organic matter. "Organic matter depletion high" indicates that the soil and site have features that are very conducive to the depletion of organic matter. Very careful management is needed to prevent serious loss of organic matter if these soils are farmed. "Organic matter depletion moderately high," "Organic matter depletion moderate," and "Organic matter depletion moderately low" are gradients of the level of management needed to avoid organic matter depletion. "Organic matter depletion low" indicates soils that have features that are favorable for organic matter accumulation. These soils allow more management options while still maintaining favorable organic matter levels.
+
+The map unit components listed for each map unit in the accompanying "Summary by Map Unit" table in Web Soil Survey or the "Aggregation Report" in Soil Data Viewer are determined by the aggregation method chosen. An aggregated rating class is shown for each map unit. The components listed for each map unit are only those that have the same rating class as listed for the map unit. The percent composition of each component in a particular map unit is presented to help the user better understand the extent of each map unit that has the indicated rating.
+
+Other components with different ratings may be present in each map unit. The ratings for all components, regardless of the map unit aggregated rating, can be viewed by generating the equivalent report from the Soil Reports tab in Web Soil Survey or from the Soil Data Mart site. Onsite investigation may be needed to validate these interpretations and to confirm the identity of the soil on a given site.
+
+### Criteria Table
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+Site or soil feature|Low|Moderate|High|Impact
+-----------|-----------|-----------|-----------|-----------
+Organic matter loss sensitivity (%)|>6.0|0.5 to 6.0|<0.5|Soil is not able to accumulate organic matter.
+Mean annual air temperature (C)|<3|20-Mar|>20|Temperature drives the rates of accumulation and destruction.
+Depth to seasonal high water (cm)|0|0 to 100|>100|Oxygen is excluded from saturated soils.
+Land surface shape|concave|linear|convex|Landform can gather or spread material.
+Surface clay content (%)|>40|15 to 40|<15|Organic matter is protected by clay particles.
+Moisture deficit (mm/yr)|>1000|-1000 to 1000|<-1000|Mean annual rainfall minus the potential evapotranspiration.
+
+## Soil Script Breakdown
+### Create AoI Table
+```{SQL}
+CREATE TABLE #AoiTable 
+    ( aoiid INT IDENTITY (1,1),
+    landunit CHAR(20),
+    aoigeom GEOMETRY);
+```
+ 
+ * Create AOI table with polygon geometry. Coordinate system must be WGS1984 (EPSG 4326).
+ 
+```{SQL}
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+```
+#### Create summary acres for each landunit
+
+```{SQL}
+CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;
+```
+
+|aoiid|	landunit|landunit_acres|
+|------|-------------|----------------|
+|1|	T9981 Fld3|          	328.952|
+|2|	T9981 Fld4  |        	318.722|
+
+
+#### Populate intersected soil polygon table with geometry
+```{SQL}
+-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;
+```
+
+
+
+
+####  Populate soil geometry with landunit attribute
+```{SQL}
+-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );
+```
+
+```{SQL}
+-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;
+```
+
+
+
+
+### Create Table to Store Survey Area Datestamps (sacatalog.saverest)
+```{SQL}
+CREATE TABLE #DateStamps
+(landunit CHAR(20),
+datestamp VARCHAR(32));
+```
+landunit|	datestamp
+------------|------------|
+T9981 Fld3   |       	ND001 2018-09-12 19:21:50
+T9981 Fld3   |       	SD105 2018-09-12 23:49:29
+T9981 Fld4   |       	ND001 2018-09-12 19:21:50
+```{SQL}
+INSERT INTO #DateStamps
+SELECT DISTINCT AM.landunit, ([SC].[areasymbol] + ' ' + CONVERT(VARCHAR(32),[SC].[saverest],120) ) AS datestamp
+FROM #M4 AM
+INNER JOIN mapunit Mu ON AM.mukey = Mu.mukey
+INNER JOIN legend LG ON Mu.lkey = LG.lkey
+INNER JOIN sacatalog SC ON Lg.areasymbol = SC.areasymbol;
+```
+* Get survey area dates for all soil mapunits involved. 
+ 
+### Create Table to Store Landunit Metadata (survey area and saverest) Which Comes From #DateStamps
+```{SQL}
+CREATE TABLE #LandunitMetadata
+(landunit CHAR(20),
+soils_metadata VARCHAR(150)
+);
+```
+```{SQL}
+INSERT INTO #LandunitMetadata
+SELECT DISTINCT
+landunit,
+STUFF((SELECT ' | ' + CAST([datestamp] AS VARCHAR(30))
+FROM #DateStamps dt2
+WHERE dt1.landunit = dt2.landunit
+FOR XML PATH ('') ), 1, 2, '') AS soils_metadata
+FROM #DateStamps dt1;
+```
+
+* Populate landunit soils-metadata.
+
+landunit|soils_metadata|
+----------------------------------|-----------|
+T9981 Fld3| ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29|
+T9981 Fld4| ND001 2018-09-12 19:21:50|
+ 
+
+### Populate #SDV with Interp Metadata
+```{SQL}
+CREATE TABLE #SDV
+(attributekey BIGINT,
+attributename CHAR(60),
+attributetablename CHAR(30),
+attributecolumnname CHAR(30),
+attributelogicaldatatype CHAR(20),
+attributefieldsize SMALLINT,
+attributeprecision TINYINT,
+attributedescription NVARCHAR(MAX),
+attributeuom NVARCHAR(60),
+attributeuomabbrev NVARCHAR(30),
+attributetype CHAR(20),
+nasisrulename CHAR(60),
+ruledesign NVARCHAR(60),
+notratedphrase CHAR(15),
+mapunitlevelattribflag TINYINT,
+complevelattribflag TINYINT,
+cmonthlevelattribflag TINYINT,
+horzlevelattribflag TINYINT,
+tiebreakdomainname CHAR(40),
+tiebreakruleoptionflag TINYINT,
+tiebreaklowlabel CHAR(20),
+tiebreakhighlabel CHAR(20),
+tiebreakrule SMALLINT,
+resultcolumnname CHAR(10),
+sqlwhereclause CHAR(255),
+primaryconcolname CHAR(30),
+pcclogicaldatatype CHAR(20),
+primaryconstraintlabel CHAR(30),
+secondaryconcolname CHAR(30),
+scclogicaldatatype CHAR(20),
+secondaryconstraintlabel CHAR(30),
+dqmodeoptionflag TINYINT,
+depthqualifiermode CHAR(20),
+layerdepthtotop FLOAT,
+layerdepthtobottom FLOAT,
+layerdepthuom CHAR(20),
+monthrangeoptionflag TINYINT,
+beginningmonth CHAR(9),
+endingmonth CHAR(9),
+horzaggmeth CHAR(30),
+interpnullsaszerooptionflag TINYINT,
+interpnullsaszeroflag TINYINT,
+nullratingreplacementvalue CHAR(254),
+basicmodeflag TINYINT,
+maplegendkey SMALLINT,
+maplegendclasses TINYINT,
+maplegendxml XML,
+nasissiteid BIGINT,
+wlupdated DATETIME,
+algorithmname CHAR(50),
+componentpercentcutoff TINYINT,
+readytodistribute TINYINT,
+effectivelogicaldatatype CHAR(20),
+rulekey CHAR(30)
+);
+```
+
+
+```{SQL}
+INSERT INTO #SDV (attributename, nasisrulename, rulekey, ruledesign, notratedphrase, resultcolumnname, maplegendxml, attributedescription)
+SELECT sdv.attributename, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname, sdv.maplegendxml, sdv.attributedescription
+FROM sdvattribute sdv
+LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
+WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Hydric Rating by Map Unit', 'Suitability for Aerobic Soil Organisms', 'Ponding Frequency Class','Flooding Frequency Class',
+'Available Water Storage','Depth to Water Table', 'Drainage Class', 'Farmland Classification')
+GROUP BY md.rulekey, sdv.attributename, sdv.nasisrulename, sdv.resultcolumnname, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.attributedescription;
+```
+
+* Begin populating static tables. These are for the base soils data and metadata. No interp data yet.
+* Create a table containing neccessary interp data
+* Please note that if we instead get ruledesign from sdvattribute, those values change to integer as in 1:limitation, 2:suitability
+
+
+
+#### Populate soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+-- Soil map unit acres, aggregated by mukey (merges polygons together)
+CREATE TABLE #M2
+    ( aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    mapunit_acres FLOAT
+    );
+```
+
+
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+```
+
+aoiid|landunit|mukey|mapunit_acres
+------|----------|------------|---------------|
+1|T9981 Fld3          |354627|0.426
+1|T9981 Fld3          |354648|0.287
+1|T9981 Fld3          |2494708|1.729
+1|T9981 Fld3          |2525720|56.699
+1|T9981 Fld3          |2525732|1.35
+1|T9981 Fld3          |2525733|0.129
+1|T9981 Fld3          |2525739|28.479
+1|T9981 Fld3          |2525745|4.983
+1|T9981 Fld3          |2525746|16.106
+1|T9981 Fld3          |2525754|12.638
+1|T9981 Fld3          |2525764|17.691
+1|T9981 Fld3          |2525766|0.032
+1|T9981 Fld3          |2525769|181.356
+1|T9981 Fld3          |2755648|2.449
+1|T9981 Fld3          |2755654|4.599
+2|T9981 Fld4          |2525720|8.623
+2|T9981 Fld4          |2525724|0.458
+2|T9981 Fld4          |2525730|31.514
+2|T9981 Fld4          |2525745|62.205
+2|T9981 Fld4          |2525746|63.55
+2|T9981 Fld4          |2525754|23.138
+2|T9981 Fld4          |2525767|3.86
+2|T9981 Fld4          |2525769|103.909
+2|T9981 Fld4          |2755639|0.443
+2|T9981 Fld4          |2755643|9.641
+2|T9981 Fld4          |2755648|11.382
+
+|aoiid	|landunit|	aoigeom|
+|------|-------------|---------------------------------------------------------------------------------------|
+|1	|T9981 Fld3	|POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))|
+|2	|T9981 Fld4|	POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))|
+
+
+### Create Table to Store Survey Area Datestamps (sacatalog.saverest)
+```{SQL}
+CREATE TABLE #DateStamps
+(landunit CHAR(20),
+datestamp VARCHAR(32));
+```
+
+
+
+```{SQL}
+SELECT @attributeName = 'Organic Matter Depletion';
+SELECT @minPct = 10;
+SELECT @minAcres = 10;
+```
+* Defines the soil interpretion
+* Sets the minimun cutoff pecent for a resource concern at 10 percent or 10 acres for a given landunit
+
+### XML Parsing
+```{SQL}
+SELECT @rating1 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[1]', 'VARCHAR(100)');
+SELECT @rating2 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[2]', 'VARCHAR(100)');
+SELECT @rating3 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[3]', 'VARCHAR(100)');
+SELECT @rating4 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[4]', 'VARCHAR(100)');
+SELECT @rating5 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[5]', 'VARCHAR(100)');
+SELECT @rating6 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attributeName).value('(/Map_Legend/Legend_Elements/Labels/@value)[6]', 'VARCHAR(100)');
+```
+* Get ordered set of interphrc values from sdvattribute.maplegendxml. This is assumed to begin with the 'worst' rating. Need to double-check this for all interps.
+
+### Set Interp Rulekey and Ruledesign as a Variable To Be Used in Cointerp Query
+```{SQL}
+SELECT @ruleKey = (SELECT rulekey FROM #SDV WHERE attributename = @attributeName);
+SELECT @ruleDesign = (SELECT ruledesign FROM #SDV WHERE attributename = @attributeName)
+SELECT @notRatedPhrase = (SELECT notratedphrase FROM #SDV WHERE attributename = @attributeName);
+```
+
+
+###  Add Not Rated Phrase to @rating Variables
+```{SQL}
+IF @notRatedPhrase IS NOT NULL
+  IF @rating1 IS NULL (SELECT @rating1 = @notRatedPhrase)
+  ELSE 
+    IF @rating2 IS NULL (SELECT @rating2 = @notRatedPhrase)
+    ELSE
+      IF @rating3 IS NULL (SELECT @rating3 = @notRatedPhrase)
+      ELSE
+        IF @rating4 IS NULL (SELECT @rating4 = @notRatedPhrase)
+        ELSE 
+          IF @rating5 IS NULL (SELECT @rating5 = @notRatedPhrase)
+          ELSE
+            IF @rating6 IS NULL (SELECT @rating6 = @notRatedPhrase)
+```
+
+
+### Append the Rating Classes for this Interp to the #RatingClasses Table
+
+```{SQL }
+INSERT INTO #RatingClasses (attributename, ruledesign, rating1, rating2, rating3, rating4, rating5, rating6)
+SELECT @attributeName AS attributename, @ruleDesign AS ruledesign, @rating1 AS rating1, @rating2 AS rating2, @rating3 AS rating3, @rating4 AS rating4, @rating5 AS rating5, @rating6 AS rating6;
+```
+
+attributename|ruledesign|rating1|rating2|rating3|rating4|rating5|rating6
+Organic Matter Depletion |limitation |OM depletion high|OM depletion moderately high |OM depletion moderate|OM depletion moderately low|OM depletion low |Not rated
+
+
+
+### Populate the #RatingDomain Table with a Unique Rating_key for this Interp
+
+```{SQL}
+SELECT @ratingKey = RTRIM(@attributeName) + ':1'
+IF NOT @rating1 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating1, 1)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':2'
+IF NOT @rating2 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating2, 2)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':3'
+IF NOT @rating3 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating3, 3)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':4'
+IF NOT @rating4 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating4, 4)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':5'
+IF NOT @rating5 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating5, 5)
+ 
+SELECT @ratingKey = RTRIM(@attributeName) + ':6'
+IF NOT @rating6 IS NULL INSERT INTO #RatingDomain VALUES( @ratingKey, @attributename, @rating6, 6)
+```
+
+id|rating_key|attributename|rating|rating_num
+9|Organic Matter Depletion:1|Organic Matter Depletion|OM depletion high |1
+10|Organic Matter Depletion:2|Organic Matter Depletion|OM depletion moderately high|2
+11|Organic Matter Depletion:3|Organic Matter Depletion|OM depletion moderate |3
+12|Organic Matter Depletion:4|Organic Matter Depletion|OM depletion moderately low |4
+13|Organic Matter Depletion:5|Organic Matter Depletion|OM depletion low|5
+14|Organic Matter Depletion:6|Organic Matter Depletion|Not rated |6
+
+
+
+
+### Populate Component Level Ratings Using the Currently Set Soil Interpretation
+
+```{SQL}
+TRUNCATE TABLE #M5
+INSERT INTO #M5
+SELECT M4.aoiid, M4.landunit, M4.mukey, mapunit_acres, M4.cokey, M4.compname, M4.comppct_r, TP.interphrc AS rating, SUM (M4.comppct_r) OVER(PARTITION BY M4.landunit, M4.mukey) AS mu_pct_sum
+FROM #M4 AS M4
+LEFT OUTER JOIN cointerp AS TP ON M4.cokey = TP.cokey AND rulekey = @ruleKey
+WHERE M4.majcompflag = 'yes';
+```
+                                  
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|mu_pct_sum
+1|T9981 Fld3|354627|0.426|16464494|Daglum|25|OM depletion moderately high|90
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|OM depletion moderately high|90
+1|T9981 Fld3|354648|0.287|16464607|Amor|25|OM depletion moderately high|85
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|OM depletion moderately high|85
+1|T9981 Fld3|2494708|1.729|16663930|Amor|49|OM depletion moderately high|81
+1|T9981 Fld3|2494708|1.729|16663931|Cabba |32|OM depletion moderately high|81
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|OM depletion moderate |88
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades |55|OM depletion moderate |88
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka |55|OM depletion moderately high|72
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|OM depletion moderately high|72
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|OM depletion moderately high|75
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen |25|OM depletion moderately high|75
+1|T9981 Fld3|2525739|28.479|16663915|Parshall|20|OM depletion moderately high|78
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|OM depletion moderately high|78
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|OM depletion moderately high|75
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|OM depletion moderately high|78
+1|T9981 Fld3|2525754|12.638|16663602|Harriet |75|OM depletion moderate |75
+1|T9981 Fld3|2525764|17.691|16663611|Regan |55|OM depletion moderate |55
+1|T9981 Fld3|2525766|0.032|16663539|Water |100|Not rated |100
+1|T9981 Fld3|2525769|181.356|16663985|Belfield|48|OM depletion moderately high|88
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|OM depletion moderate |88
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|OM depletion moderately high|78
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|OM depletion moderately high|78
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|OM depletion moderately high|85
+1|T9981 Fld3|2755654|4.599|16663847|Amor|25|OM depletion moderately high|85
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|OM depletion moderate |88
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades |55|OM depletion moderate |88
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|OM depletion moderate |85
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|OM depletion moderately high|85
+2|T9981 Fld4|2525724|0.458|16664022|Belfield|35|OM depletion moderately high|85
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|OM depletion moderate |85
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|OM depletion moderate |85
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|OM depletion moderately high|75
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|OM depletion moderately high|78
+2|T9981 Fld4|2525754|23.138|16663602|Harriet |75|OM depletion moderate |75
+2|T9981 Fld4|2525767|3.86|16663540|Water |100|Not rated |100
+2|T9981 Fld4|2525769|103.909|16663985|Belfield|48|OM depletion moderately high|88
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|OM depletion moderate |88
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|OM depletion moderately high|80
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|OM depletion moderate |80
+2|T9981 Fld4|2755643|9.641|16663957|Flasher |30|OM depletion moderately high|88
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|OM depletion moderately high|88
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|OM depletion moderately high|88
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|OM depletion moderately high|78
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|OM depletion moderately high|78
+
+
+### Populate Component Level Ratings with Adjusted Component Percent to Account for the Un-used Minor Components
+```{SQL}
+TRUNCATE TABLE #M6
+INSERT INTO #M6
+SELECT aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, mu_pct_sum, (1.0 * comppct_r / mu_pct_sum) AS adj_comp_pct
+FROM #M5;
+```
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|mu_pct_sum|adj_comp_pct
+1|T9981 Fld3|354627|0.426|16464494|Daglum|25|OM depletion moderately high|90|0.277777778
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|OM depletion moderately high|90|0.722222222
+1|T9981 Fld3|354648|0.287|16464607|Amor|25|OM depletion moderately high|85|0.294117647
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|OM depletion moderately high|85|0.705882353
+1|T9981 Fld3|2494708|1.729|16663930|Amor|49|OM depletion moderately high|81|0.604938272
+1|T9981 Fld3|2494708|1.729|16663931|Cabba |32|OM depletion moderately high|81|0.395061728
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|OM depletion moderate |88|0.375
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades |55|OM depletion moderate |88|0.625
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka |55|OM depletion moderately high|72|0.763888889
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|OM depletion moderately high|72|0.236111111
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|OM depletion moderately high|75|0.666666667
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen |25|OM depletion moderately high|75|0.333333333
+1|T9981 Fld3|2525739|28.479|16663915|Parshall|20|OM depletion moderately high|78|0.256410256
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|OM depletion moderately high|78|0.743589744
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|OM depletion moderately high|75|1
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|OM depletion moderately high|78|1
+1|T9981 Fld3|2525754|12.638|16663602|Harriet |75|OM depletion moderate |75|1
+1|T9981 Fld3|2525764|17.691|16663611|Regan |55|OM depletion moderate |55|1
+1|T9981 Fld3|2525766|0.032|16663539|Water |100|Not rated |100|1
+1|T9981 Fld3|2525769|181.356|16663985|Belfield|48|OM depletion moderately high|88|0.545454545
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|OM depletion moderate |88|0.454545455
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|OM depletion moderately high|78|0.743589744
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|OM depletion moderately high|78|0.256410256
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|OM depletion moderately high|85|0.705882353
+1|T9981 Fld3|2755654|4.599|16663847|Amor|25|OM depletion moderately high|85|0.294117647
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|OM depletion moderate |88|0.375
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades |55|OM depletion moderate |88|0.625
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|OM depletion moderate |85|0.352941176
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|OM depletion moderately high|85|0.235294118
+2|T9981 Fld4|2525724|0.458|16664022|Belfield|35|OM depletion moderately high|85|0.411764706
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|OM depletion moderate |85|0.8
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|OM depletion moderate |85|0.2
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|OM depletion moderately high|75|1
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|OM depletion moderately high|78|1
+2|T9981 Fld4|2525754|23.138|16663602|Harriet |75|OM depletion moderate |75|1
+2|T9981 Fld4|2525767|3.86|16663540|Water |100|Not rated |100|1
+2|T9981 Fld4|2525769|103.909|16663985|Belfield|48|OM depletion moderately high|88|0.545454545
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|OM depletion moderate |88|0.454545455
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|OM depletion moderately high|80|0.775
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|OM depletion moderate |80|0.225
+2|T9981 Fld4|2755643|9.641|16663957|Flasher |30|OM depletion moderately high|88|0.340909091
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|OM depletion moderately high|88|0.454545455
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|OM depletion moderately high|88|0.204545455
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|OM depletion moderately high|78|0.743589744
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|OM depletion moderately high|78|0.256410256
+
+
+
+
+### Populates Component Acres by Multiplying Map Unit Acres with Adjusted Component Percent
+```{SQL}
+TRUNCATE TABLE #M8
+INSERT INTO #M8
+SELECT  aoiid, landunit, mukey, mapunit_acres, cokey, compname, comppct_r, rating, MU_pct_sum, adj_comp_pct, ROUND ( (adj_comp_pct * mapunit_acres), 4) AS co_acres
+FROM #M6;
+```
+
+aoiid|landunit|mukey|mapunit_acres|cokey|compname|comppct_r|rating|MU_pct_sum|adj_comp_pct|co_acres
+1|T9981 Fld3|354627|0.426|16464494|Daglum|25|OM depletion moderately high|90|0.277777778|0.1183
+1|T9981 Fld3|354627|0.426|16464495|Farnuf|65|OM depletion moderately high|90|0.722222222|0.3077
+1|T9981 Fld3|354648|0.287|16464607|Amor|25|OM depletion moderately high|85|0.294117647|0.0844
+1|T9981 Fld3|354648|0.287|16464612|Reeder|60|OM depletion moderately high|85|0.705882353|0.2026
+1|T9981 Fld3|2494708|1.729|16663930|Amor|49|OM depletion moderately high|81|0.604938272|1.0459
+1|T9981 Fld3|2494708|1.729|16663931|Cabba |32|OM depletion moderately high|81|0.395061728|0.6831
+1|T9981 Fld3|2525720|56.699|16663899|Daglum|33|OM depletion moderate |88|0.375|21.2621
+1|T9981 Fld3|2525720|56.699|16663903|Rhoades |55|OM depletion moderate |88|0.625|35.4369
+1|T9981 Fld3|2525732|1.35|16663796|Ekalaka |55|OM depletion moderately high|72|0.763888889|1.0312
+1|T9981 Fld3|2525732|1.35|16663797|Yegen |17|OM depletion moderately high|72|0.236111111|0.3187
+1|T9981 Fld3|2525733|0.129|16663951|Vebar |50|OM depletion moderately high|75|0.666666667|0.086
+1|T9981 Fld3|2525733|0.129|16663952|Cohagen |25|OM depletion moderately high|75|0.333333333|0.043
+1|T9981 Fld3|2525739|28.479|16663915|Parshall|20|OM depletion moderately high|78|0.256410256|7.3023
+1|T9981 Fld3|2525739|28.479|16663917|Vebar |58|OM depletion moderately high|78|0.743589744|21.1767
+1|T9981 Fld3|2525745|4.983|16663921|Shambo|75|OM depletion moderately high|75|1|4.983
+1|T9981 Fld3|2525746|16.106|16663927|Shambo|78|OM depletion moderately high|78|1|16.106
+1|T9981 Fld3|2525754|12.638|16663602|Harriet |75|OM depletion moderate |75|1|12.638
+1|T9981 Fld3|2525764|17.691|16663611|Regan |55|OM depletion moderate |55|1|17.691
+1|T9981 Fld3|2525766|0.032|16663539|Water |100|Not rated |100|1|0.032
+1|T9981 Fld3|2525769|181.356|16663985|Belfield|48|OM depletion moderately high|88|0.545454545|98.9215
+1|T9981 Fld3|2525769|181.356|16663987|Daglum|40|OM depletion moderate |88|0.454545455|82.4345
+1|T9981 Fld3|2755648|2.449|16663766|Reeder|58|OM depletion moderately high|78|0.743589744|1.8211
+1|T9981 Fld3|2755648|2.449|16663767|Janesburg |20|OM depletion moderately high|78|0.256410256|0.6279
+1|T9981 Fld3|2755654|4.599|16663846|Reeder|60|OM depletion moderately high|85|0.705882353|3.2464
+1|T9981 Fld3|2755654|4.599|16663847|Amor|25|OM depletion moderately high|85|0.294117647|1.3526
+2|T9981 Fld4|2525720|8.623|16663899|Daglum|33|OM depletion moderate |88|0.375|3.2336
+2|T9981 Fld4|2525720|8.623|16663903|Rhoades |55|OM depletion moderate |88|0.625|5.3894
+2|T9981 Fld4|2525724|0.458|16664017|Savage|30|OM depletion moderate |85|0.352941176|0.1616
+2|T9981 Fld4|2525724|0.458|16664018|Daglum|20|OM depletion moderately high|85|0.235294118|0.1078
+2|T9981 Fld4|2525724|0.458|16664022|Belfield|35|OM depletion moderately high|85|0.411764706|0.1886
+2|T9981 Fld4|2525730|31.514|16663991|Regent|68|OM depletion moderate |85|0.8|25.2112
+2|T9981 Fld4|2525730|31.514|16663992|Savage|17|OM depletion moderate |85|0.2|6.3028
+2|T9981 Fld4|2525745|62.205|16663921|Shambo|75|OM depletion moderately high|75|1|62.205
+2|T9981 Fld4|2525746|63.55|16663927|Shambo|78|OM depletion moderately high|78|1|63.55
+2|T9981 Fld4|2525754|23.138|16663602|Harriet |75|OM depletion moderate |75|1|23.138
+2|T9981 Fld4|2525767|3.86|16663540|Water |100|Not rated |100|1|3.86
+2|T9981 Fld4|2525769|103.909|16663985|Belfield|48|OM depletion moderately high|88|0.545454545|56.6776
+2|T9981 Fld4|2525769|103.909|16663987|Daglum|40|OM depletion moderate |88|0.454545455|47.2314
+2|T9981 Fld4|2755639|0.443|16663554|Savage|62|OM depletion moderately high|80|0.775|0.3433
+2|T9981 Fld4|2755639|0.443|16663555|Grail |18|OM depletion moderate |80|0.225|0.0997
+2|T9981 Fld4|2755643|9.641|16663957|Flasher |30|OM depletion moderately high|88|0.340909091|3.2867
+2|T9981 Fld4|2755643|9.641|16663958|Vebar |40|OM depletion moderately high|88|0.454545455|4.3823
+2|T9981 Fld4|2755643|9.641|16663959|Tally |18|OM depletion moderately high|88|0.204545455|1.972
+2|T9981 Fld4|2755648|11.382|16663766|Reeder|58|OM depletion moderately high|78|0.743589744|8.4635
+2|T9981 Fld4|2755648|11.382|16663767|Janesburg |20|OM depletion moderately high|78|0.256410256|2.9185
+
+
+
+### Aggregates the Classes and Sums up the Component Acres by Landunit (Tract and Field number)
+```{SQL}
+TRUNCATE TABLE #M10
+INSERT INTO #M10
+SELECT landunit, rating, SUM (co_acres) AS rating_acres
+FROM #M8
+GROUP BY landunit, rating
+ORDER BY landunit, rating_acres DESC;
+```
+
+landunit|rating|rating_acres
+T9981 Fld3|Not rated |0.032
+T9981 Fld4|Not rated |3.86
+T9981 Fld3|OM depletion moderate |169.4625
+T9981 Fld4|OM depletion moderate |110.7677
+T9981 Fld3|OM depletion moderately high|159.4584
+T9981 Fld4|OM depletion moderately high|204.0953
+
+
+
+
+### Group of Insert Statements to Populate the Final Output Tables
+```{SQL}
+INSERT INTO #LandunitRatingsDetailed1 (aoiid, landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres)
+SELECT aoiid, M10.landunit, @attributeName AS attributename, M10.rating, RD.rating_key, RD.rating_num,
+ROUND ((rating_acres/ landunit_acres) * 100.0, 2) AS rating_pct, 
+ROUND (rating_acres,2) AS rating_acres,
+ROUND ( landunit_acres, 2) AS landunit_acres
+FROM #M10 M10
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.landunit = M10.landunit
+INNER JOIN #RatingDomain RD ON M10.rating = RD.rating
+WHERE RD.attributename = @attributeName
+GROUP BY aoiid, M10.landunit, M10.rating, rating_key, rating_acres, landunit_acres, rating_num
+ORDER BY landunit, attributename, rating_num DESC;
+```
+
+aoiid|landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres
+1|T9981 Fld3|Organic Matter Depletion|Not rated |6|Organic Matter Depletion:6|0.01|0.03|328.95
+1|T9981 Fld3|Organic Matter Depletion|OM depletion moderate |3|Organic Matter Depletion:3|51.52|169.46|328.95
+1|T9981 Fld3|Organic Matter Depletion|OM depletion moderately high|2|Organic Matter Depletion:2|48.47|159.46|328.95
+2|T9981 Fld4|Organic Matter Depletion|Not rated |6|Organic Matter Depletion:6|1.21|3.86|318.72
+2|T9981 Fld4|Organic Matter Depletion|OM depletion moderate |3|Organic Matter Depletion:3|34.75|110.77|318.72
+2|T9981 Fld4|Organic Matter Depletion|OM depletion moderately high|2|Organic Matter Depletion:2|64.04|204.1|318.72
+
+
+* Detailed Landunit Ratings1: rating acres and rating percent by area for each soil-landunit polygon
+* These will be summarized to a single set of interp ratings for each landunit. Currently there are 5 interps.
+
+### Determine Dominant Critical 
+```{SQL}
+INSERT INTO #LandunitRatingsDetailed2 (landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres)
+SELECT landunit, attributename, rating, rating_num, rating_key, rating_pct, rating_acres, landunit_acres,
+  rolling_pct = SUM(rating_pct) OVER
+  (
+    PARTITION BY landunit
+    ORDER BY rating_key ROWS UNBOUNDED PRECEDING
+  ),
+  rolling_acres = SUM(rating_acres) OVER
+  (
+    PARTITION BY landunit
+    ORDER BY rating_key ROWS UNBOUNDED PRECEDING
+  )
+  FROM #LandunitRatingsDetailed1
+  WHERE attributename = @attributeName
+  ORDER BY landunit, attributename;
+```
+landunit|attributename|rating|rating_num|rating_key|rating_pct|rating_acres|landunit_acres|rolling_pct|rolling_acres
+T9981 Fld3|Organic Matter Depletion|OM depletion moderately high|2|Organic Matter Depletion:2|48.47|159.46|328.95|48.47|159.46
+T9981 Fld3|Organic Matter Depletion|OM depletion moderate |3|Organic Matter Depletion:3|51.52|169.46|328.95|99.99|328.92
+T9981 Fld3|Organic Matter Depletion|Not rated |6|Organic Matter Depletion:6|0.01|0.03|328.95|100|328.95
+T9981 Fld4|Organic Matter Depletion|OM depletion moderately high|2|Organic Matter Depletion:2|64.04|204.1|318.72|64.04|204.1
+T9981 Fld4|Organic Matter Depletion|OM depletion moderate |3|Organic Matter Depletion:3|34.75|110.77|318.72|98.79|314.87
+T9981 Fld4|Organic Matter Depletion|Not rated |6|Organic Matter Depletion:6|1.21|3.86|318.72|100|318.73
+
+
+
+
+* LandunitRatingsDetailed2 is populated with all information plus rolling_pct and rolling_acres which are using in the landunit summary rating.
+* Detailed Landunit Ratings2 table columns: landunit, attributename, rating, rating_key, rating_num, rating_pct, rating_acres, landunit_acres, rolling_pct, rolling_acres. 
+
+### Landunit Ratings CART
+```{SQL}
+INSERT INTO #LandunitRatingsCART (id, landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres)
+SELECT ROW_NUMBER() OVER(PARTITION BY landunit ORDER BY rating_key ASC) AS "id",
+landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres
+FROM #LandunitRatingsDetailed2
+WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acres >= @minAcres)
+```
+
+* Identifies the single, most limiting rating (per landunit) that comprises at least 10% by area or 10 acres.
+* This record will have an id value of 1.
+
+id|landunit|attributename|rating|rating_key|rolling_pct|rolling_acres|landunit_acres
+1|T9981 Fld3|Organic Matter Depletion|OM depletion moderately high|Organic Matter Depletion:2|48.47|159.46|328.95
+2|T9981 Fld3|Organic Matter Depletion|OM depletion moderate |Organic Matter Depletion:3|99.99|328.92|328.95
+3|T9981 Fld3|Organic Matter Depletion|Not rated |Organic Matter Depletion:6|100|328.95|328.95
+1|T9981 Fld4|Organic Matter Depletion|OM depletion moderately high|Organic Matter Depletion:2|64.04|204.1|318.72
+2|T9981 Fld4|Organic Matter Depletion|OM depletion moderate |Organic Matter Depletion:3|98.79|314.87|318.72
+3|T9981 Fld4|Organic Matter Depletion|Not rated |Organic Matter Depletion:6|100|318.73|318.72
+
+
+
+### Final CART Soil Interpretation Ratings for Each Landunit
+
+```{SQL}
+INSERT INTO #LandunitRatingsCART2 (landunit, attributename, rating, rating_key, rolling_pct, rolling_acres, landunit_acres, soils_metadata)
+SELECT LC.landunit, LC.attributename, LC.rating, LC.rating_key, rolling_pct, rolling_acres, landunit_acres, MD.soils_metadata
+FROM #LandunitRatingsCART LC
+INNER JOIN #RatingDomain RD ON LC.attributename = RD.attributename AND LC.rating = RD.rating
+INNER JOIN #LandunitMetadata MD ON LC.landunit = MD.landunit
+WHERE LC.id = 1
+ORDER BY landunit, rating_key;
+```
+* The LandunitRatingsCART table will have all data, but the record for the overall landunit rating will have an id = 1.
+
+landunit|rating_key|soils_metadata
+T9981 Fld3|Organic Matter Depletion:2| ND001 2018-09-12 19:21:50  SD105 2018-09-12 23:49:29
+T9981 Fld4|Organic Matter Depletion:2| ND001 2018-09-12 19:21:50
+
+
+## References
+
+1. Owens, P., E. Winzeler, Z. Libohova, S. Waltman, D. Miller, and B. Waltman. Evaluating U.S. soil taxonomy soil climate regimes: Application across scales. 
+https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_053084.pdf (accessed 1 March 2018).
+
+2. Page-Dumrose, D.S. 1993. Susceptibility of volcanic ash-influenced soils in northern Idaho to mechanical compaction. U.S. Forest Service Intermountain Research Station. Research Note INT-409.
+
+3. Pimentel, D. 2006. Soil erosion: A food and environmental threat. Environment, Development and Sustainability 8:119--137.
+
+4. Schmitt, A., and B. Glaser. 2011. Organic matter dynamics in a temperate forest as influenced by soil frost. Journal of Plant Nutrition and Soil Science 174(5):754--764. https://doi.org/10.1002/jpln.201100009.
+
+5. Schmidt, M.W.I., M.S. Torn, S. Abiven, T. Dittmar, G. Guggenberger, I.A. Janssens, and S.E. Trumbore. 2011. Persistence of soil organic matter as an ecosystem property. Nature 478:49--56. http://dx.doi.org/10.1038/nature10386.
+
+6. Soil Survey Staff. 2014. Keys to soil taxonomy, 12th edition. USDA Natural Resources Conservation Service, Washington, DC. https://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/survey/class/taxonomy/?cid=nrcs142p2_053580.
+
+7. U.S. Department of Agriculture, Agricultural Research Service. 1997. Predicting soil erosion by water: A guide to conservation planning with the Revised Universal Soil Loss Equation (RUSLE). Agriculture Handbook 703. https://www.ars.usda.gov/ARSUserFiles/64080530/rusle/ah_703.pdf.
+
+8. U.S. Department of Agriculture, Natural Resources Conservation Service. National soil survey handbook, Title 430-VI. http://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/ref/?cid=nrcs142p2_054242 (accessed 1 March 2018).
+
+9. U.S. Department of Agriculture, Soil Conservation Service. 1961. Land capability classification. https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_052290.pdf (accessed 1 March 2018).
+
+10. Zhanyu, Z., L. Sheng, J. Yang, X.-A. Chen, L. Kong, and B. Wagan. 2015. Effects of land use and slope gradient on soil erosion in a red soil hilly watershed of southern China. Sustainability 7(10):14,309--14,325; doi:10.3390/su71014309.
+

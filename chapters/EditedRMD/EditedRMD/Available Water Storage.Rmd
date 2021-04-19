@@ -1,0 +1,221 @@
+---
+title: "Available Water Storage"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+__Available water storage (AWS)__ is the total volume of water (in centimeters) that is expected to be available to plants when the soil, inclusive of rock fragments, is at field capacity. It is commonly estimated as the amount of water held between field capacity and the wilting point, with corrections for salinity, rock fragments, and rooting depth. AWS is reported as a single value (in centimeters) of water for the specified depth of the soil. 
+
+AWS is calculated as the available water capacity times the thickness of each soil horizon to a specified depth. For each soil layer, available water capacity, used in the computation of AWS, is recorded as three separate values in the database. A low value and a high value indicate the range of this attribute for the soil component. A "representative" value indicates the expected value of this attribute for the component. For the derivation of AWS, only the representative value for available water capacity is used. The available water storage for each map unit component is computed as described above and then aggregated to a single value for the map unit by the process described below. 
+
+A map unit typically consists of one or more "components." A component is either soil or a nonsoil entity, e.g., rock outcrop. For the attribute being aggregated (e.g., available water storage), the first step of the aggregation process is to derive one attribute value for each of a map unit's components. From this set of component attributes, the next step of the process is to derive a single value that represents the map unit as a whole. Once a single value for each map unit is derived, a thematic map for the map units can be generated. Aggregation is needed because map units rather than components are delineated on the soil maps. The composition of each component in a map unit is recorded as a percentage. A composition of 60 indicates that the component typically makes up approximately 60 percent of the map unit. For the available water storage, percent composition is the weighting factor when a weighted average of all component values is computed.
+
+
+## Script Breakdown
+
+####  Insert identifier(s) string and WKT geometry for each area of interest (AOI) polygon
+
+```{SQL}
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387, -102.12327175652177 45.944703605814198, -102.12335160658608 45.959173206572416)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld3', @aoiGeomFixed); 
+SELECT @aoiGeom = GEOMETRY::STGeomFromText('MULTIPOLYGON (((-102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.944703605814198, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383)))', 4326);   
+SELECT @aoiGeomFixed = @aoiGeom.MakeValid().STUnion(@aoiGeom.STStartPoint());  
+INSERT INTO #AoiTable ( landunit, aoigeom )  
+VALUES ('T9981 Fld4', @aoiGeomFixed);
+```
+
+
+|aoiid	|landunit|	aoigeom|
+|------|-------------|---------------------------------------------------------------------------------------|
+|1	|T9981 Fld3	|POLYGON ((-102.13386921506947 45.944643788188387, -102.12327175652177 45.9447036058142, -102.12335160658608 45.959173206572416, -102.13402890980223 45.959218442561564, -102.13386921506947 45.944643788188387))|
+|2	|T9981 Fld4|	POLYGON ((-102.12327175652177 45.9447036058142, -102.1128892282776 45.944710506326032, -102.1130336443976 45.959162795100383, -102.12335160658608 45.959173206572416, -102.12327175652177 45.9447036058142))|
+
+#### Create summary acres for each landunit
+
+```{SQL}
+CREATE TABLE #AoiAcres
+    ( aoiid INT,
+    landunit CHAR(20),
+    landunit_acres FLOAT
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )\
+SELECT  aoiid, landunit,
+SUM( ROUND( ( ( GEOGRAPHY::STGeomFromWKB(aoigeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) ) AS landunit_acres
+FROM #AoiTable
+GROUP BY aoiid, landunit;
+```
+
+|aoiid|	landunit|landunit_acres|
+|------|-------------|----------------|
+|1|	T9981 Fld3|          	328.952|
+|2|	T9981 Fld4  |        	318.722|
+
+
+#### Populate intersected soil polygon table with geometry
+```{SQL}
+-- Create intersected soil polygon table with geometry
+CREATE TABLE #AoiSoils 
+    ( polyid INT IDENTITY (1,1),
+    aoiid INT,
+    landunit CHAR(20),
+    mukey INT,
+    soilgeom GEOMETRY
+    );
+```
+
+```{SQL}
+INSERT INTO #AoiSoils (aoiid, landunit, mukey, soilgeom)
+SELECT A.aoiid, A.landunit, M.mukey, M.mupolygongeo.STIntersection(A.aoigeom ) AS soilgeom
+FROM mupolygon M, #AoiTable A
+WHERE mupolygongeo.STIntersects(A.aoigeom) = 1;
+```
+
+
+
+
+####  Populate soil geometry with landunit attribute
+```{SQL}
+-- Soil geometry with landunits
+CREATE TABLE #AoiSoils2 
+    ( aoiid INT,
+    polyid INT,
+    landunit CHAR(20),
+    mukey INT,
+    poly_acres FLOAT,
+    soilgeog GEOGRAPHY
+    );
+```
+
+```{SQL}
+-- Populate Soil geometry with landunit attribute
+INSERT INTO #AoiSoils2   
+SELECT aoiid, polyid, landunit,  mukey, ROUND((( GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ).STArea() ) / 4046.8564224 ), 3 ) AS poly_acres, GEOGRAPHY::STGeomFromWKB(soilgeom.STAsBinary(), 4326 ) AS soilgeog 
+FROM #AoiSoils;
+```
+
+
+
+####  Populate soil map unit acres, aggregated by mukey (merges polygons together)
+```{SQL}
+INSERT INTO #M2
+SELECT DISTINCT M1.aoiid, M1.landunit, M1.mukey,
+ROUND (SUM (M1.poly_acres) OVER(PARTITION BY M1.landunit, M1.mukey), 3) AS mapunit_acres
+FROM #AoiSoils2 AS M1
+GROUP BY M1.aoiid, M1.landunit, M1.mukey, M1.poly_acres;
+````
+
+
+### Getting Availible Water Storage from MUAGGAT Table
+```{SQL}
+CREATE TABLE #acpfaws
+(  aoiid INT ,
+landunit CHAR(20), 
+mukey INT,
+mapunit_acres FLOAT, 
+mu_pct_sum INT, 
+aws0150wta FLOAT )
+;
+```
+```{SQL}
+
+INSERT INTO #acpfaws
+SELECT DISTINCT 
+ MA44.aoiid ,
+ MA44.landunit, 
+ MA44.mukey,
+ MA44.mapunit_acres, 
+ mu_pct_sum, 
+ aws0150wta
+FROM (#M4 AS MA44 
+INNER JOIN muaggatt AS mt on MA44.mukey=mt.mukey);
+```
+
+aoiid|landunit|mukey|mapunit_acres|mu_pct_sum|aws0150wta
+---------|---------|---------|---------|---------|---------
+1|T9981 Fld3          |354627|0.426|100|24.46999931
+1|T9981 Fld3          |354648|0.287|100|15.01000023
+1|T9981 Fld3          |2494708|1.729|100|12.56999969
+1|T9981 Fld3          |2525720|56.699|100|19.02000046
+1|T9981 Fld3          |2525732|1.35|100|19.05999947
+1|T9981 Fld3          |2525733|0.129|100|11.13000011
+1|T9981 Fld3          |2525739|28.479|100|16.62999916
+1|T9981 Fld3          |2525745|4.983|100|26.54999924
+1|T9981 Fld3          |2525746|16.106|100|26.62000084
+1|T9981 Fld3          |2525754|12.638|100|18.52000046
+1|T9981 Fld3          |2525764|17.691|100|19.88999939
+1|T9981 Fld3          |2525766|0.032|100|NULL
+1|T9981 Fld3          |2525769|181.356|100|20.85000038
+1|T9981 Fld3          |2755648|2.449|100|20.12999916
+1|T9981 Fld3          |2755654|4.599|100|21.28000069
+2|T9981 Fld4          |2525720|8.623|100|19.02000046
+2|T9981 Fld4          |2525724|0.458|100|21.26000023
+2|T9981 Fld4          |2525730|31.514|100|16.57999992
+2|T9981 Fld4          |2525745|62.205|100|26.54999924
+2|T9981 Fld4          |2525746|63.55|100|26.62000084
+2|T9981 Fld4          |2525754|23.138|100|18.52000046
+2|T9981 Fld4          |2525767|3.86|100|NULL
+2|T9981 Fld4          |2525769|103.909|100|20.85000038
+2|T9981 Fld4          |2755639|0.443|100|26.81999969
+2|T9981 Fld4          |2755643|9.641|100|11.14000034
+2|T9981 Fld4          |2755648|11.382|100|20.12999916
+
+```{SQL}
+ CREATE TABLE #aws1
+( aoiid INT,
+landunit CHAR(20),  
+landunit_acres FLOAT,
+AWS_Weighted_Average0_150 FLOAT
+)
+;
+
+
+```
+
+```{SQL}
+INSERT INTO #aws1
+SELECT DISTINCT 
+ #acpfaws.aoiid ,
+ #acpfaws.landunit,  
+landunit_acres,
+ FORMAT (SUM ((mapunit_acres/landunit_acres)*aws0150wta) over(partition by #acpfaws.aoiid)  , '#,###,##0.00') AS AWS_Weighted_Average0_150
+FROM #acpfaws
+LEFT OUTER JOIN #AoiAcres ON #AoiAcres.aoiid=#acpfaws.aoiid
+GROUP BY #acpfaws.aoiid, #acpfaws.landunit, mapunit_acres, landunit_acres, aws0150wta;
+
+````
+
+aoiid|landunit|	landunit_acres|	AWS_Weighted_Average0_150
+--------|--------|--------|--------|
+1|	T9981 Fld3|          	328.952	|20.34
+2	|T9981 Fld4 |        	318.722	|21.91
+
+
+```{SQL}
+SELECT DISTINCT  landunit, landunit_acres, CASE WHEN AWS_Weighted_Average0_150 IS NOT NULL THEN CONCAT ('Availible Water Storage' , ':' , 1) 
+WHEN AWS_Weighted_Average0_150 = 0 THEN CONCAT ('Availible Water Storage' , ':' , 0)
+WHEN AWS_Weighted_Average0_150 IS  NULL THEN CONCAT ('Availible Water Storage' , ':' , 'Not Rated') 
+END AS rating_key,
+'Availible Water Storage' AS attributename,
+AWS_Weighted_Average0_150	AS [AWS_0_150]
+FROM #aws1;
+```
+
+landunit	|landunit_acres	|rating_key|	attributename	|AWS_0_150
+--------|--------|--------|--------|--------|
+T9981 Fld3  |328.952|	Availible Water Storage:|	Availible Water Storage	|20.34
+T9981 Fld4  |        	318.722|	Availible Water Storage:1	|Availible Water Storage|	21.91
+
+
+
+
+

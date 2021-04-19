@@ -1,0 +1,44 @@
+---
+title: "Outcomes"
+author: "Laura Morton and Jason Nemecek"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Conservation Assessment Ranking Tool Outcomes
+
+CART is intended to provide NRCS leadership with the ability to  model data and report the natural resource impacts and outcomes of conservation practices, systems, programs, and initiatives. It is also intended to facilitate the identification of conservation treatment needs and the reporting of outcomes for NRCS and USDA. 
+
+1. Example: RCCP Outcomes Guidance Document: [Click Here](https://github.com/jneme910/CART/blob/master/documents/RCPP%20Outcomes%20Guidance_DRAFT_6.17.docx?raw=true)
+2. Data connections (CART-NPAD): [Click Here](https://github.com/jneme910/CART/blob/master/documents/npad_70_051419.pdf)
+3. Measuring the success of conservation practice implementation.
+4. Using soils data to help validate conservation practices.
+5. Providing technical soil services using soil scientist to collect data for validation 
+
+## Conceptual Data Design
+
+The "conceptual data design"" consists of practice tables, land unit tables, miscellaneous reference tables, interpretation tables, and connection to (SSURGO) soil map units.
+
+## Outcomes Talking Points
+
+1. Priority #1 is data design (in progress). 
+2. Analysis of existing free assets (infrastructure, programmatic, governance, partnerships.) 
+    + We expect to complete this analysis by end of FY--2019 and have an action plan.
+3. Near-term wins need leadership support and approvals to begin October 1. 
+    + Cost on this to be decided by the analysis of assets.
+
+## Leadership Help
+Leadership can assist in the process by brainstorming and providing a list of desired outcomes for us to focus the priorities for data design (jobs, businesses, carbon, water quality, etc.).
+
+## Soils Data
+1. We need to be able to tag PLU attributes to a soil map unit and interpretations on the fly with data feeds.  
+    + Some would need to have pre-generated reference table values based on a script (to be developed by SMEs) 
+    + Some could pull direct soil interpretations.
+2. We may only be able to do a few outcomes this way with soil data, but we could get the highest priority completed and evaluate the outcome.

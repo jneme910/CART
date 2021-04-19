@@ -1,0 +1,145 @@
+---
+title: "Future CART Enhancements"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+
+## Proposed Future Enhancements
+1. Develop Nitrogen Leaching Interpretation. 
+2. Write a SQL Script (Soil Data Access) Version of Erosion.
+3. Add Soil Organic Carbon Stock to "Air Quality" resource concern.
+4. Develop Soil Property and Interpretation SQL Scripts to assist conservation planning for specific practices.
+5.  Develop SQL scripts to assist in special conservation signups by identifying opportunities for conservation. Examples:
+    + Golden Wing Warblers can be found in alder (along swamps-edges). Soils data could be used to query certain locations and help identify customers (by locating the most productive sights for declining habitats).
+    + Karner Blue Butterfly Habitat Identification.
+        +	The Karner Blue Butterfly (KBB) is a federally listed endanger species
+        + KBB caterpillars feed exclusively on the leaves of wild lupine.
+        +	NRCS and partner staff wanted to identify likely lupine habitat to prioritize for protection under NRCS easements and related programs.
+        + 	NRCS and partner agencies have begun using these results to help identify opportunities for conservation easements funds to identify critical areas.
+        + This process could be used to identify customers.
+6. Add thematic maps by map unit and landunit.
+
+
+## Example for Proposal #4: Using Soils Data for a Specific Pratice
+<center>
+**WASTE STORAGE FACILITY**
+
+**Conservation Pratice CODE 313 (Credit Georgia NRCS)**
+
+</center>
+
+Soil Concerns Stated in CP Standard|Web Soil Survey (WSS) Related Items 
+--------------------------------------------|-----------------------------------------------
+Bedrock with joints, fractures, or solution channels|Depth to bedrock (paralithic bedrock)
+Corrosion|Corrosion of concrete and steel
+Depth to bedrock|Depth to bedrock (paralithic bedrock)
+Depth to bedrock|Depth to bedrock (lithic bedrock)
+Depth to high water table|Depth to water table
+Description of soil material|Map unit description
+Embankments|Soil interpretation for embankments, dikes, and levees
+Impacts on wetlands|Hydric soils^1^
+Location outside flood plain|Flooding frequency^2^
+Runoff|Hydrologic soil group
+Seepage rate|Saturated hydraulic conductivity (Ksat)
+Soil permeability|Saturated hydraulic conductivity (Ksat)
+Unified soil classification|Unified Soil Classification
+Water soluble bedrock such as limestone|Map unit description
+
+^1^Hydric soils are not synonymous with wetlands, but hydric soils are one of the 3 wetland factors required for an area to be considered a wetland.
+^2^Flooding frequencies of rare, occasional, frequent, or very frequent indicate the potential for flooding at least once in 100 years.
+
+![Note: In Web Soil Survey, the Suitabilities and Limitations option and the Soil Properties and Qualities option are designed to aggregate data and return a single rating or value for each map unit. The single value typically is either for the surface layer or a weighted average for a specified depth range. Use of a single value facilitates the creation of a thematic map for the selected item. Representative values (rv's) are used instead of the range in properties, and depth measurements are generally displayed in centimeters. The Soil Reports option generally provides the range in values for each soil component, and depth measurements are generally displayed in inches or feet. Results, however, are tabular only.](https://jneme910.github.io/CART/TableImages/future_pratices_soil.PNG)
+
+![A soil map and map legend of an area can be generated from the Soil Map tab in the Web Soil Survey. Soil maps were published at certain scales. Site specific practices may require onsite investigation.](https://jneme910.github.io/CART/TableImages/future_pratices_soil2.PNG)
+
+## Example for Proposal #5: Thematic Soil Map
+The Karner Blue Butterfly (KBB) is a federally listed endangered species present in small patches across the north-central and northeastern United States. The KBB typically occupies open barrens, savannas, and prairies that contain wild lupine. This plant is widespread in Wisconsin's central and northwest sands. The pale green caterpillar of the KBB feeds exclusively on the leaves of wild lupine.
+
+Staff of the Natural Resources Conservation Service (NRCS) in Wisconsin were interested in finding a more efficient and consistent way to identify areas that are likely to contain lupine habitat so that these areas could be prioritized for protection under NRCS easements programs and related programs.
+
+Because the presence of lupine is closely related to soil characteristics, NRCS conservation staff approached Tim Miland, area resource soil scientist; Mike England, soil scientist; and Jason Nemecek, Wisconsin State soil scientist, about the possibility of developing a soil interpretation for KBB habitat suitability.
+
+NRCS staff members involved in developing the interpretation included an area resource soil scientist, the State biologist, the assistant State conservationist for easements, and the State resource conservationist. Other partners in the project include the Wisconsin Department of Natural Resources, the U.S. Fish and Wildlife Service (USFWS), U.S. Forest Service (USFS), and the Farm Service Agency (FSA).
+
+The team developed a draft interpretation for "Karner Blue Butterfly Habitat Suitability" (fig. 1). The next steps, now underway (2019), are to compare the habitat suitability ratings with field data on the presence of KBB larvae and to involve additional partners working in the area. Information from the field and feedback from partners will be used to refine and revise the draft interpretation.
+
+A great benefit of the KBB interpretation is the "Aha!" moment when resource management professionals who are not soil scientists realize that soils data can be used this way. The interpretation allows them to see the data in action and realize what it can do. It also allows them to focus and prioritize conservation funds and back up these decisions with the science of the interpretation. This interpretation shows how soils data can and should be used to facilitate conservation planning.
+
+ 
+![Figure 1.---Interpretive results corresponding to areas where KBB larvae have been observed.](https://jneme910.github.io/CART/TableImages/WIKBB_Interp.jpg)
+
+![Figure 2.---NRCS and Partner agencies have begun using these results to help target easement-program funds and to identify critical areas.](https://jneme910.github.io/CART/TableImages/RegionKBB.jpg)
+
+
+## Example for Proposal #6: Thematic Soil Map
+
+
+#### Organic Matter Depletion 
+
+
+![Figure 3.---Field 3 is on the left, and Field 4 is on the right.](https://jneme910.github.io/CART/TableImages/future_OM_Depletion.PNG)
+
+## AoiCoords---JavaScript Object Notation (json)
+1. https://sdmdataaccess.sc.egov.usda.gov/test/testpost.html
+
+```{SQL}
+{
+	'type': 'FeatureCollection',
+	'features': [
+		{
+			'type': 'Feature',
+			'geometry': {
+				'type': 'Polygon',
+				'coordinates': [[[-102.12335160658608, 45.959173206572416], [-102.13402890980223, 45.959218442561564], [-102.13386921506947, 45.944643788188387], [ -102.12327175652177, 45.944703605814198], [-102.12335160658608 , 45.959173206572416]
+
+
+]]
+			},
+			'properties': {'partName': 'T9981 Fld3' }
+		},
+		{
+			'type': 'Feature',
+			'geometry': {
+			   'type': 'Polygon',
+			   'coordinates': [[
+[-102.1130336443976, 45.959162795100383], [-102.12335160658608, 45.959173206572416], [-102.12327175652177, 45.944703605814198], [-102.1128892282776, 45.944710506326032], [-102.1130336443976, 45.959162795100383]
+
+]]
+			 },
+			'properties': {'partName': 'T9981 Fld4' }
+		}
+	   ]
+}
+```
+
+
+
+2. https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcseprd1390056.html
+    + AOI= 40055
+    + interpresultid = 2915
+    
+    
+
+
+
+
+
+
+
+
+

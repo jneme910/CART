@@ -1,0 +1,121 @@
+---
+title: "Soil Data Checks"
+author: "Jason Nemecek"
+date: "`r Sys.Date()`"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+
+<style>
+   tbody tr:nth-child(odd){
+    background-color: #F7FBFF;
+  }
+</style>
+
+Number|Data checks|SSURGO table
+---|--------------------------------------|-----------------
+1|Check Component percent is not null or zero|Component
+2|Check horizon thickness is not null or zero|Component horizon
+3|Check for major components and less than 10 percent|Component
+4|Check for histic or histosols in taxonomic name where hydric rating is no|Component
+5|Component RV percent total exceeds 100%|Mapunit*
+6|Horizon depths contain either gaps or overlaps|Component*
+7|Horizon bottom depth is NULL|Component horizon
+8|Horizon depths are duplicated|Component horizon
+9|Check for hydric rating where component percent is null or zero|Component
+10|Component RV percent total is less than 100%|Component
+
+
+
+### Check Null Component Percent by State
+
+```{SQL}
+DROP TABLE IF EXISTS #tem1
+
+SELECT COUNT (DISTINCT c.cokey) AS ct, LEFT (Areasymbol, 2) AS State_sym
+INTO #tem1
+FROM legend AS l
+INNER JOIN mapunit AS m ON m.lkey=l.lkey AND areasymbol <> 'US'
+INNER JOIN component AS c ON c.mukey=m.mukey AND comppct_r IS NULL
+GROUP BY Areasymbol
+;
+
+SELECT DISTINCT SUM (ct) over(partition by State_sym) as SUM_NULL_COMP_PCT, State_sym
+FROM #tem1
+ORDER BY State_sym ASC
+
+```
+
+State_sym|SUM_NULL_COMP_PCT
+----|----
+CA|6
+CO|1033
+IL|2907
+KS|95
+LA|1
+MS|77
+MT|1
+NM|4207
+NV|1
+OH|6877
+OR|6
+TN|2
+UT|3
+VA|2
+WA|372
+WI|1491
+WV|32
+WY|2
+
+Breakdown Null Component Percent:
+* 17,115 Components
+* 76 Major Component
+* 17,039 Minor Components
+* 6,885 National Map Unit Symbols
+
+## Checks Major Components Where Percent is Less Than 10
+
+```{SQL}
+SELECT  areasymbol, areaname,  mapunit.muname, mapunit.mukey, compname, localphase, component.cokey,
+comppct_r, majcompflag , nationalmusym, musym
+INTO #comp2
+FROM (legend INNER JOIN (mapunit   INNER JOIN component ON mapunit.mukey = component.mukey AND majcompflag = 'Yes' ) ON legend.lkey = mapunit.lkey AND areasymbol <> 'US')
+ORDER BY areasymbol ASC, musym ASC, muname ASC,  component.cokey;
+
+---with — recursive common table expression - Organize Complex Queries
+WITH #comp AS (Select areasymbol, areaname, nationalmusym, musym, muname, mukey, compname, cokey, majcompflag, localphase,  SUM (comppct_r) over(partition by mukey) AS  mu_sum_pct, 
+SUM (comppct_r) over(partition by mukey, compname) AS  sum_compname_pct  From #comp2)
+
+
+Select areasymbol, areaname, nationalmusym, musym, muname, mukey, compname, localphase, cokey,  majcompflag,  mu_sum_pct, sum_compname_pct
+From #comp
+Where sum_compname_pct < 10
+ORDER BY areasymbol ASC, musym ASC, muname ASC
+
+
+-- Cleanup all temporary tables 
+IF OBJECT_ID('temp_db..#comp2', 'U') IS NOT NULL
+  DROP TABLE #comp2;
+IF OBJECT_ID('temp_db..#comp', 'U') IS NOT NULL
+  DROP TABLE #comp;
+```
+
+
+
+areasymbol|areaname|nationalmusym|musym|muname|mukey|compname|localphase|cokey|majcompflag|mu_sum_pct|sum_compname_pct|
+-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------
+AK644|Ketchikan Area, Alaska|1nsm|6|McGilvery-Traitors complex, 60 to 100 percent slopes|49774|Helm|granitic|15954339|Yes|88|3|
+AK646|Chatham Area, Alaska|1nz8|3553D|Sitka-Partofshikof complex, smooth, 56 to 75 percent slopes|49949|McGilvery|smooth|15955701|Yes|90|5|
+
+Example Output
+
+
