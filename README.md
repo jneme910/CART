@@ -32,7 +32,7 @@ This documentation describes the SQL queries that access soils data for CART.  T
 |4 |Nitrogen Leaching |RA | [Click here](https://jneme910.github.io/CART/chapters/Nitrogen_Leaching_Potential)|Future Development (Water Quality-Diffuse Nutrient, Pesticide and Pathogens Transport to Water
  |5|Farmland Classification |EE, EP |[Click here](https://jneme910.github.io/CART/chapters/Farmland_Classification) |Easements; Environmental Evaluation|
 |6|Available Water Storage |EP |[Click here](https://jneme910.github.io/CART/chapters/Available_Water_Storage) |Easements|
-|7|Soil Organic Carbon Stock|RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Soil_Organic_Carbon_Stock)|Easements; Air Quality: Emissions of Greenhouse Gases |
+|7|Soil Organic Carbon Stock|RA, EP |[Click here](https://jneme910.github.io/CART/chapters/Soil-Organic-Carbon_Stock)|Easements; Air Quality: Emissions of Greenhouse Gases |
  |8|Drainage Class |EP |[Click here](https://jneme910.github.io/CART/chapters/Drainage_Class) |Easements|
 |9|Organic Soils |RA |See 'Hydric Rating by Mapunit'|---|
 |10|Agricultural Organic Soil Subsidence |RA |[Click here](https://jneme910.github.io/CART/chapters//EditedRMD/Agricultural_Organic_Soil_Subsidence) |Soil Quality Degradation: Subsidence|
