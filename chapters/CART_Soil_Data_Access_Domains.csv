@@ -26,8 +26,8 @@ Line|CART Rating|Attribute Name|Soil Interpretation Rating Class
 26|Ponding or Flooding:0|Ponding or Flooding|0
 27|Ponding or Flooding:2|Ponding or Flooding|Not rated
 28|Drainage Class: 1|Drainage class|Excessively drained
-29|Drainage Class: 2|Drainage class|"Somewhat excessively
-drained"
+"29|Drainage Class: 2|Drainage class|""Somewhat excessively"
+"drained"""
 30|Drainage Class: 3|Drainage class|Well drained
 31|Drainage Class: 4|Drainage class|Moderately well drained
 32|Drainage Class: 5|Drainage class|Somewhat poorly drained
@@ -80,3 +80,7 @@ drained"
 75|Farm Class:0|Farm Class|0
 76|Farm Class:1|Farm Class|1
 77|Farm Class:2|Farm Class|Not rated
+78|Limitations for Aerobic Soil Organisms:1|Suitability for Aerobic Soil Organisms|Very limited
+79|Limitations for Aerobic Soil Organisms:2|Suitability for Aerobic Soil Organisms|Somewhat limited
+80|Limitations for Aerobic Soil Organisms:3|Suitability for Aerobic Soil Organisms|Not limited
+81|Limitations for Aerobic Soil Organisms:4|Suitability for Aerobic Soil Organisms|Not rated

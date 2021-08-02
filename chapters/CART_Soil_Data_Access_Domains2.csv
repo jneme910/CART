@@ -79,3 +79,7 @@ Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
 81,Easements Drainage                                          ,0,No
 82,Easements Drainage                                          ,1,Yes
 83,Easements Drainage                                          ,2,Not rated
+84, Limitations for Aerobic Soil Organisms,1,Very limited
+85, Limitations for Aerobic Soil Organisms,2,Somewhat limited
+86, Limitations for Aerobic Soil Organisms,3,Not limited
+87, Limitations for Aerobic Soil Organisms,4,Not rated
