@@ -39,7 +39,7 @@ This documentation describes the SQL queries that access soils data for CART.  T
 |11|Soil Susceptibility to Compaction |RA |[Click here](https://jneme910.github.io/CART/chapters/Soil_Susceptibility_to_Compaction)|Soil Quality Degradation:Compaction| 
 |12|Soil Susceptibility Organic Matter Depletion |RA |[Click here](https://jneme910.github.io/CART/chapters/Organic_Matter_Depletion)|Soil Quality Degradation:Organic Matter Depletion|
 |13|Surface Salt Concentration |RA |[Click here](https://jneme910.github.io/CART/chapters/Surface_Salt_Concentration)|Soil Quality Degradation:Concentration of Salts and Other Chemicals
-|14|Suitability for Aerobic Soil Organisms |RA |[Click here](https://jneme910.github.io/CART/chapters/Suitability_for_Aerobic_Soil_Organisms)|Soil Quality Degradation:Soil Organism Habitat Loss and Degradation|
+|14|Limitation for Aerobic Soil Organisms |RA |[Click here](https://jneme910.github.io/CART/chapters/Suitability_for_Aerobic_Soil_Organisms)|Soil Quality Degradation:Soil Organism Habitat Loss and Degradation|
 |15|Aggregate stability |RA |[Click here](https://jneme910.github.io/CART/chapters/Aggregate-stability) |Soil Quality Degradation:Aggregate Instability|
 |16| Domain Tables|---|  [Click here](https://jneme910.github.io/CART/chapters/CART_Soil_Data_Access_Domains) |---|
 |17|Soil Property List by Interpretation |---| [Click here](https://jneme910.github.io/CART/chapters/Soil_Property_List_by_Soil_Interpretation) |---|
