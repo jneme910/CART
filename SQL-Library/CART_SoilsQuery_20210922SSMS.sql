@@ -6,8 +6,8 @@ GO
 
 ----------------- SDM NOTE: I changed the date of the SDA query to September, and add a comment at the beginning.
 /** SDA Query application="CART" rule="Generalized Resource Assessment - September 2021" version="FY22" **/
--- BEGIN CREATING AOI QUERY
--- Includes Air Quality
+-- Updated Soil Carbon Domain and added Hydric Easements to Air Quality 09/27/2021
+-- Includes Air Quality 09/23/2021
 
 DROP TABLE IF EXISTS #AoiTable
 DROP TABLE IF EXISTS #AoiAcres
@@ -2616,13 +2616,13 @@ ORDER BY landunit
 -- SOC CART
 INSERT INTO #LandunitRatingsCART2 (landunit, attributename, rating_value, rating_class)
 SELECT DISTINCT landunit, 'Soil Organic Carbon Stock' AS attributename,
-CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN 0
-WHEN SOCSTOCK_0_30_Weighted_Average > 0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN 1
-WHEN SOCSTOCK_0_30_Weighted_Average >= 10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN 2
-WHEN SOCSTOCK_0_30_Weighted_Average >= 25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN 3
-WHEN SOCSTOCK_0_30_Weighted_Average >= 50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN 4
-WHEN SOCSTOCK_0_30_Weighted_Average >= 100 THEN 5
-WHEN SOCSTOCK_0_30_Weighted_Average IS NULL THEN 6
+CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN 1
+WHEN SOCSTOCK_0_30_Weighted_Average > 0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN 2
+WHEN SOCSTOCK_0_30_Weighted_Average >= 10 AND SOCSTOCK_0_30_Weighted_Average < 25 THEN 3
+WHEN SOCSTOCK_0_30_Weighted_Average >= 25 AND SOCSTOCK_0_30_Weighted_Average < 50 THEN 4
+WHEN SOCSTOCK_0_30_Weighted_Average >= 50 AND SOCSTOCK_0_30_Weighted_Average < 100 THEN 5
+WHEN SOCSTOCK_0_30_Weighted_Average >= 100 THEN 6
+WHEN SOCSTOCK_0_30_Weighted_Average IS NULL THEN 7
 END AS rating_value,
 CASE WHEN SOCSTOCK_0_30_Weighted_Average = 0 THEN 'None'
 WHEN SOCSTOCK_0_30_Weighted_Average >0 AND SOCSTOCK_0_30_Weighted_Average < 10 THEN 'Very low'
@@ -2702,7 +2702,7 @@ SELECT LRC.landunit, LRC.attributename AS rating_name, LRC.rating_value, LRC.rat
 FROM #LandunitRatingsCART2 LRC
 INNER JOIN #AoiAcres AS a ON a.landunit = LRC.landunit AND LRC.attributename = 'Soil Organic Carbon Stock'
 INNER JOIN #LandunitRatingsCART2 LRC2 ON LRC.landunit = LRC2.landunit AND LRC2.attributename ='Organic Matter Depletion'
-INNER JOIN #LandunitRatingsCART2 LRC3 ON LRC.landunit = LRC3.landunit AND LRC3.attributename ='Hydric Soils'
+INNER JOIN #LandunitRatingsCART2 LRC3 ON LRC.landunit = LRC3.landunit AND LRC3.attributename ='Easements Hydric Soils'
 
 
 --------------------------------------------------------- begin long sql
