@@ -83,3 +83,7 @@ Line,CART Rating,Attribute Name,Soil Interpretation Rating Class
 85, Limitations for Aerobic Soil Organisms,2,Somewhat limited
 86, Limitations for Aerobic Soil Organisms,3,Not limited
 87, Limitations for Aerobic Soil Organisms,4,Not rated
+88,Air Quality,1,Class 1
+89,Air Quality,2,Class 2
+90,Air Quality,3,Class 3
+91,Air Quality,4,Class 4
