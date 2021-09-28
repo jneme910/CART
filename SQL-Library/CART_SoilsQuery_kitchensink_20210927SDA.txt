@@ -1,12 +1,14 @@
--- 2021-09-27 T15:35:41 
+-- 2021-09-23 T16:13:41 
 
-
-/** SDA Query application="CART" rule="Generalized Resource Assessment - February 2021" version="FY22" **/
--- BEGIN CREATING AOI QUERY
+/** SDA Query application="CART" rule="Generalized Resource Assessment - September 2021" version="FY22" **/
 -- Updated Soil Carbon Domain and added Hydric Easements to Air Quality 09/27/2021
 -- Includes Air Quality 09/23/2021
+-- BEGIN CREATING AOI QUERY
+--
 
 
+
+-- Declare all variables here
 ~DeclareChar(@attributeName,60)~
 ~DeclareChar(@ruleDesign,60)~
 ~DeclareChar(@ruleKey,30)~
@@ -396,7 +398,7 @@ INSERT INTO #SDV (attributename, attributecolumnname, attributelogicaldatatype, 
     sdv.sqlwhereclause, sdv.secondaryconcolname,tiebreaklowlabel, tiebreakhighlabel
     FROM sdvattribute sdv
     LEFT OUTER JOIN distinterpmd md ON sdv.nasisrulename = md.rulename
-    WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Suitability for Aerobic Soil Organisms', 'Hydric Rating by Map Unit')
+    WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Limitations for Aerobic Soil Organisms', 'Hydric Rating by Map Unit')
     GROUP BY md.rulekey, sdv.attributename, sdv.attributecolumnname, sdv.attributelogicaldatatype, sdv.attributetype, sdv.attributeuom, sdv.nasisrulename, sdv.resultcolumnname, sdv.effectivelogicaldatatype,
     sdv.attributefieldsize, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.maplegendkey, sdv.attributedescription, sqlwhereclause, secondaryconcolname, tiebreaklowlabel, tiebreakhighlabel
 ;
@@ -2284,10 +2286,10 @@ WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acre
 -- End of:  Agricultural Organic Soil Subsidence
 -- ************************************************************************************************
 
--- Begin query for soil interpretation:  Suitability for Aerobic Soil Organisms
+-- Begin query for soil interpretation:  Limitations for Aerobic Soil Organisms
 -- ************************************************************************************************
 
-SELECT @attributeName = 'Suitability for Aerobic Soil Organisms';
+SELECT @attributeName = 'Limitations for Aerobic Soil Organisms';
 SELECT @minPct = 10;
 SELECT @minAcres = 10;
 
@@ -2411,7 +2413,7 @@ FROM #LandunitRatingsDetailed2
 WHERE attributename = @attributeName AND (rolling_pct >= @minPct OR rolling_acres >= @minAcres)
 ;
 
--- End of:  Suitability for Aerobic Soil Organisms
+-- End of:  Limitations for Aerobic Soil Organisms
 -- ************************************************************************************************
 
 -- Begin saving the final CART soil interpretation ratings for each landunit. The record for the overall landunit rating will have an id = 1.
@@ -2563,6 +2565,7 @@ WHEN AWS_Weighted_Average0_150 = 0 THEN 'No'
 END AS rating_class
 FROM #aws1
 ;
+
 
 --Air Quality
 CREATE TABLE #LandunitRatingsAirQualityData (
@@ -2742,10 +2745,10 @@ THEN 'Class 3'
 ELSE  'Class 4'
 END AS rating_class
  FROM #LandunitRatingsAirQualityData
-
 -- For ArcMap LandUnit Rating table, also return rating_class.
 SELECT LRC.landunit, LRC.attributename AS rating_name, LRC.rating_value, LRC.rating_class
 FROM #LandunitRatingsCART2 LRC
 INNER JOIN #AoiAcres AS a ON a.landunit = LRC.landunit
 ORDER BY LRC.landunit, LRC.attributename
 ;
+

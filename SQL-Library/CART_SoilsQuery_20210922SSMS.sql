@@ -1,14 +1,14 @@
--- 2021-08-02 T15:35:41 
-USE sdm
-GO
+-- 2021-09-27 T15:35:41 
 
-
-
------------------ SDM NOTE: I changed the date of the SDA query to September, and add a comment at the beginning.
 /** SDA Query application="CART" rule="Generalized Resource Assessment - September 2021" version="FY22" **/
 -- Updated Soil Carbon Domain and added Hydric Easements to Air Quality 09/27/2021
 -- Includes Air Quality 09/23/2021
 
+
+-- BEGIN CREATING AOI QUERY
+--
+USE sdm
+GO
 DROP TABLE IF EXISTS #AoiTable
 DROP TABLE IF EXISTS #AoiAcres
 DROP TABLE IF EXISTS #AoiSoils
@@ -2666,6 +2666,7 @@ WHEN AWS_Weighted_Average0_150 = 0 THEN 'No'
 END AS rating_class
 FROM #aws1
 ;
+
 ----------------------------------------------------------------=========================================================== begin
 ----------- Air Quality  
 DROP TABLE IF EXISTS #LandunitRatingsAirQualityData
@@ -2780,17 +2781,10 @@ ELSE  4
 END AS rating_value
  FROM #LandunitRatingsAirQualityData
 
-
- ------- for air quality - update the rating_class
- ------- SDM NOTE:  SDA does not allow the update/set command - had to comment this out in the real SDA Query ; CART only uses the rating_name and rating_value
+------- for air quality - update the rating_class
+------- SDM NOTE:  SDA does not allow the update/set command - had to comment this out in the real SDA Query ; CART only uses the rating_name and rating_value
  UPDATE #LandunitRatingsCART2 SET rating_class = 'Class ' + CAST(rating_value AS VARCHAR(3))
  WHERE attributename = 'air quality'
-
-
-DROP TABLE IF EXISTS #LandunitRatingsAirQualityData
-
------------ Air Quality
-----------------------------------------------------------------=========================================================== end
 
 -- For ArcMap LandUnit Rating table, also return rating_class.
 SELECT LRC.landunit, LRC.attributename AS rating_name, LRC.rating_value, LRC.rating_class
