@@ -503,7 +503,7 @@ INSERT INTO #SDV (attributename, attributecolumnname, attributelogicaldatatype, 
     GROUP BY md.rulekey, sdv.attributename, sdv.attributecolumnname, sdv.attributelogicaldatatype, sdv.attributetype, sdv.attributeuom, sdv.nasisrulename, sdv.resultcolumnname, sdv.effectivelogicaldatatype,
     sdv.attributefieldsize, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.maplegendkey, sdv.attributedescription, sqlwhereclause, secondaryconcolname, tiebreaklowlabel, tiebreakhighlabel
 ;
-  SELECT sdv.attributename, sdv.attributecolumnname, sdv.attributelogicaldatatype, sdv.attributetype,
+  /*SELECT sdv.attributename, sdv.attributecolumnname, sdv.attributelogicaldatatype, sdv.attributetype,
     sdv.attributeuom, sdv.nasisrulename, md.rulekey, md.ruledesign, sdv.notratedphrase, sdv.resultcolumnname,
     sdv.effectivelogicaldatatype, sdv.attributefieldsize, sdv.maplegendxml, sdv.maplegendkey, sdv.attributedescription,
     sdv.sqlwhereclause, sdv.secondaryconcolname,tiebreaklowlabel, tiebreakhighlabel
@@ -512,6 +512,7 @@ INSERT INTO #SDV (attributename, attributecolumnname, attributelogicaldatatype, 
     WHERE sdv.attributename IN ('Agricultural Organic Soil Subsidence', 'Soil Susceptibility to Compaction', 'Organic Matter Depletion', 'Surface Salt Concentration', 'Limitations for Aerobic Soil Organisms', 'Hydric Rating by Map Unit')
     GROUP BY md.rulekey, sdv.attributename, sdv.attributecolumnname, sdv.attributelogicaldatatype, sdv.attributetype, sdv.attributeuom, sdv.nasisrulename, sdv.resultcolumnname, sdv.effectivelogicaldatatype,
     sdv.attributefieldsize, md.ruledesign, sdv.notratedphrase, sdv.maplegendxml, sdv.maplegendkey, sdv.attributedescription, sqlwhereclause, secondaryconcolname, tiebreaklowlabel, tiebreakhighlabel
+	*/
 -- Populate #AoiAcres table
 INSERT INTO #AoiAcres (aoiid, landunit, landunit_acres )
     SELECT  aoiid, landunit,
@@ -2414,7 +2415,7 @@ SELECT @rating6 = (SELECT maplegendxml FROM #SDV WHERE attributename = @attribut
 -- Set interp rulekey and ruledesign as a variable to be used in cointerp query
 SELECT @ruleKey = (SELECT rulekey FROM #SDV WHERE attributename = @attributeName);
 
-SELECT * FROM #SDV WHERE attributename = @attributeName
+--SELECT * FROM #SDV WHERE attributename = @attributeName
 SELECT @ruleDesign = (SELECT ruledesign FROM #SDV WHERE attributename = @attributeName)
 SELECT @notRatedPhrase = (SELECT notratedphrase FROM #SDV WHERE attributename = @attributeName)
 ;
