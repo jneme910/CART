@@ -562,7 +562,7 @@ SELECT DISTINCT aoiid ,
 landunit, 
 
 mukey,
-mapunit_acres, 
+--mapunit_acres, 
 mu_pct_sum,
 --AgStab_l ,
 --AgStab_r , 
