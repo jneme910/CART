@@ -8,8 +8,8 @@ The Conservation Assessment Ranking Tool (CART) is designed for use in the conse
 This documentation describes the SQL queries that access soils data for CART.  The queries described in this documentation run through the [Soil Data Access](https://sdmdataaccess.nrcs.usda.gov/Query.aspx) tabular data query portal.  The portal accesses current databases maintained by the U.S. National Cooperative Soil Survey.
 
 ### Structured Query Language (SQL) script for the Conservation Assessment Ranking Tool: Soil.
-1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_20210922SSMS.sql)
-2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20210927SDA.txt)
+1.  SQL Server version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_20240925SSMS.sql) 
+2.  Soil Data Access SQL version: [Click here](https://github.com/jneme910/CART/blob/master/SQL-Library/CART_SoilsQuery_kitchensink_20240925.sql)
 3.  Area of Interest (AOI) Geometry examples to copy into the SQL script:  [Click here](https://raw.githubusercontent.com/jneme910/CART/master/SQL-Library/AOI_Geometry_Examples.txt)
 4.  Prototype: [Click here](https://jneme910.github.io/CART/documents/rev00_Organic_Matter_Depletion.html)
 5.  Prototype2: [Click here](https://jneme910.github.io/CART/documents/rev00.html)
