@@ -1,7 +1,7 @@
 # Conservation Assessment Ranking Tool (CART)
 Jason Nemecek and Steve Peaslee 
 
-August 2, 2021 
+March 5, 2025 
 
 The Conservation Assessment Ranking Tool (CART) is designed for use in the conservation planning process to assess resource concerns, planned practices, and site vulnerability. It ranks applications for USDA conservation funding. CART starts with a site-specific risk threshold for each resource concern. The thresholds are based on intrinsic site characteristics, such as soils and climate. The tool evaluates the benefits of site-specific management for treating resource concerns. A “management credit” score is assigned to each site based on such factors as the methods used for crop production and the conservation practices that are applied. The scores are summed, and the total is compared to the threshold for existing conditions and to planning alternatives. The scores can also be used to prioritize program ranking, which may be further modified by identified priorities, special considerations, or both.
 
