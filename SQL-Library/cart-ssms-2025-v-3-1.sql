@@ -607,7 +607,7 @@ END CATCH;
 – INTERPRETATION PROCESSING ENGINE
 – ================================================================================
 
-– Modern interpretation processing using dynamic SQL generation
+– interpretation processing using dynamic SQL generation
 DECLARE @interpretation_cursor CURSOR;
 DECLARE @current_interpretation NVARCHAR(60);
 
