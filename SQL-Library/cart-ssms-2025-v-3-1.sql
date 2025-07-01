@@ -145,7 +145,7 @@ CONSTRAINT pk_aoitable PRIMARY KEY CLUSTERED (aoiid),
 -- (Create spatial index after table creation; see below)
 
 -- Covering index for common queries
-INDEX ix_aoitable_covering NONCLUSTERED (landunit) INCLUDE (aoigeom, created_timestamp)
+INDEX ix_aoitable_covering NONCLUSTERED (landunit) INCLUDE ( aoigeom, created_timestamp)
 -----'''
 
 );
@@ -158,13 +158,17 @@ landunit_acres DECIMAL(15,3) NOT NULL,
 
 -----'''
 -- Clustered index optimized for aggregations
+
 INDEX ci_aoiacres CLUSTERED (aoiid, landunit),
 
+
 -- Columnstore for analytical queries
+
 INDEX cci_aoiacres NONCLUSTERED COLUMNSTORE (aoiid, landunit, landunit_acres)
------'''
+
 
 ) WITH (DATA_COMPRESSION = PAGE);
+
 
 --- Modern soil intersection table with intelligent partitioning
 CREATE TABLE #aoisoils2 (
@@ -199,15 +203,21 @@ mapunit_acres DECIMAL(15,3) NOT NULL,
 
 -----'''
 -- Composite primary key for optimal joins
+
 CONSTRAINT pk_m2 PRIMARY KEY CLUSTERED (aoiid, landunit, mukey),
 
+
 -- Covering indexes for common access patterns
+
 INDEX ix_m2_mukey NONCLUSTERED (mukey) INCLUDE (aoiid, landunit, mapunit_acres),
+
 INDEX ix_m2_acres NONCLUSTERED (mapunit_acres DESC) INCLUDE (aoiid, landunit, mukey),
 
+
 -- Columnstore for aggregations
+
 INDEX cci_m2 NONCLUSTERED COLUMNSTORE (aoiid, landunit, mukey, mapunit_acres)
------'''
+
 
 ) WITH (DATA_COMPRESSION = PAGE);
 
@@ -638,5 +648,14 @@ SET @attribute_name = @current_interpretation;
 
 ---'''
 -- Dynamic rating extraction with XML processing
----'''
+
+
+
+FETCH NEXT FROM @interpretation_cursor INTO @current_interpretation;
+
 END
+
+
+
+CLOSE @interpretation_cursor;
+---'''
