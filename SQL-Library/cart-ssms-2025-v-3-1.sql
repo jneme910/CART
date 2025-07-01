@@ -145,7 +145,7 @@ CONSTRAINT pk_aoitable PRIMARY KEY CLUSTERED (aoiid),
 -- (Create spatial index after table creation; see below)
 
 -- Covering index for common queries
-INDEX ix_aoitable_covering NONCLUSTERED (landunit) INCLUDE ( aoigeom, created_timestamp)
+INDEX ix_aoitable_covering NONCLUSTERED (landunit) INCLUDE (aoigeom, created_timestamp)
 -----'''
 
 );
@@ -658,4 +658,8 @@ END
 
 
 CLOSE @interpretation_cursor;
+
+
+DEALLOCATE @interpretation_cursor;
+
 ---'''
