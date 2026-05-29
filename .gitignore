@@ -1,0 +1,15 @@
+# Security remediation notes
+
+This repository currently commits a generated site artifact under `_site/`, including an outdated vendored jQuery file:
+
+- `_site/site_libs/jquery-1.11.3/jquery.min.js`
+
+That file is a generated dependency artifact rather than source code. The durable fix is to stop tracking generated site output so vulnerable bundled libraries are not committed.
+
+Recommended follow-up:
+
+1. Remove `_site/` from version control.
+2. Add `_site/` to `.gitignore`.
+3. Regenerate the published site using current tooling when needed.
+
+A `.gitignore` entry has been added as the first mitigation step.
